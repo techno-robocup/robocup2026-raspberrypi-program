@@ -23,3 +23,6 @@ def get_logger(name="Logger", file="log.log"):
     logger.addHandler(file_handler)
 
   return logger
+
+if __name__ == "__main__":
+  pass
