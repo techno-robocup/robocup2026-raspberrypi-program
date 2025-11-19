@@ -2,7 +2,7 @@ import modules.constants as consts
 import modules.logger as logger
 from typing import Optional, List
 import serial
-from serial.tools.list_ports import ListPortInfo
+import serial.tools.list_ports
 
 class Message:
   def __init__(self, *args):
@@ -39,7 +39,7 @@ class uart_io:
     self.__timeout: Optional[float] = None
     self.__message_id_increment = 0
 
-  def list_ports(self) -> list[ListPortInfo]:
+  def list_ports(self) -> list:
     return list(serial.tools.list_ports.comports())
 
   def connect(self, port: str, baud_rate: int, timeout: float) -> None:
