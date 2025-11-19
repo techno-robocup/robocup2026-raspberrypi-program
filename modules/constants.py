@@ -1,4 +1,6 @@
 UART_BAUD_RATE = 9600
 UART_TIMEOUT = 0.2
+MOTOR_MAX_SPEED = 2000
+MOTOR_MIN_SPEED = 1000
 if __name__ == "__main__":
   pass

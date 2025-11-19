@@ -100,8 +100,8 @@ class Robot:
     self.__uart_device = device
 
   def set_speed(self, motor_l: int, motor_r: int):
-    self.__MOTOR_L = motor_l
-    self.__MOTOR_R = motor_r
+    self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l), consts.MOTOR_MAX_SPEED)
+    self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r), consts.MOTOR_MAX_SPEED)
 
   def send_speed(self):
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
