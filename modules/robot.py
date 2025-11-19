@@ -36,6 +36,7 @@ class uart_io:
     self.__device_name: Optional[str] = None
     self.__baud_rate: Optional[int] = None
     self.__timeout: Optional[float] = None
+    self.__message_id_increment = 0
 
   def list_ports(self) -> ListPortInfo:
     return list(serial.tools.list_ports.comports())
@@ -62,6 +63,22 @@ class uart_io:
       self.__Serial_port.close()
     self.connect()
     return None
+
+  def send(self, message: Message) -> bool:
+    if self.isConnected():
+      self.__Serial_port.write(str(message).encode("ascii"))
+      while True:
+        message_str = self.__Serial_Port.read_until(b'\n').decode('ascii').strip()
+        if message_str:
+          retMessage = Message(message_str)
+          if retMessage.getId == message.getId:
+            return True
+          elif retMessage.getId < message.getId:
+            continue
+          else:
+            return False
+        else:
+          return False
 
 
 class Robot:
