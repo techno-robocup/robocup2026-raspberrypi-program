@@ -65,6 +65,9 @@ class uart_io:
     self.connect()
     return None
 
+  def send(self, message: str) -> bool:
+    return self.send(Message(self.__message_id_increment, message))
+
   def send(self, message: Message) -> bool:
     if self.isConnected():
       self.__Serial_port.write(str(message).encode("ascii"))
@@ -89,9 +92,19 @@ class uart_io:
 class Robot:
   def __init__(self):
     self.logger = logger.get_logger()
+    self.__uart_device: Optional[uart_io] = None
+    self.__MOTOR_L = 1500
+    self.__MOTOR_R = 1500
 
   def set_uart_device(self, device: uart_io):
     self.__uart_device = device
+
+  def set_speed(self, motor_l: int, motor_r: int):
+    self.__MOTOR_L = motor_l
+    self.__MOTOR_R = motor_r
+
+  def send_speed(self):
+    return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
 if __name__ == "__main__":
   pass
