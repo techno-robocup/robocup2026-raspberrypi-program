@@ -66,24 +66,24 @@ class uart_io:
     self.__connect()
     return None
 
-  def send(self, message: str) -> bool:
-    return self.send(Message(self.__message_id_increment, message))
+  def send(self, message: str) -> bool | str:
+    return self.__send(Message(self.__message_id_increment, message))
 
-  def send(self, message: Message) -> bool | str:
+  def __send(self, message: Message) -> bool | str:
     if self.isConnected():
       self.__Serial_port.write(str(message).encode("ascii"))
       while True:
-        message_str = self.__Serial_Port.read_until(b'\n').decode('ascii').strip()
+        message_str = self.__Serial_port.read_until(b'\n').decode('ascii').strip()
         if message_str:
           retMessage = Message(message_str)
           if retMessage.getId() == message.getId():
-            return message.getMessage()
+            return retMessage.getMessage()
           elif retMessage.getId() < message.getId():
             continue
           else:
             return False
         else:
-          logger.get_logger().error(f"No response from ESP32 for message id {__message_id_increment}")
+          logger.get_logger().error(f"No response from ESP32 for message id {self.__message_id_increment}")
           return False
 
   def close(self) -> None:
