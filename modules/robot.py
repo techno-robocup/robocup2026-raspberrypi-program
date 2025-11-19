@@ -68,16 +68,16 @@ class uart_io:
   def send(self, message: str) -> bool:
     return self.send(Message(self.__message_id_increment, message))
 
-  def send(self, message: Message) -> bool:
+  def send(self, message: Message) -> bool | str:
     if self.isConnected():
       self.__Serial_port.write(str(message).encode("ascii"))
       while True:
         message_str = self.__Serial_Port.read_until(b'\n').decode('ascii').strip()
         if message_str:
           retMessage = Message(message_str)
-          if retMessage.getId == message.getId:
-            return True
-          elif retMessage.getId < message.getId:
+          if retMessage.getId() == message.getId():
+            return message.getMessage()
+          elif retMessage.getId() < message.getId():
             continue
           else:
             return False
