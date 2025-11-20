@@ -165,6 +165,7 @@ class Robot:
     return None
 
   slope = None
+  is_stop = False
 
 if __name__ == "__main__":
   pass

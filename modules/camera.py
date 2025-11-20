@@ -5,8 +5,8 @@ import threading
 import modules.robot
 import modules.logger
 import modules.constants
-from typing import Callable, Any, Dict, Tuple
-from picamera2 import Picamera2, CompletedRequest
+from typing import Callable, Any, Dict, Tuple, List, Optional
+from picamera2 import Picamera2, CompletedRequest, MappedArray
 
 logger = modules.logger.get_logger()
 const = modules.constants
@@ -60,6 +60,11 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg")
     modules.robot.robot.write_rescue_image(image)
 
+green_marks: List[Tuple[int, int, int, int]] = []
+green_black_detected: List[np.ndarray] = []
+green_contours: List[np.ndarray] = []
+
+red_contours: List[np.ndarray] = []
 
 def detect_green_marks(orig_image: np.ndarray,
                        blackline_image: np.ndarray) -> None:
@@ -69,12 +74,8 @@ def detect_green_marks(orig_image: np.ndarray,
   # Convert to HSV (avoid copying if possible)
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
 
-  # Define green color range (very permissive for dark teal-green)
-  lower_green = np.array([20, 130, 90])
-  upper_green = np.array([100, 255, 255])
-
   # Create mask for green color
-  green_mask = cv2.inRange(hsv, lower_green, upper_green)
+  green_mask = cv2.inRange(hsv, const.lower_green, const.upper_green)
 
   # Clean up noise with optimized kernel
   kernel = np.ones((3, 3), np.uint8)
@@ -114,11 +115,9 @@ def detect_green_marks(orig_image: np.ndarray,
                                                         h)
       green_black_detected.append(black_detections)
 
-      _draw_green_mark_debug(orig_image, x, y, w, h, center_x, center_y,
-                               black_detections)
-
-  # Save the image with X marks drawn on it
-  cv2.imwrite(f"bin/{time.time():.3f}_green_marks_with_x.jpg", orig_image)
+      _draw_green_mark_debug(orig_image, x, y, w, h, center_x, center_y,                               black_detections)
+  if green_marks:
+    cv2.imwrite(f"bin/{time.time():.3f}_green_marks_with_x.jpg", orig_image)
 
 def detect_red_marks(orig_image: np.ndarray) -> None:
   """Detect red marks and set stop_requested flag."""
@@ -126,10 +125,7 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
 
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
 
-  lower_red = np.array([160, 70, 110])
-  upper_red = np.array([179, 255, 255])
-
-  red_mask = cv2.inRange(hsv, lower_red, upper_red)
+  red_mask = cv2.inRange(hsv, const.lower_red, const.upper_red)
 
   kernel = np.ones((3, 3), np.uint8)
   red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel, iterations=3)
@@ -181,7 +177,7 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
                           h // 2:min(center_y + h // 2 +
                                      roi_height, const.LINETRACE_CAMERA_LORES_HEIGHT),
                           center_x - roi_width // 2:center_x + roi_width // 2]
-  if black_detectionsroi_b.size > 0 and np.sum(roi_b < const.BLACK_WHITE_THRESHOLD) / roi_b.size <= black_threshold:
+  if roi_b.size > 0 and np.sum(roi_b < const.BLACK_WHITE_THRESHOLD) / roi_b.size <= black_threshold:
     black_detections[0] = 1
 
   # Check top
@@ -206,7 +202,7 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   if roi_r.size > 0 and np.sum(roi_r < const.BLACK_WHITE_THRESHOLD) / roi_r.size <= black_threshold:
     black_detections[3] = 1
 
-  return
+  return black_detections
 
 def _draw_green_mark_debug(image: np.ndarray, x: int, y: int, w: int, h: int,
                            center_x: int, center_y: int,
@@ -230,17 +226,6 @@ def _draw_green_mark_debug(image: np.ndarray, x: int, y: int, w: int, h: int,
   if black_detections[3]:
     cv2.line(image, (center_x + 10, center_y - 10),
              (center_x + 10, center_y + 10), (255, 0, 0), 2)
-
-def apply_center_vignette(img, strength=0.5):#filter function
-  h, w = img.shape[:2]
-  kernel_x = cv2.getGaussianKernel(w, w * strength)
-  kernel_y = cv2.getGaussianKernel(h, h * strength)
-  mask = kernel_y @ kernel_x.T
-  mask = mask / mask.max()
-  vignette = np.zeros_like(img)
-  for i in range(3):  # RGB
-      vignette[:,:,i] = img[:,:,i] * mask
-  return vignette
 
 def find_best_contour(contours: List[np.ndarray], camera_x: int, camera_y: int,
                       last_center: int) -> Optional[np.ndarray]:
@@ -320,13 +305,12 @@ def calculate_contour_center(contour: np.ndarray) -> Tuple[int, int]:
 
   return cx, cy
 
-
 def calculate_slope(contour: np.ndarray, cx: int, cy: int) -> float:
   """Calculate the slope of the line for steering."""
   try:
     # Set base point
-    base_x = LINETRACE_CAMERA_LORES_WIDTH // 2
-    base_y = LINETRACE_CAMERA_LORES_HEIGHT
+    base_x = const.LINETRACE_CAMERA_LORES_WIDTH // 2
+    base_y = const.LINETRACE_CAMERA_LORES_HEIGHT
 
     # Calculate slope between top and center points
     if cx != base_x:  # Avoid division by zero or tiny values
@@ -334,8 +318,7 @@ def calculate_slope(contour: np.ndarray, cx: int, cy: int) -> float:
     else:
       return 10**9
   except Exception as e:
-    if DEBUG_MODE:
-      logger.error(f"Error in calculate_slope: {e}")
+    logger.error(f"Error in calculate_slope: {e}")
     return 0.0
 
 def visualize_tracking(image: np.ndarray, contour: np.ndarray, cx: int,
@@ -380,6 +363,17 @@ SLOPE_LOCK = threading.Lock()
 lastblackline = const.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
+def apply_center_vignette(img, strength=0.5):#filter function
+  h, w = img.shape[:2]
+  kernel_x = cv2.getGaussianKernel(w, w * strength)
+  kernel_y = cv2.getGaussianKernel(h, h * strength)
+  mask = kernel_y @ kernel_x.T
+  mask = mask / mask.max()
+  vignette = np.zeros_like(img)
+  for i in range(3):  # RGB
+      vignette[:,:,i] = img[:,:,i] * mask
+  return vignette
+
 def Linetrace_Camera_Pre_callback(request):
   logger.debug("Linetrace Camera Pre call-back called")
   current_time = time.time()
@@ -396,15 +390,14 @@ def Linetrace_Camera_Pre_callback(request):
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg",image)
       gray_image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
       _, binary_image = cv2.threshold(gray_image, const.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
-      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary",image)
+      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary",binary_image)
       kernel = np.ones((3,3),np.uint8)
       binary_image = cv2.morphologyEx(binary_image,cv2.MORRH_OPEN,kernel,iteration=6)
-      cv2.imwrite(f"bin/{current_time:.3f}_binary.jpg")
 
       detect_red_marks(image)
       detect_green_marks(image,binary_image)
 
-      contours, _ = cv2.findContours(binary_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+      contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
       if not contours:
         modules.robot.Robot.slope = None
@@ -426,7 +419,7 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       with SLOPE_LOCK:
-        slope = calculate_slope(best,cx,cy)
+        modules.robot.Robot.slope = calculate_slope(best_contour,cx,cy)
 
       debug_image = visualize_tracking(image,best_contour,cx,cy)
       _draw_debug_contours(debug_image)

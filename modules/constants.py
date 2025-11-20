@@ -1,4 +1,6 @@
 import libcamera
+import numpy as np
+
 UART_BAUD_RATE = 9600
 UART_TIMEOUT = 0.2
 MOTOR_MAX_SPEED = 2000
@@ -44,6 +46,12 @@ COMPUTING_P = 35055
 MIN_BLACK_LINE_AREA = 300
 MIN_GREEN_AREA = 200
 MIN_RED_AREA = 200
+
+lower_green = np.array([20, 130, 90])
+upper_green = np.array([100, 255, 255])
+
+lower_red = np.array([160, 70, 110])
+upper_red = np.array([179, 255, 255])
 
 if __name__ == "__main__":
   pass
