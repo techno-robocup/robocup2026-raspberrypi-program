@@ -4,7 +4,9 @@ from typing import Optional, List
 import serial
 import serial.tools.list_ports
 
+
 class Message:
+
   def __init__(self, *args):
     self.__id: int
     self.__message: str
@@ -16,8 +18,9 @@ class Message:
       self.__id = int(temp_id)
       self.__message = self.__message.strip()
     else:
-      logger.get_logger().error(f"Invalid number of arguments to construct Message object {args}")
-  
+      logger.get_logger().error(
+          f"Invalid number of arguments to construct Message object {args}")
+
   @property
   def __str__(self):
     return f"{self.id} {self.message}"
@@ -32,6 +35,7 @@ class Message:
 
 
 class uart_io:
+
   def __init__(self):
     self.__Serial_port: Optional[serial.Serial] = None
     self.__device_name: Optional[str] = None
@@ -52,11 +56,13 @@ class uart_io:
   def __connect(self) -> None:
     logger.get_logger().info(f"Connecting to {self.__device_name}")
     while True:
-      self.__Serial_port = serial.Serial(self.__device_name, self.__baud_rate, timeout=self.__timeout)
+      self.__Serial_port = serial.Serial(self.__device_name,
+                                         self.__baud_rate,
+                                         timeout=self.__timeout)
       if self.__Serial_port.isOpen():
         break
     return None
-  
+
   def isConnected(self) -> bool:
     return self.__Serial_port.isOpen
 
@@ -73,7 +79,8 @@ class uart_io:
     if self.isConnected():
       self.__Serial_port.write(str(message).encode("ascii"))
       while True:
-        message_str = self.__Serial_port.read_until(b'\n').decode('ascii').strip()
+        message_str = self.__Serial_port.read_until(b'\n').decode(
+            'ascii').strip()
         if message_str:
           retMessage = Message(message_str)
           if retMessage.getId() == message.getId():
@@ -83,14 +90,18 @@ class uart_io:
           else:
             return False
         else:
-          logger.get_logger().error(f"No response from ESP32 for message id {self.__message_id_increment}")
+          logger.get_logger().error(
+              f"No response from ESP32 for message id {self.__message_id_increment}"
+          )
           return False
 
   def close(self) -> None:
     if self.isConnected():
       self.__Serial_port.close()
 
+
 class Robot:
+
   def __init__(self):
     self.logger = logger.get_logger()
     self.__uart_device: Optional[uart_io] = None
@@ -101,8 +112,10 @@ class Robot:
     self.__uart_device = device
 
   def set_speed(self, motor_l: int, motor_r: int):
-    self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l), consts.MOTOR_MAX_SPEED)
-    self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r), consts.MOTOR_MAX_SPEED)
+    self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l),
+                         consts.MOTOR_MAX_SPEED)
+    self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r),
+                         consts.MOTOR_MAX_SPEED)
 
   def send_speed(self):
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
@@ -113,13 +126,15 @@ class Robot:
     self.__Rescue_wire = wire
 
   def send_arm(self):
-    return self.__uart_device.send(f"Rescue {self.__Rescue_angle:4d}{self.__Rescue_wire}")
+    return self.__uart_device.send(
+        f"Rescue {self.__Rescue_angle:4d}{self.__Rescue_wire}")
 
   def get_ultrasonic(self) -> List[int]:
     return self.__uart_device.send("GET usonic")
 
   def get_button(self) -> bool:
     return self.__uart_device.send("GET button")
+
 
 if __name__ == "__main__":
   pass

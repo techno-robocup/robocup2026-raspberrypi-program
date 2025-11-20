@@ -24,5 +24,6 @@ def get_logger(name="Logger", file="log.log"):
 
   return logger
 
+
 if __name__ == "__main__":
   pass

@@ -31,7 +31,8 @@ Linetrace_Camera_Controls = {
 }
 Linetrace_Camera_Size = (4608, 2592)
 Linetrace_Camera_Formats = "RGB888"
-Linetrace_Camera_lores = (Linetrace_Camera_Size // 8, Linetrace_Camera_Size // 8)
+Linetrace_Camera_lores = (Linetrace_Camera_Size // 8,
+                          Linetrace_Camera_Size // 8)
 Linetrace_Camera_precallback = None
 
 if __name__ == "__main__":
