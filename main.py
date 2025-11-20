@@ -2,7 +2,13 @@ import modules.constants as consts
 import modules.logger
 import modules.robot
 
+logger = modules.logger.get_logger()
+
+logger.debug("Logger initialized")
+
 robot = modules.robot.Robot()
+
+logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
   uart_dev = modules.robot.uart_io()
