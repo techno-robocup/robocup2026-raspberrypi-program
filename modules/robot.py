@@ -3,6 +3,7 @@ import modules.logger as logger
 from typing import Optional, List
 import serial
 import serial.tools.list_ports
+import modules.camera
 
 
 class Message:
@@ -107,6 +108,24 @@ class Robot:
     self.__uart_device: Optional[uart_io] = None
     self.__MOTOR_L = 1500
     self.__MOTOR_R = 1500
+    self.__Linetrace_Camera = modules.camera.Camera(
+      modules.constants.Linetrace_Camera_Port,
+      modules.constants.Linetrace_Camera_Controls,
+      modules.constants.Linetrace_Camera_Size,
+      modules.constants.Linetrace_Camera_Formats,
+      modules.constants.Linetrace_Camera_lores,
+      modules.constants.Linetrace_Camera_precallback
+    )
+    self.__Rescue_Camera = modules.camera.Camera(
+      modules.constants.Rescue_Camera_Port,
+      modules.constants.Rescue_Camera_Controls,
+      modules.constants.Rescue_Camera_Size,
+      modules.constants.Rescue_Camera_Formats,
+      modules.constants.Rescue_Camera_lores,
+      modules.constants.Rescue_Camera_precallback
+    )
+    self.__Linetrace_Camera.start_cam()
+    self.__Rescue_Camera.start_cam()
 
   def set_uart_device(self, device: uart_io):
     self.__uart_device = device
