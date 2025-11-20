@@ -9,7 +9,7 @@ logger = modules.logger.get_logger()
 
 
 class Camera:
-"""Camera class for handling Picamera2 operations."""
+  """Camera class for handling Picamera2 operations."""
 
   def __init__(self, PORT: int, controls: Dict[str, Any], size: Tuple[int, int],
                formats: str, lores_size: Tuple[int, int],
