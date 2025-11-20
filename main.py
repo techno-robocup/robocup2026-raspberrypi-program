@@ -7,12 +7,13 @@ logger = modules.logger.get_logger()
 logger.debug("Logger initialized")
 
 robot = modules.robot.Robot()
+uart_dev = modules.robot.uart_io()
+uart_devices = uart_dev.list_ports()
+uart_dev.connect(uart_devices[0].device, consts.UART_BAUD_RATE,
+                  consts.UART_TIMEOUT)
+robot.set_uart_device(uart_dev)
 
 logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
-  uart_dev = modules.robot.uart_io()
-  uart_devices = uart_dev.list_ports()
-  uart_dev.connect(uart_devices[0].device, consts.UART_BAUD_RATE,
-                   consts.UART_TIMEOUT)
-  robot.set_uart_device(uart_dev)
+  pass
