@@ -165,6 +165,15 @@ class Robot:
     with self.__rescue_camera_lock:
       self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = image
     return None
+  
+  def write_linetrace_stop(self, flag: bool) -> None:
+    with self.__linetrace_lock:
+        self.__is_stop = flag
+
+def write_linetrace_slope(self, slope: float) -> None:
+    with self.__linetrace_lock:
+        self.__slope = slope
+
 
 robot = modules.robot.Robot()
 
