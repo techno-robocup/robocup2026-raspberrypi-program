@@ -56,8 +56,10 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
   with MappedArray(request, "lores") as mapped_array:
     image = mapped_array.array
     current_time = time.time()
-    cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg")
+    cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg",image)
     modules.robot.robot.write_rescue_image(image)
+
+robot = modules.robot.Robot()
 
 green_marks: List[Tuple[int, int, int, int]] = []
 green_black_detected: List[np.ndarray] = []
@@ -120,7 +122,7 @@ def detect_green_marks(orig_image: np.ndarray,
 
 def detect_red_marks(orig_image: np.ndarray) -> None:
   """Detect red marks and set stop_requested flag."""
-  global stop_requested, red_contours
+  global red_contours
 
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
 
@@ -159,7 +161,7 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
     cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
   if count >= 3:
-    modules.robot.Robot.stop_requested = True
+    robot.__is_stop = True
 
 def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
                                    center_y: int, w: int, h: int) -> np.ndarray:
@@ -399,7 +401,7 @@ def Linetrace_Camera_Pre_callback(request):
       contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
       if not contours:
-        modules.robot.Robot.slope = None
+        robot.__slope = None
         return
 
       best_contour = find_best_contour(contours, consts.LINETRACE_CAMERA_LORES_WIDTH,
@@ -407,7 +409,7 @@ def Linetrace_Camera_Pre_callback(request):
                                          lastblackline)
 
       if best_contour is None:
-        modules.robot.Robot.slope = None
+        robot.__slope = None
         return
 
       cx,cy = calculate_contour_center(best_contour)
@@ -418,11 +420,11 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       with SLOPE_LOCK:
-        modules.robot.Robot.slope = calculate_slope(best_contour,cx,cy)
+        robot.__slope = calculate_slope(best_contour,cx,cy)
 
       debug_image = visualize_tracking(image,best_contour,cx,cy)
       _draw_debug_contours(debug_image)
-      cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg")
+      cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg",debug_image)
 
   except SystemExit:
     logger.error("SystemExit caught")
