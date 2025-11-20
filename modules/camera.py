@@ -396,7 +396,7 @@ def Linetrace_Camera_Pre_callback(request):
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg",image)
       gray_image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
       _, binary_image = cv2.threshold(gray_image, consts.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
-      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary",binary_image)
+      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg",binary_image)
       kernel = np.ones((3,3),np.uint8)
       binary_image = cv2.morphologyEx(binary_image,cv2.MORRH_OPEN,kernel,iteration=6)
 
