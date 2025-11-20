@@ -164,5 +164,7 @@ class Robot:
       self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = image
     return None
 
+  slope = None
+
 if __name__ == "__main__":
   pass

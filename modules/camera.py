@@ -2,6 +2,7 @@ import time
 import numpy as np
 import cv2
 import threading
+import modules.robot
 import modules.logger
 import modules.constants
 from typing import Callable, Any, Dict, Tuple
@@ -201,13 +202,34 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_r = blackline_image[center_y - roi_height // 2:center_y + roi_height // 2,
                           center_x +
                           w // 2:min(center_x + w // 2 +
-                                     roi_width, LINETRACE_CAMERA_LORES_WIDTH)]
+                                     roi_width, const.LINETRACE_CAMERA_LORES_WIDTH)]
   if roi_r.size > 0 and np.sum(roi_r < const.BLACK_WHITE_THRESHOLD) / roi_r.size <= black_threshold:
     black_detections[3] = 1
 
   return
 
-
+def _draw_green_mark_debug(image: np.ndarray, x: int, y: int, w: int, h: int,
+                           center_x: int, center_y: int,
+                           black_detections: np.ndarray) -> None:
+  """Draw debug visualization for green marks."""
+  # Draw X mark
+  cv2.line(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+  cv2.line(image, (x + w, y), (x, y + h), (0, 255, 0), 2)
+  # Draw center point
+  cv2.circle(image, (center_x, center_y), 5, (0, 0, 255), -1)
+  # Draw black line detection indicators
+  if black_detections[0]:
+    cv2.line(image, (center_x - 10, center_y + 10),
+             (center_x + 10, center_y + 10), (255, 0, 0), 2)
+  if black_detections[1]:
+    cv2.line(image, (center_x - 10, center_y - 10),
+             (center_x + 10, center_y - 10), (255, 0, 0), 2)
+  if black_detections[2]:
+    cv2.line(image, (center_x - 10, center_y - 10),
+             (center_x - 10, center_y + 10), (255, 0, 0), 2)
+  if black_detections[3]:
+    cv2.line(image, (center_x + 10, center_y - 10),
+             (center_x + 10, center_y + 10), (255, 0, 0), 2)
 
 def apply_center_vignette(img, strength=0.5):#filter function
   h, w = img.shape[:2]
@@ -219,6 +241,144 @@ def apply_center_vignette(img, strength=0.5):#filter function
   for i in range(3):  # RGB
       vignette[:,:,i] = img[:,:,i] * mask
   return vignette
+
+def find_best_contour(contours: List[np.ndarray], camera_x: int, camera_y: int,
+                      last_center: int) -> Optional[np.ndarray]:
+  """
+  Find the best contour to follow from multiple candidates.
+  Prioritizes larger lines first, then center, then bottom of the image.
+  Also considers line width and continuity to handle intersections.
+
+  Returns the selected contour or None if no suitable contour found.
+  """
+  if not contours:
+    return None
+
+  # Filter contours by minimum area first
+  valid_contours = [(i, contour) for i, contour in enumerate(contours)
+                    if cv2.contourArea(contour) >= const.MIN_BLACK_LINE_AREA]
+
+  if not valid_contours:
+    return None
+
+  # Process valid contours
+  candidates = []
+  image_center = camera_x / 2
+
+  for i, contour in valid_contours:
+    # Get bounding box
+    rect = cv2.minAreaRect(contour)
+    box = cv2.boxPoints(rect)
+    # Sort points by y-coordinate (descending)
+    box = box[box[:, 1].argsort()[::-1]]
+
+    # Calculate line width at bottom
+    width = abs(box[0][0] - box[1][0])
+    # Calculate center of contour
+    center_x = (box[0][0] + box[1][0]) / 2
+    distance_from_center = abs(image_center - center_x)
+
+    # Penalize very wide lines (likely intersections)
+    if width > 20:
+      distance_from_center *= 2
+
+    # Check if contour extends to bottom of image
+    is_bottom = box[0][1] >= (camera_y * 0.95)
+    # Calculate contour area (larger = higher priority)
+    area = cv2.contourArea(contour)
+
+    candidates.append({
+        'index': i,
+        'contour': contour,
+        'x1': int(box[0][0]),
+        'y1': int(box[0][1]),
+        'x2': int(box[1][0]),
+        'y2': int(box[1][1]),
+        'width': width,
+        'is_bottom': is_bottom,
+        'distance_from_center': distance_from_center,
+        'area': area
+    })
+
+  # Sort candidates by area (larger first), then center, then bottom
+  candidates.sort(key=lambda x: (-x['area'], x['distance_from_center'], -x['y1']))
+
+  # Return best contour (largest area, then closest to center, then highest y-coordinate)
+  return candidates[0]['contour'] if candidates else None
+
+def calculate_contour_center(contour: np.ndarray) -> Tuple[int, int]:
+  """Calculate the center point of a contour."""
+  M = cv2.moments(contour)
+  if M["m00"] != 0:
+    cx = int(M["m10"] / M["m00"])
+    cy = int(M["m01"] / M["m00"])
+  else:
+    # Fallback to bounding box center
+    x, y, w, h = cv2.boundingRect(contour)
+    cx = x + w // 2
+    cy = y + h // 2
+
+  return cx, cy
+
+
+def calculate_slope(contour: np.ndarray, cx: int, cy: int) -> float:
+  """Calculate the slope of the line for steering."""
+  try:
+    # Set base point
+    base_x = LINETRACE_CAMERA_LORES_WIDTH // 2
+    base_y = LINETRACE_CAMERA_LORES_HEIGHT
+
+    # Calculate slope between top and center points
+    if cx != base_x:  # Avoid division by zero or tiny values
+      return (base_y - cy) / (cx - base_x)
+    else:
+      return 10**9
+  except Exception as e:
+    if DEBUG_MODE:
+      logger.error(f"Error in calculate_slope: {e}")
+    return 0.0
+
+def visualize_tracking(image: np.ndarray, contour: np.ndarray, cx: int,
+                       cy: int) -> np.ndarray:
+  """Create a visualization image showing tracking information."""
+  vis_image = image.copy()
+  cv2.drawContours(vis_image, [contour], 0, (0, 255, 0), 1)
+  cv2.circle(vis_image, (cx, cy), 3, (0, 0, 255), -1)
+  h, w = vis_image.shape[:2]
+  cv2.line(vis_image, (0, h // 2), (w, h // 2), (255, 0, 0), 1)
+  cv2.line(vis_image, (cx, 0), (cx, h), (255, 0, 0), 1)
+  return vis_image
+
+def _draw_debug_contours(debug_image: np.ndarray) -> None:
+  """Draw debug visualization for all detected contours."""
+  for contour in red_contours:
+    x, y, w, h = cv2.boundingRect(contour)
+    cv2.line(debug_image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+    cv2.line(debug_image, (x + w, y), (x, y + h), (0, 0, 255), 2)
+    cv2.circle(debug_image, (x + w // 2, y + h // 2), 5, (0, 0, 255), -1)
+  for contour, black_detection in zip(green_contours, green_black_detected):
+    x, y, w, h = cv2.boundingRect(contour)
+    cv2.line(debug_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    cv2.line(debug_image, (x + w, y), (x, y + h), (0, 255, 0), 2)
+    cv2.circle(debug_image, (x + w // 2, y + h // 2), 5, (0, 255, 0), -1)
+    center_x, center_y = x + w // 2, y + h // 2
+    if black_detection[0]:
+      cv2.line(debug_image, (center_x, center_y), (center_x, center_y + 10),
+               (255, 0, 0), 2)
+    if black_detection[1]:
+      cv2.line(debug_image, (center_x, center_y), (center_x, center_y - 10),
+               (255, 0, 0), 2)
+    if black_detection[2]:
+      cv2.line(debug_image, (center_x, center_y), (center_x - 10, center_y),
+               (255, 0, 0), 2)
+    if black_detection[3]:
+      cv2.line(debug_image, (center_x, center_y), (center_x + 10, center_y),
+               (255, 0, 0), 2)
+
+LASTBLACKLINE_LOCK = threading.Lock()
+SLOPE_LOCK = threading.Lock()
+lastblackline = const.LINETRACE_CAMERA_LORES_WIDTH // 2
+line_area: Optional[float] = None
 
 def Linetrace_Camera_Pre_callback(request):
   logger.debug("Linetrace Camera Pre call-back called")
@@ -235,10 +395,42 @@ def Linetrace_Camera_Pre_callback(request):
       image = apply_center_vignette(image)
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg",image)
       gray_image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
-      _, binary_image = cv2.threshold(gray_image, const.const.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
-
+      _, binary_image = cv2.threshold(gray_image, const.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
+      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary",image)
+      kernel = np.ones((3,3),np.uint8)
+      binary_image = cv2.morphologyEx(binary_image,cv2.MORRH_OPEN,kernel,iteration=6)
       cv2.imwrite(f"bin/{current_time:.3f}_binary.jpg")
 
+      detect_red_marks(image)
+      detect_green_marks(image,binary_image)
+
+      contours, _ = cv2.findContours(binary_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+
+      if not contours:
+        modules.robot.Robot.slope = None
+        return
+
+      best_contour = find_best_contour(contours, const.LINETRACE_CAMERA_LORES_WIDTH,
+                                         const.LINETRACE_CAMERA_LORES_HEIGHT,
+                                         lastblackline)
+
+      if best_contour is None:
+        modules.robot.Robot.slope = None
+        return
+
+      cx,cy = calculate_contour_center(best_contour)
+
+      global line_area
+      line_area = cv2.contourArea(best_contour)
+
+      with LASTBLACKLINE_LOCK:
+        lastblackline = cx
+      with SLOPE_LOCK:
+        slope = calculate_slope(best,cx,cy)
+
+      debug_image = visualize_tracking(image,best_contour,cx,cy)
+      _draw_debug_contours(debug_image)
+      cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg")
 
   except SystemExit:
     print("SystemExit caught")
