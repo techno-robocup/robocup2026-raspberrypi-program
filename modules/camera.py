@@ -369,7 +369,7 @@ LASTBLACKLINE_LOCK = threading.Lock()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
-def log_compression(image, c=30):
+def log_compression(image, c=5):
   """Logarithmic compression - strongly reduces bright areas (glare/reflections)."""
   img = image.astype(np.float32)
   img = c * np.log1p(img)  # log(1 + x)
