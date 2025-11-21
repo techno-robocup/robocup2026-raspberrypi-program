@@ -369,19 +369,13 @@ LASTBLACKLINE_LOCK = threading.Lock()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
-def log_compression(image, c=5):
-  """Logarithmic compression - strongly reduces bright areas (glare/reflections)."""
+def reduce_contrast(image, factor=0.5):
+  """Reduce contrast by pulling pixel values toward middle gray.
+  Factor < 1 reduces contrast, factor > 1 increases contrast."""
+  mean = 128  # Middle gray
   img = image.astype(np.float32)
-  img = c * np.log1p(img)  # log(1 + x)
-  img = (img / img.max()) * 255
-  return img.astype(np.uint8)
-
-def gamma_correction(image, gamma=2.0):
-  """Apply gamma correction. Gamma < 1 brightens darks, gamma > 1 darkens brights."""
-  inv_gamma = 1.0 / gamma
-  table = np.array([((i / 255.0) ** inv_gamma) * 255
-                    for i in range(256)]).astype(np.uint8)
-  return cv2.LUT(image, table)
+  img = mean + factor * (img - mean)
+  return np.clip(img, 0, 255).astype(np.uint8)
 
 def reduce_glare_clahe(image, clip_limit=2.0):
   """Use CLAHE on luminance to balance brightness and reduce glare."""
@@ -392,10 +386,9 @@ def reduce_glare_clahe(image, clip_limit=2.0):
   lab = cv2.merge([l, a, b])
   return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
 
-def reduce_glare_combined(image, log_c=5, gamma=2.0, clip_limit=2.0):
-  """Combine log compression, gamma correction, and CLAHE for maximum glare reduction."""
-  image = log_compression(image, log_c)
-  image = gamma_correction(image, gamma)
+def reduce_glare_combined(image, contrast_factor=0.5, clip_limit=2.0):
+  """Combine contrast reduction and CLAHE for glare reduction."""
+  image = reduce_contrast(image, contrast_factor)
   image = reduce_glare_clahe(image, clip_limit)
   return image
 
