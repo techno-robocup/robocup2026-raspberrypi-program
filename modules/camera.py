@@ -415,7 +415,7 @@ def Linetrace_Camera_Pre_callback(request):
       _, binary_image = cv2.threshold(gray_image, consts.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg",binary_image)
       kernel = np.ones((3,3),np.uint8)
-      binary_image = cv2.morphologyEx(binary_image,cv2.MORPH_OPEN,kernel,iterations=10)
+      binary_image = cv2.morphologyEx(binary_image,cv2.MORPH_OPEN,kernel,iterations=40)
 
       detect_red_marks(image)
       detect_green_marks(image,binary_image)
