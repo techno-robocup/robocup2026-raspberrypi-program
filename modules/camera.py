@@ -369,17 +369,12 @@ LASTBLACKLINE_LOCK = threading.Lock()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
-def apply_center_vignette(img, strength=0.5):#filter function
-  h, w = img.shape[:2]
-  kernel_x = cv2.getGaussianKernel(w, w * strength)
-  kernel_y = cv2.getGaussianKernel(h, h * strength)
-  mask = kernel_y @ kernel_x.T
-  mask = mask / mask.max()
-  mask = 1.0 - mask
-  vignette = np.zeros_like(img)
-  for i in range(3):  # RGB
-      vignette[:,:,i] = img[:,:,i] * mask
-  return vignette
+def gamma_correction(image, gamma=2):
+  """Apply gamma correction. Gamma < 1 brightens darks, gamma > 1 darkens brights."""
+  inv_gamma = 1.0 / gamma
+  table = np.array([((i / 255.0) ** inv_gamma) * 255
+                    for i in range(256)]).astype(np.uint8)
+  return cv2.LUT(image, table)
 
 def Linetrace_Camera_Pre_callback(request):
   global lastblackline, LASTBLACKLINE_LOCK
@@ -394,7 +389,7 @@ def Linetrace_Camera_Pre_callback(request):
       image = image[:, x_start:x_start + crop_w]
       image = cv2.resize(image,(w,h), interpolation=cv2.INTER_LINEAR)
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_origin.jpg", image)
-      image = apply_center_vignette(image)
+      image = gamma_correction(image)
       cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg",image)
       gray_image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
       _, binary_image = cv2.threshold(gray_image, consts.BLACK_WHITE_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
