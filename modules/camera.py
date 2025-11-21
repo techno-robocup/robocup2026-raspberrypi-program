@@ -2,11 +2,18 @@ import time
 import numpy as np
 import cv2
 import threading
-import modules.robot
 import modules.logger
 import modules.constants as consts
 from typing import Callable, Any, Dict, Tuple, List, Optional
 from picamera2 import Picamera2, CompletedRequest, MappedArray
+
+# Robot reference - set by robot.py after initialization to avoid circular import
+robot = None
+
+def set_robot(robot_instance):
+  """Set the robot reference. Called by robot.py after Robot initialization."""
+  global robot
+  robot = robot_instance
 
 logger = modules.logger.get_logger()
 class Camera:
@@ -57,9 +64,8 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     image = mapped_array.array
     current_time = time.time()
     cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg",image)
-    modules.robot.robot.write_rescue_image(image)
-
-robot = modules.robot.Robot()
+    if robot is not None:
+      robot.write_rescue_image(image)
 
 green_marks: List[Tuple[int, int, int, int]] = []
 green_black_detected: List[np.ndarray] = []
@@ -160,8 +166,8 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       center_y = y + ch // 2
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
     cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
-  if count >= 3:
-    robot.__is_stop = True
+  if count >= 3 and robot is not None:
+    robot.write_linetrace_stop(True)
 
 def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
                                    center_y: int, w: int, h: int) -> np.ndarray:
@@ -360,7 +366,6 @@ def _draw_debug_contours(debug_image: np.ndarray) -> None:
                (255, 0, 0), 2)
 
 LASTBLACKLINE_LOCK = threading.Lock()
-SLOPE_LOCK = threading.Lock()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
@@ -401,7 +406,8 @@ def Linetrace_Camera_Pre_callback(request):
       contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
       if not contours:
-        robot.__slope = None
+        if robot is not None:
+          robot.write_linetrace_slope(None)
         return
 
       best_contour = find_best_contour(contours, consts.LINETRACE_CAMERA_LORES_WIDTH,
@@ -409,7 +415,8 @@ def Linetrace_Camera_Pre_callback(request):
                                          lastblackline)
 
       if best_contour is None:
-        robot.__slope = None
+        if robot is not None:
+          robot.write_linetrace_slope(None)
         return
 
       cx,cy = calculate_contour_center(best_contour)
@@ -419,8 +426,8 @@ def Linetrace_Camera_Pre_callback(request):
 
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
-      with SLOPE_LOCK:
-        robot.__slope = calculate_slope(best_contour,cx,cy)
+      if robot is not None:
+        robot.write_linetrace_slope(calculate_slope(best_contour,cx,cy))
 
       debug_image = visualize_tracking(image,best_contour,cx,cy)
       _draw_debug_contours(debug_image)

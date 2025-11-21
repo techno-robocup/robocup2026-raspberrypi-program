@@ -128,11 +128,14 @@ class Robot:
       modules.constants.Rescue_Camera_precallback
     )
     self.__rescue_camera_lock = threading.Lock()
+    self.__linetrace_lock = threading.Lock()
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
     self.__Linetrace_Camera.start_cam()
     self.__Rescue_Camera.start_cam()
     self.__slope = None
     self.__is_stop = False
+    # Set robot reference in camera module to avoid circular import
+    modules.camera.set_robot(self)
 
   def set_uart_device(self, device: uart_io):
     self.__uart_device = device
@@ -170,12 +173,10 @@ class Robot:
     with self.__linetrace_lock:
         self.__is_stop = flag
 
-def write_linetrace_slope(self, slope: float) -> None:
+  def write_linetrace_slope(self, slope: Optional[float]) -> None:
     with self.__linetrace_lock:
         self.__slope = slope
 
-
-robot = modules.robot.Robot()
 
 if __name__ == "__main__":
   pass

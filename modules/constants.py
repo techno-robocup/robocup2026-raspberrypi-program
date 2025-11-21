@@ -1,6 +1,15 @@
 import libcamera
 import numpy as np
-import modules.camera
+
+def Linetrace_Camera_precallback_func(request):
+  """Linetrace camera pre-callback - imports camera module lazily to avoid circular import."""
+  import modules.camera
+  modules.camera.Linetrace_Camera_Pre_callback(request)
+
+def Rescue_Camera_precallback_func(request):
+  """Rescue camera pre-callback - imports camera module lazily to avoid circular import."""
+  import modules.camera
+  modules.camera.Rescue_precallback_func(request)
 
 UART_BAUD_RATE = 9600
 UART_TIMEOUT = 0.2
@@ -20,7 +29,7 @@ Rescue_Camera_Controls = {
 Rescue_Camera_Size = (4608, 2592)
 Rescue_Camera_Formats = "RGB888"
 Rescue_Camera_lores = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
-Rescue_Camera_precallback = None
+Rescue_Camera_precallback = Rescue_Camera_precallback_func
 
 Linetrace_Camera_Port = 1
 Linetrace_Camera_Controls = {
@@ -37,7 +46,7 @@ Linetrace_Camera_Size = (4608, 2592)
 Linetrace_Camera_Formats = "RGB888"
 Linetrace_Camera_lores = (Linetrace_Camera_Size[0] // 8,
                           Linetrace_Camera_Size[1] // 8)
-Linetrace_Camera_precallback = modules.camera.Linetrace_Camera_Pre_callback
+Linetrace_Camera_precallback = Linetrace_Camera_precallback_func
 
 BLACK_WHITE_THRESHOLD = 55
 LINETRACE_CAMERA_LORES_HEIGHT = 180
