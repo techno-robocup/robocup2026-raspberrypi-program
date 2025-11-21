@@ -369,13 +369,17 @@ LASTBLACKLINE_LOCK = threading.Lock()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
-def reduce_contrast(image, factor=0.5):
-  """Reduce contrast by pulling pixel values toward middle gray.
+def reduce_contrast_v(image, factor=0.5):
+  """Reduce contrast on V channel only (HSV).
   Factor < 1 reduces contrast, factor > 1 increases contrast."""
+  hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+  h, s, v = cv2.split(hsv)
   mean = 128  # Middle gray
-  img = image.astype(np.float32)
-  img = mean + factor * (img - mean)
-  return np.clip(img, 0, 255).astype(np.uint8)
+  v = v.astype(np.float32)
+  v = mean + factor * (v - mean)
+  v = np.clip(v, 0, 255).astype(np.uint8)
+  hsv = cv2.merge([h, s, v])
+  return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 def reduce_glare_clahe(image, clip_limit=2.0):
   """Use CLAHE on luminance to balance brightness and reduce glare."""
