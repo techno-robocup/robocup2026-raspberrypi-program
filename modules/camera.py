@@ -376,6 +376,13 @@ def log_compression(image, c=5):
   img = (img / img.max()) * 255
   return img.astype(np.uint8)
 
+def gamma_correction(image, gamma=2.0):
+  """Apply gamma correction. Gamma < 1 brightens darks, gamma > 1 darkens brights."""
+  inv_gamma = 1.0 / gamma
+  table = np.array([((i / 255.0) ** inv_gamma) * 255
+                    for i in range(256)]).astype(np.uint8)
+  return cv2.LUT(image, table)
+
 def reduce_glare_clahe(image, clip_limit=2.0):
   """Use CLAHE on luminance to balance brightness and reduce glare."""
   lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
@@ -385,10 +392,11 @@ def reduce_glare_clahe(image, clip_limit=2.0):
   lab = cv2.merge([l, a, b])
   return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
 
-def reduce_glare_combined(image, clip_limit=2.0, log_c=30):
-  """Combine CLAHE and log compression for maximum glare reduction."""
-  image = reduce_glare_clahe(image, clip_limit)
+def reduce_glare_combined(image, log_c=5, gamma=2.0, clip_limit=2.0):
+  """Combine log compression, gamma correction, and CLAHE for maximum glare reduction."""
   image = log_compression(image, log_c)
+  image = gamma_correction(image, gamma)
+  image = reduce_glare_clahe(image, clip_limit)
   return image
 
 def Linetrace_Camera_Pre_callback(request):
