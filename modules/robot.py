@@ -131,6 +131,8 @@ class Robot:
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
     self.__Linetrace_Camera.start_cam()
     self.__Rescue_Camera.start_cam()
+    self.__slope = None
+    self.__is_stop = False
 
   def set_uart_device(self, device: uart_io):
     self.__uart_device = device
@@ -163,9 +165,6 @@ class Robot:
     with self.__rescue_camera_lock:
       self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = image
     return None
-
-  slope = None
-  is_stop = False
 
 if __name__ == "__main__":
   pass
