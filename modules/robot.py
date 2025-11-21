@@ -177,6 +177,7 @@ class Robot:
     with self.__linetrace_lock:
         self.__slope = slope
 
+robot = modules.robot.Robot()
 
 if __name__ == "__main__":
   pass
