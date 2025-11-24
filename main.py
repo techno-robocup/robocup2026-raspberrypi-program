@@ -17,8 +17,6 @@ uart_dev.connect(uart_devices[0].device, consts.UART_BAUD_RATE,
                  consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-logger.debug("Objects Initialized")
-
 BASE_SPEED = 1700
 MAX_SPEED = 2000
 MIN_SPEED = 1000
@@ -72,6 +70,8 @@ def signal_handler(sig, frame):
   robot.set_speed(1500, 1500)
   robot.send_speed()
   sys.exit(0)
+
+logger.debug("Objects Initialized")
 
 
 if __name__ == "__main__":
