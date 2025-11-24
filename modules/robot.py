@@ -34,7 +34,7 @@ class Message:
     return self.__id
 
   @property
-  def getMessage(self):
+  def Message(self):
     return self.__message
 
 
@@ -88,7 +88,7 @@ class uart_io:
         if message_str:
           retMessage = Message(message_str)
           if retMessage.Id == message.Id:
-            return retMessage.getMessage()
+            return retMessage.Message
           elif retMessage.Id < message.Id:
             continue
           else:
