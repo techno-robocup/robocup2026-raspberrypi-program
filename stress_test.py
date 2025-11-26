@@ -1,34 +1,44 @@
 #!/usr/bin/env python3
 """
-CPU and power stress test for Raspberry Pi.
-Usage: python3 stress_test.py [duration_seconds] [num_workers]
-Default: 60 seconds, all CPU cores
+CPU and power stress test for Raspberry Pi using matrix operations.
+Usage: python3 stress_test.py [duration_seconds] [num_workers] [matrix_size]
+Default: 60 seconds, all CPU cores, 512x512 matrices
 """
 
 import multiprocessing
 import time
 import sys
-import math
+import numpy as np
 
 
-def cpu_stress_worker(worker_id: int, duration: float) -> None:
-    """Perform CPU-intensive calculations."""
+def cpu_stress_worker(worker_id: int, duration: float, matrix_size: int) -> None:
+    """Perform CPU-intensive matrix calculations."""
     end_time = time.time() + duration
-    x = 0.0
+    ops = 0
+
     while time.time() < end_time:
-        # Mix of floating point operations to stress FPU
-        for _ in range(10000):
-            x = math.sin(x) * math.cos(x) + math.sqrt(abs(x) + 1)
-            x = math.tan(x % 1.0) + math.log(abs(x) + 1)
-            x = x ** 1.1 + math.exp(x % 10)
-    print(f"Worker {worker_id} finished")
+        # Create random matrices
+        a = np.random.rand(matrix_size, matrix_size).astype(np.float64)
+        b = np.random.rand(matrix_size, matrix_size).astype(np.float64)
+
+        # Matrix multiply (very CPU intensive, uses BLAS/NEON)
+        c = np.dot(a, b)
+
+        # Additional operations to keep pressure
+        c = np.linalg.inv(c + np.eye(matrix_size))  # Inversion
+        _ = np.linalg.svd(c, full_matrices=False)   # SVD decomposition
+
+        ops += 1
+
+    print(f"Worker {worker_id} finished: {ops} iterations")
 
 
 def main():
     duration = int(sys.argv[1]) if len(sys.argv) > 1 else 60
     num_workers = int(sys.argv[2]) if len(sys.argv) > 2 else multiprocessing.cpu_count()
+    matrix_size = int(sys.argv[3]) if len(sys.argv) > 3 else 512
 
-    print(f"Starting stress test: {num_workers} workers for {duration} seconds")
+    print(f"Starting stress test: {num_workers} workers, {matrix_size}x{matrix_size} matrices, {duration}s")
     print("Press Ctrl+C to stop early")
 
     processes = []
@@ -36,7 +46,7 @@ def main():
 
     try:
         for i in range(num_workers):
-            p = multiprocessing.Process(target=cpu_stress_worker, args=(i, duration))
+            p = multiprocessing.Process(target=cpu_stress_worker, args=(i, duration, matrix_size))
             p.start()
             processes.append(p)
 
