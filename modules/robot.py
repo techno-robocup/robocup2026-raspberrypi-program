@@ -26,8 +26,8 @@ class Message:
           f"Invalid number of arguments to construct Message object {args}")
 
   # @property
-  def __str__(self):
-    return f"{self.Id} {self.Message}"
+  def __str__(self) -> str:
+    return f"{self.Id} {self.Message}\n"
 
   @property
   def Id(self):
