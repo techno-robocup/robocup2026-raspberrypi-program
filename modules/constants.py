@@ -1,5 +1,6 @@
 import libcamera
 import numpy as np
+from enum import Enum
 from ultralytics import YOLO
 
 def Linetrace_Camera_precallback_func(request):
@@ -66,6 +67,8 @@ COMPUTING_P = 30
 MIN_BLACK_LINE_AREA = 300
 MIN_GREEN_AREA = 200
 MIN_RED_AREA = 200
+
+TURN_180_TIME = 12
 
 lower_green = np.array([20, 130, 90])
 upper_green = np.array([100, 255, 255])
