@@ -248,7 +248,15 @@ if __name__ == "__main__":
   while True:
     if not robot.linetrace_stop:
       motorl, motorr = calculate_motor_speeds()
-      robot.set_speed(motorl, motorr)
-      robot.send_speed()
+      # robot.set_speed(motorl, motorr)
+      # robot.send_speed()
+      prev = time.time()
+      while time.time() - prev < 2:
+        robot.set_speed(1200, 1800)
+        robot.send_speed()
+      prev = time.time()
+      while time.time() - prev < 2:
+        robot.set_speed(1800, 1200)
+        robot.send_speed()
 
 logger.debug("Program Stop")
