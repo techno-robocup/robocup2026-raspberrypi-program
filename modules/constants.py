@@ -1,6 +1,6 @@
 import libcamera
 import numpy as np
-
+from ultralytics import YOLO
 
 def Linetrace_Camera_precallback_func(request):
   """Linetrace camera pre-callback - imports camera module lazily to avoid circular import."""
@@ -33,6 +33,7 @@ Rescue_Camera_Size = (4608, 2592)
 Rescue_Camera_Formats = "RGB888"
 Rescue_Camera_lores = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
 Rescue_Camera_precallback = Rescue_Camera_precallback_func
+Rescue_Yolo_Model = YOLO("best.pt")
 
 Linetrace_Camera_Port = 1
 Linetrace_Camera_Controls = {
