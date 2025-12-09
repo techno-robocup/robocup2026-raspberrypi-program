@@ -33,7 +33,13 @@ Rescue_Camera_Size = (4608, 2592)
 Rescue_Camera_Formats = "RGB888"
 Rescue_Camera_lores = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
 Rescue_Camera_precallback = Rescue_Camera_precallback_func
-Rescue_Yolo_Model = YOLO("best.pt")
+MODEL = YOLO("best.pt")
+class TargetList(Enum):
+  BLACK_BALL = 0
+  EXIT = 1
+  GREEN_CAGE = 2
+  RED_CAGE = 3
+  SILVER_BALL = 4
 
 Linetrace_Camera_Port = 1
 Linetrace_Camera_Controls = {
