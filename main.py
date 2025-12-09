@@ -121,8 +121,9 @@ def find_best_target() -> None:
         logger.info(
             f"Detected cls={consts.TargetList(cls).value}, area={area:.1f}, offset={dist:.1f}")
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-        # rescue_cnt_turning_degrees = 0
-        # rescue_valid_classes = [ObjectClasses.SILVER_BALL.value]
+        logger.info("Override")
+        robot.write_rescue_turning_angle(0)
+        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
         area = w * h
@@ -135,7 +136,7 @@ def find_best_target() -> None:
           best_target_h = h
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
-            f"Over ride silver cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}")
+            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}")
     robot.write_rescue_angle(best_angle)
     robot.write_rescue_size(best_size)
 
@@ -210,6 +211,22 @@ def release_ball() -> None:
     robot.send_speed()
   robot.set_speed(1500, 1500)
   robot.send_speed()
+
+def change_position() -> int:
+  logger.debug("Change position")
+  prev_time = time.time()
+  robot.set_speed(1750,1250)
+  while time.time() - prev_time < consts.TURN_30_TIME:
+    robot.send_speed()
+  robot.set_speed(1500,1500)
+  robot.send_speed()
+  robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
+  logger.info(f"Turn degrees{robot.rescue_turning_angle}")
+  return robot.rescue_turning_angle
+
+# def calculate_ball(angle: Optional[float] = None, size: Optional[int] = None) -> tuple[int, int]
+
+# def calculate_cage(angle: Optional[float] = None, size: Optional[int] = None) -> tuple[int, int]
 
 logger.debug("Objects Initialized")
 
