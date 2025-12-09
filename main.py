@@ -5,6 +5,7 @@ import time
 import signal
 import sys
 import math
+from typing import Optional
 
 logger = modules.logger.get_logger()
 
@@ -28,7 +29,7 @@ def clamp(value: int, min_val: int, max_val: int) -> int:
   return max(min_val, min(max_val, value))
 
 
-def calculate_motor_speeds(slope: float = None) -> tuple[int, int]:
+def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   """
   Calculate left and right motor speeds based on line slope.
 
