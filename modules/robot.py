@@ -138,7 +138,8 @@ class Robot:
     self.__rescue_lock = threading.Lock()
     self.__rescue_angle:Optional[float] = None
     self.__rescue_size:Optional[int] = None
-    self.__rescue_target:int = consts.TargetList.BLACK_BALL
+    self.__rescue_target:int = consts.TargetList.SILVER_BALL
+    self.__rescue_turning_angle:int = 0
     self.__slope = None
     self.__is_stop = False
     # Set robot reference in camera module to avoid circular import
@@ -191,9 +192,13 @@ class Robot:
     with self.__rescue_lock:
       self.__rescue_size = size
 
-  def write_rescue_target(self,target:int) -> None:
+  def write_rescue_target(self, target:int) -> None:
     with self.__rescue_lock:
       self.__rescue_target = target
+
+  def write_rescue_turning_angle(self, angle:int) -> None:
+    with self.__rescue_lock:
+      self.__rescue_turning_angle = angle
 
   @property
   def rescue_angle(self) -> Optional[float]:
@@ -209,6 +214,11 @@ class Robot:
   def rescue_target(self) -> int:
     with self.rescue_lock:
       return self.__rescue_target
+
+  @property
+  def rescue_turning_angle(self) -> int:
+    with self.__rescue_lock:
+      return self.__rescue_turning_angle
 
   def write_linetrace_stop(self, flag: bool) -> None:
     with self.__linetrace_lock:

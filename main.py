@@ -4,8 +4,10 @@ import modules.robot
 import time
 import signal
 import sys
+import cv2
 import math
 from typing import Optional
+from ultralytics import YOLO
 
 logger = modules.logger.get_logger()
 
@@ -71,6 +73,143 @@ def signal_handler(sig, frame):
   robot.send_speed()
   sys.exit(0)
 
+def find_best_target() -> None:
+  logger.debug("Find target")
+  yolo_results = consts.MODEL(robot.rescue_image,verbose=False)
+  current_time = time.time()
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg",result_image)
+  if yolo_results is None or len(yolo_results) == 0:
+        logger.info("Target not found")
+        robot.write_rescue_angle(None)
+        robot.write_rescue_size(None)
+        return
+  result_image = yolo_results[0].plot()
+  boxes = yolo_results[0].boxes
+  if boxes is None or len(boxes) == 0:
+    logger.info("Target not found")
+    robot.write_rescue_angle(None)
+    robot.write_rescue_size(None)
+    return
+  else:
+    image_height = yolo_results[0].orig_shape[0]
+    image_width = yolo_results[0].orig_shape[1]
+    detected_classes = []
+    best_angle = None
+    best_size = None
+    best_target_y = None
+    best_target_w = None
+    best_target_h = None
+    min_dist = float("inf")
+    cx = image_width / 2.0
+    for box in boxes:
+      try:
+        cls = int(box.cls[0])
+        detected_classes.append(cls)
+      except Exception:
+        continue
+      if cls in robot.rescue_target:
+        x_center, y_center, w, h = map(float, box.xywh[0])
+        dist = x_center - cx
+        area = w * h
+        if abs(dist) < min_dist:
+          min_dist = abs(dist)
+          best_angle = dist
+          best_size = area
+          best_target_y = y_center
+          best_target_w = w
+          best_target_h = h
+        logger.info(
+            f"Detected cls={consts.TargetList(cls).value}, area={area:.1f}, offset={dist:.1f}")
+      elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
+        # rescue_cnt_turning_degrees = 0
+        # rescue_valid_classes = [ObjectClasses.SILVER_BALL.value]
+        x_center, y_center, w, h = map(float, box.xywh[0])
+        dist = x_center - cx
+        area = w * h
+        if abs(dist) < min_dist:
+          min_dist = abs(dist)
+          best_angle = dist
+          best_size = area
+          best_target_y = y_center
+          best_target_w = w
+          best_target_h = h
+        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+        logger.info(
+            f"Over ride silver cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}")
+    robot.write_rescue_angle(best_angle)
+    robot.write_rescue_size(best_size)
+
+def catch_ball() -> int:
+  logger.debug("Executing catch_ball()")
+  # Store which ball type we're catching
+  logger.info(f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
+  robot.set_speed(1500, 1500)
+  robot.set_arm(1400, 0)
+  robot.send_speed()
+  robot.send_arm()
+  robot.set_speed(1650,1650)
+  prev_time = time.time()
+  while time.time() - prev_time < 2:
+    robot.send_speed()
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_arm(1024, 0)
+  robot.send_arm()
+  robot.set_speed(1600, 1600)
+  prev_time = time.time()
+  while time.time() - prev_time < 2:
+    robot.send_speed()
+  robot.set_arm(1000, 1)
+  robot.send_arm()
+  robot.set_arm(3072, 1)
+  robot.send_arm()
+  robot.set_speed(1450, 1450)
+  prev_time = time.time()
+  while time.time() - prev_time < 1:
+    robot.send_speed()
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  find_best_target()
+  if robot.rescue_angle is None:
+    logger.info("Catch successful")
+    robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value if robot.rescue_target == consts.TargetList.SILVER_BALL.value else consts.TargetList.RED_CAGE.value)
+    return 0
+  else:
+    logger.info("Catch failed")
+    return 1
+
+def release_ball() -> None:
+  logger.debug("Executing release_ball()")
+  prev_time = time.time()
+  robot.set_speed(1700, 1700)
+  while time.time() - prev_time < 2.2:
+    robot.send_speed()
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  prev_time = time.time()
+  robot.set_speed(1400,1400)
+  while time.time() - prev_time < 0.5:
+    robot.send_speed()
+  robot.set_speed(1500,1500)
+  robot.set_arm(1536, 0)
+  robot.send_speed()
+  prev_time = time.time()
+  while time.time() - prev_time < 1.5:
+    robot.send_arm()
+  robot.set_arm(3072, 0)
+  prev_time = time.time()
+  while time.time() - prev_time < 0.5:
+    robot.send_arm()
+  prev_time = time.time()
+  robot.set_speed(1400, 1400)
+  while time.time() - prev_time < 1:
+    robot.send_speed()
+  prev_time = time.time()
+  robot.set_speed(1750, 1250)
+  while time.time() - prev_time < consts.TURN_180_TIME:
+    robot.send_speed()
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
 
 logger.debug("Objects Initialized")
 
