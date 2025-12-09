@@ -83,7 +83,7 @@ class uart_io:
   def __send(self, message: Message) -> bool | str:
     if self.isConnected():
       self.__Serial_port.write(str(message).encode("ascii"))
-      logger.get_logger().debug(f"Sent message: {str(message)}")
+      logger.get_logger().info(f"Sent message: {str(message)}")
       while True:
         message_str = self.__Serial_port.read_until(b'\n').decode(
             'ascii').strip()
