@@ -430,6 +430,7 @@ def Linetrace_Camera_Pre_callback(request):
   try:
     with MappedArray(request, "lores") as m:
       image = m.array
+      image = cv2.rotate(image, cv2.ROTATE_180)
       h, w = image.shape[:2]
       crop_w = int(w * 0.85)
       x_start = (w - crop_w) // 2
