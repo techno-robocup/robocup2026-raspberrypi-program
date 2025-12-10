@@ -176,7 +176,7 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       center_y = y + ch // 2
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
     cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
-  if count >= 3 and robot is not None:
+  # if count >= 3 and robot is not None:
     # robot.write_linetrace_stop(True)
 
 
