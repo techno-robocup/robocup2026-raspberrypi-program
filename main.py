@@ -258,5 +258,6 @@ if __name__ == "__main__":
       while time.time() - prev < 2:
         robot.set_speed(1800, 1200)
         robot.send_speed()
-
+    else:
+      logger.debug("Red stop")
 logger.debug("Program Stop")
