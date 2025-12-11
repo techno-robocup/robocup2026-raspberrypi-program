@@ -124,7 +124,8 @@ def find_best_target() -> None:
           best_target_w = w
           best_target_h = h
           if cls == consts.TargetList.BLACK_BALL or cls == consts.TargetList.SILVER_BALL:
-            is_bottom_third = best_target_y and best_target_y > (image_height * 3 / 4)
+            is_bottom_third = best_target_y and best_target_y > (image_height *
+                                                                 3 / 4)
             if best_target_w:
               ball_left = robot.rescue_angle - best_target_w / 2 + image_width / 2
               ball_right = robot.rescue_angle + best_target_w / 2 + image_width / 2
@@ -156,6 +157,7 @@ def find_best_target() -> None:
         )
     robot.write_rescue_angle(best_angle)
     robot.write_rescue_size(best_size)
+
 
 def catch_ball() -> int:
   logger.debug("Executing catch_ball()")
@@ -246,16 +248,18 @@ def change_position() -> int:
   logger.info(f"Turn degrees{robot.rescue_turning_angle}")
   return robot.rescue_turning_angle
 
-def calculate_ball(angle: Optional[float] = None, size: Optional[int] = None) -> tuple[int, int]:
+
+def calculate_ball(angle: Optional[float] = None,
+                   size: Optional[int] = None) -> tuple[int, int]:
   if angle is None or size is None:
-    return 1500,1500
+    return 1500, 1500
   if abs(angle) > 60:
     diff_angle = angle * P
   else:
     diff_angle = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * AP
-  dist_term = int(max(60,dist_term))
+  dist_term = int(max(60, dist_term))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
@@ -263,7 +267,9 @@ def calculate_ball(angle: Optional[float] = None, size: Optional[int] = None) ->
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return base_L, base_R
 
-def calculate_cage(angle: Optional[float] = None, size: Optional[int] = None) -> tuple[int, int]:
+
+def calculate_cage(angle: Optional[float] = None,
+                   size: Optional[int] = None) -> tuple[int, int]:
   if angle is None or size is None:
     return 1500, 1500
   diff_angle = angle * WP
@@ -273,6 +279,7 @@ def calculate_cage(angle: Optional[float] = None, size: Optional[int] = None) ->
   base_R = int(base_R)
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return base_L, base_R
+
 
 logger.debug("Objects Initialized")
 
