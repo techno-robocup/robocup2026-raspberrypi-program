@@ -111,7 +111,7 @@ def find_best_target() -> None:
         detected_classes.append(cls)
       except Exception:
         continue
-      if cls in robot.rescue_target:
+      if cls == robot.rescue_target:
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
         area = w * h
@@ -295,8 +295,8 @@ if __name__ == "__main__":
         change_position()
       else:
         if robot.rescue_target == consts.TargetList.EXIT.value:
-          motorr = 1500
           motorl = 1500
+          motorr = 1500
         if robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
           motorl, motorr = calculate_ball(robot.rescue_offset, robot.rescue_size)
           if robot.rescue_ball_flag:
@@ -304,7 +304,7 @@ if __name__ == "__main__":
             # TODO: Retry
         else:
           motorl, motorr = calculate_cage(robot.rescue_offset, robot.rescue_size)
-          if robot.rescue_size() >= consts.BALL_CATCH_SIZE * 3.8:
+          if robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
             release_ball()
     else:
       if not robot.linetrace_stop:
