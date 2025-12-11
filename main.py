@@ -81,13 +81,13 @@ def find_best_target() -> None:
   logger.debug("Find target")
   yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
   current_time = time.time()
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
     robot.write_rescue_angle(None)
     robot.write_rescue_size(None)
     return
   result_image = yolo_results[0].plot()
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   boxes = yolo_results[0].boxes
   if boxes is None or len(boxes) == 0:
     logger.info("Target not found")
@@ -116,12 +116,23 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
+          robot.write_rescue_ball_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
           best_target_y = y_center
           best_target_w = w
           best_target_h = h
+          if cls == consts.TargetList.BLACK_BALL or cls == consts.TargetList.SILVER_BALL:
+            is_bottom_third = best_target_y and best_target_y > (image_height * 3 / 4)
+            if best_target_w:
+              ball_left = robot.rescue_angle - best_target_w / 2 + image_width / 2
+              ball_right = robot.rescue_angle + best_target_w / 2 + image_width / 2
+              includes_center = ball_left <= image_width / 2 <= ball_right
+            else:
+              includes_center = False
+            if is_bottom_third and includes_center:
+              robot.write_rescue_ball_flag(True)
         logger.info(
             f"Detected cls={consts.TargetList(cls).value}, area={area:.1f}, offset={dist:.1f}"
         )

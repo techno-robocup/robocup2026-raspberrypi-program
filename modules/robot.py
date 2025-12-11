@@ -140,6 +140,7 @@ class Robot:
     self.__rescue_size: Optional[int] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL
     self.__rescue_turning_angle: int = 0
+    self.__rescue_ball_flag = False
     self.__slope = None
     self.__is_stop = False
     # Set robot reference in camera module to avoid circular import
@@ -200,6 +201,10 @@ class Robot:
     with self.__rescue_lock:
       self.__rescue_turning_angle = angle
 
+  def write_rescue_ball_flag(self, flag: bool) -> None:
+    with self.__rescue_lock:
+      self.__rescue_ball_flag = flag
+
   @property
   def rescue_angle(self) -> Optional[float]:
     with self.__rescue_lock:
@@ -219,6 +224,11 @@ class Robot:
   def rescue_turning_angle(self) -> int:
     with self.__rescue_lock:
       return self.__rescue_turning_angle
+
+  @property
+  def rescue_ball_flag(self) -> bool:
+    with self.__rescue_lock:
+      return self.__rescue_ball_flag
 
   def write_linetrace_stop(self, flag: bool) -> None:
     with self.__linetrace_lock:
