@@ -461,10 +461,7 @@ def Linetrace_Camera_Pre_callback(request):
           robot.write_linetrace_slope(None)
         return
 
-      best_contour = find_best_contour(contours,
-                                       consts.LINETRACE_CAMERA_LORES_WIDTH,
-                                       consts.LINETRACE_CAMERA_LORES_HEIGHT,
-                                       lastblackline)
+      best_contour = find_best_contour(contours, w, h, lastblackline)
 
       if best_contour is None:
         if robot is not None:
