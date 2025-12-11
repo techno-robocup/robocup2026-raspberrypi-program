@@ -217,7 +217,7 @@ class Robot:
 
   @property
   def rescue_target(self) -> int:
-    with self.rescue_lock:
+    with self.__rescue_lock:
       return self.__rescue_target
 
   @property
