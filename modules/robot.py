@@ -187,7 +187,7 @@ class Robot:
     with self.__rescue_camera_lock:
       return self.__rescue_camera_image
 
-  def write_is_rescue_flag(self, flag:bool) -> None:
+  def write_is_rescue_flag(self, flag: bool) -> None:
     with self.__rescue_lock:
       self.__is_rescue_flag = flag
 
