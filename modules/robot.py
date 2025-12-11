@@ -60,6 +60,7 @@ class uart_io:
   def __connect(self) -> None:
     logger.get_logger().info(f"Connecting to {self.__device_name}")
     while True:
+      assert self.__baud_rate != None
       self.__Serial_port = serial.Serial(self.__device_name,
                                          self.__baud_rate,
                                          timeout=self.__timeout)
@@ -68,7 +69,7 @@ class uart_io:
     return None
 
   def isConnected(self) -> bool:
-    return self.__Serial_port.isOpen
+    return self.__Serial_port.isOpen()
 
   def reConnect(self) -> None:
     if self.isConnected():
@@ -82,6 +83,7 @@ class uart_io:
 
   def __send(self, message: Message) -> bool | str:
     if self.isConnected():
+      assert self.__Serial_port != None
       self.__Serial_port.write(str(message).encode("ascii"))
       logger.get_logger().info(f"Sent message: {str(message)}")
       while True:
@@ -117,19 +119,13 @@ class Robot:
     self.__MOTOR_ARM = 3072
     self.__MOTOR_WIRE = 0
     self.__Linetrace_Camera = modules.camera.Camera(
-        modules.constants.Linetrace_Camera_Port,
-        modules.constants.Linetrace_Camera_Controls,
-        modules.constants.Linetrace_Camera_Size,
-        modules.constants.Linetrace_Camera_Formats,
-        modules.constants.Linetrace_Camera_lores,
-        modules.constants.Linetrace_Camera_precallback)
+        consts.Linetrace_Camera_Port, consts.Linetrace_Camera_Controls,
+        consts.Linetrace_Camera_Size, consts.Linetrace_Camera_Formats,
+        consts.Linetrace_Camera_lores, consts.Linetrace_Camera_precallback)
     self.__Rescue_Camera = modules.camera.Camera(
-        modules.constants.Rescue_Camera_Port,
-        modules.constants.Rescue_Camera_Controls,
-        modules.constants.Rescue_Camera_Size,
-        modules.constants.Rescue_Camera_Formats,
-        modules.constants.Rescue_Camera_lores,
-        modules.constants.Rescue_Camera_precallback)
+        consts.Rescue_Camera_Port, consts.Rescue_Camera_Controls,
+        consts.Rescue_Camera_Size, consts.Rescue_Camera_Formats,
+        consts.Rescue_Camera_lores, consts.Rescue_Camera_precallback)
     self.__rescue_camera_lock = threading.Lock()
     self.__linetrace_lock = threading.Lock()
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
@@ -139,7 +135,7 @@ class Robot:
     self.__is_rescue_flag = False
     self.__rescue_angle: Optional[float] = None
     self.__rescue_size: Optional[int] = None
-    self.__rescue_target: int = consts.TargetList.SILVER_BALL
+    self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0
     self.__rescue_ball_flag = False
     self.__slope = None
@@ -157,6 +153,7 @@ class Robot:
                          consts.MOTOR_MAX_SPEED)
 
   def send_speed(self):
+    assert self.__uart_device != None
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
@@ -165,16 +162,20 @@ class Robot:
     self.__MOTOR_WIRE = wire
 
   def send_arm(self):
+    assert self.__uart_device != None
     return self.__uart_device.send(
         f"Rescue {self.__MOTOR_ARM:4d}{self.__MOTOR_WIRE}")
 
   @property
   def ultrasonic(self) -> List[int]:
-    return self.__uart_device.send("GET usonic")
+    assert self.__uart_device != None
+    return list(map(int,
+                    Message(self.__uart_device.send("GET usonic")).Message))
 
   @property
   def button(self) -> bool:
-    return self.__uart_device.send("GET button")
+    assert self.__uart_device != None
+    return self.__uart_device.send("GET button") == "ON"
 
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
     with self.__rescue_camera_lock:
@@ -226,7 +227,7 @@ class Robot:
 
   @property
   def rescue_target(self) -> int:
-    with self.rescue_lock:
+    with self.__rescue_lock:
       return self.__rescue_target
 
   @property

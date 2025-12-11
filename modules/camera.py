@@ -177,7 +177,7 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
     cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
   # if count >= 3 and robot is not None:
-    # robot.write_linetrace_stop(True)
+  # robot.write_linetrace_stop(True)
 
 
 def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
@@ -478,6 +478,7 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       if robot is not None:
+        logger.info(f"Current slope: {calculate_slope(best_contour, cx, cy), cx, cy}")
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy))
 
       debug_image = visualize_tracking(image, best_contour, cx, cy)
