@@ -119,19 +119,19 @@ class Robot:
     self.__MOTOR_ARM = 3072
     self.__MOTOR_WIRE = 0
     self.__Linetrace_Camera = modules.camera.Camera(
-        modules.constants.Linetrace_Camera_Port,
-        modules.constants.Linetrace_Camera_Controls,
-        modules.constants.Linetrace_Camera_Size,
-        modules.constants.Linetrace_Camera_Formats,
-        modules.constants.Linetrace_Camera_lores,
-        modules.constants.Linetrace_Camera_precallback)
+        consts.Linetrace_Camera_Port,
+        consts.Linetrace_Camera_Controls,
+        consts.Linetrace_Camera_Size,
+        consts.Linetrace_Camera_Formats,
+        consts.Linetrace_Camera_lores,
+        consts.Linetrace_Camera_precallback)
     self.__Rescue_Camera = modules.camera.Camera(
-        modules.constants.Rescue_Camera_Port,
-        modules.constants.Rescue_Camera_Controls,
-        modules.constants.Rescue_Camera_Size,
-        modules.constants.Rescue_Camera_Formats,
-        modules.constants.Rescue_Camera_lores,
-        modules.constants.Rescue_Camera_precallback)
+        consts.Rescue_Camera_Port,
+        consts.Rescue_Camera_Controls,
+        consts.Rescue_Camera_Size,
+        consts.Rescue_Camera_Formats,
+        consts.Rescue_Camera_lores,
+        consts.Rescue_Camera_precallback)
     self.__rescue_camera_lock = threading.Lock()
     self.__linetrace_lock = threading.Lock()
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
@@ -140,7 +140,7 @@ class Robot:
     self.__rescue_lock = threading.Lock()
     self.__rescue_angle: Optional[float] = None
     self.__rescue_size: Optional[int] = None
-    self.__rescue_target: int = consts.TargetList.SILVER_BALL
+    self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0
     self.__rescue_ball_flag = False
     self.__slope = None
