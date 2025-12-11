@@ -158,6 +158,7 @@ class Robot:
                          consts.MOTOR_MAX_SPEED)
 
   def send_speed(self):
+    assert self.__uart_device != None
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
@@ -166,16 +167,19 @@ class Robot:
     self.__MOTOR_WIRE = wire
 
   def send_arm(self):
+    assert self.__uart_device!=None
     return self.__uart_device.send(
         f"Rescue {self.__MOTOR_ARM:4d}{self.__MOTOR_WIRE}")
 
   @property
   def ultrasonic(self) -> List[int]:
-    return self.__uart_device.send("GET usonic")
+    assert self.__uart_device != None
+    return list(map(int, Message(self.__uart_device.send("GET usonic")).Message))
 
   @property
   def button(self) -> bool:
-    return self.__uart_device.send("GET button")
+    assert self.__uart_device != None
+    return self.__uart_device.send("GET button") == "ON"
 
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
     with self.__rescue_camera_lock:
