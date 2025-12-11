@@ -332,12 +332,12 @@ def calculate_contour_center(contour: np.ndarray) -> Tuple[int, int]:
   return cx, cy
 
 
-def calculate_slope(contour: np.ndarray, cx: int, cy: int) -> float:
+def calculate_slope(contour: np.ndarray, cx: int, cy: int, img_width: int, img_height: int) -> float:
   """Calculate the slope of the line for steering."""
   try:
-    # Set base point
-    base_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
-    base_y = consts.LINETRACE_CAMERA_LORES_HEIGHT
+    # Set base point using actual image dimensions
+    base_x = img_width // 2
+    base_y = img_height
 
     # Calculate slope between top and center points
     if cx != base_x:  # Avoid division by zero or tiny values
@@ -432,7 +432,7 @@ def Linetrace_Camera_Pre_callback(request):
       image = m.array
       image = cv2.rotate(image, cv2.ROTATE_180)
       h, w = image.shape[:2]
-      crop_w = int(w * 0.65)
+      crop_w = int(w * consts.LINETRACE_CROP_WIDTH_RATIO)
       x_start = (w - crop_w) // 2
       image = image[:, x_start:x_start + crop_w]
       image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
@@ -478,8 +478,8 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       if robot is not None:
-        logger.info(f"Current slope: {calculate_slope(best_contour, cx, cy), cx, cy}")
-        robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy))
+        logger.info(f"Current slope: {calculate_slope(best_contour, cx, cy, w, h), cx, cy}")
+        robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 
       debug_image = visualize_tracking(image, best_contour, cx, cy)
       _draw_debug_contours(debug_image)
