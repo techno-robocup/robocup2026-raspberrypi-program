@@ -7,6 +7,7 @@ import modules.camera
 import threading
 import numpy as np
 import numpy.typing as npt
+import time
 
 
 class Message:
@@ -145,22 +146,28 @@ class Robot:
     self.__green_marks_lock = threading.Lock()
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
+    self.__last_time_set: float|None = None
     # Set robot reference in camera module to avoid circular import
     modules.camera.set_robot(self)
 
   def set_uart_device(self, device: uart_io):
     self.__uart_device = device
 
-  def set_speed(self, motor_l: int, motor_r: int):
+  def set_speed(self, motor_l: int, motor_r: int) -> None:
     self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l),
                          consts.MOTOR_MAX_SPEED)
     self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r),
                          consts.MOTOR_MAX_SPEED)
+    self.__last_time_set = time.time()
+    return None
 
   def send_speed(self):
     assert self.__uart_device != None
     assert isinstance(self.__MOTOR_L, int)
     assert isinstance(self.__MOTOR_R, int)
+    if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
+      logger.get_logger().info(f"Stopping due to last time set too long {self.__last_time_set}")
+      return self.__uart_device.send("MOTOR 1500 1500")
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
