@@ -253,10 +253,12 @@ def calculate_ball(angle: Optional[float] = None,
                    size: Optional[int] = None) -> tuple[int, int]:
   if angle is None or size is None:
     return 1500, 1500
+  diff_angle = 0
   if abs(angle) > 60:
     diff_angle = angle * P
   else:
     diff_angle = 0
+  dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * AP
   dist_term = int(max(60, dist_term))
