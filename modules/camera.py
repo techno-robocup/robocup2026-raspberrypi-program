@@ -6,6 +6,7 @@ import modules.logger
 import modules.constants as consts
 from typing import Callable, Any, Dict, Tuple, List, Optional
 from picamera2 import Picamera2, CompletedRequest, MappedArray
+import modules.robot
 
 # Robot reference - set by robot.py after initialization to avoid circular import
 robot = None
@@ -64,12 +65,15 @@ class Camera:
 
 
 def Rescue_precallback_func(request: CompletedRequest) -> None:
+  global robot
   modules.logger.get_logger().info("Rescue Camera pre-callback triggered")
   with MappedArray(request, "lores") as mapped_array:
     image = mapped_array.array
     image = cv2.rotate(image, cv2.ROTATE_180)
     current_time = time.time()
-    cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+    robot: modules.robot.Robot
+    if robot.is_rescue_flag:
+      cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
     if robot is not None:
       robot.write_rescue_image(image)
 
@@ -84,7 +88,7 @@ red_contours: List[np.ndarray] = []
 def detect_green_marks(orig_image: np.ndarray,
                        blackline_image: np.ndarray) -> None:
   """Detect multiple X-shaped green marks and their relationship with black lines."""
-  global green_marks, green_black_detected, green_contours
+  global green_marks, green_black_detected, green_contours, robot
 
   # Convert to HSV (avoid copying if possible)
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
@@ -100,7 +104,8 @@ def detect_green_marks(orig_image: np.ndarray,
                                 iterations=2)
 
   # Save green mask for debugging
-  cv2.imwrite(f"bin/{time.time():.3f}_green_mask.jpg", green_mask)
+  if not robot.linetrace_stop:
+    cv2.imwrite(f"bin/{time.time():.3f}_green_mask.jpg", green_mask)
 
   # Find contours
   green_contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL,
