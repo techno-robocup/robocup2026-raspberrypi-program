@@ -154,6 +154,8 @@ class Robot:
 
   def send_speed(self):
     assert self.__uart_device != None
+    assert isinstance(self.__MOTOR_L, int)
+    assert isinstance(self.__MOTOR_R, int)
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
