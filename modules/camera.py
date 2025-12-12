@@ -6,6 +6,7 @@ import modules.logger
 import modules.constants as consts
 from typing import Callable, Any, Dict, Tuple, List, Optional
 from picamera2 import Picamera2, CompletedRequest, MappedArray
+import modules.robot
 
 # Robot reference - set by robot.py after initialization to avoid circular import
 robot = None
@@ -64,12 +65,15 @@ class Camera:
 
 
 def Rescue_precallback_func(request: CompletedRequest) -> None:
+  global robot
   modules.logger.get_logger().info("Rescue Camera pre-callback triggered")
   with MappedArray(request, "lores") as mapped_array:
     image = mapped_array.array
     image = cv2.rotate(image, cv2.ROTATE_180)
     current_time = time.time()
-    cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+    robot: modules.robot.Robot
+    if robot.is_rescue_flag:
+      cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
     if robot is not None:
       robot.write_rescue_image(image)
 
@@ -84,7 +88,7 @@ red_contours: List[np.ndarray] = []
 def detect_green_marks(orig_image: np.ndarray,
                        blackline_image: np.ndarray) -> None:
   """Detect multiple X-shaped green marks and their relationship with black lines."""
-  global green_marks, green_black_detected, green_contours
+  global green_marks, green_black_detected, green_contours, robot
 
   # Convert to HSV (avoid copying if possible)
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
@@ -100,7 +104,8 @@ def detect_green_marks(orig_image: np.ndarray,
                                 iterations=2)
 
   # Save green mask for debugging
-  cv2.imwrite(f"bin/{time.time():.3f}_green_mask.jpg", green_mask)
+  if not robot.linetrace_stop:
+    cv2.imwrite(f"bin/{time.time():.3f}_green_mask.jpg", green_mask)
 
   # Find contours
   green_contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL,
@@ -133,7 +138,8 @@ def detect_green_marks(orig_image: np.ndarray,
       _draw_green_mark_debug(orig_image, x, y, w, h, center_x, center_y,
                              black_detections)
   if green_marks:
-    cv2.imwrite(f"bin/{time.time():.3f}_green_marks_with_x.jpg", orig_image)
+    if not robot.linetrace_stop:
+      cv2.imwrite(f"bin/{time.time():.3f}_green_marks_with_x.jpg", orig_image)
 
   # Write to robot instance
   if robot is not None:
@@ -152,7 +158,8 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   kernel = np.ones((3, 3), np.uint8)
   red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel, iterations=3)
 
-  cv2.imwrite(f"bin/{time.time():.3f}_red_mask.jpg", red_mask)
+  if not robot.linetrace_stop:
+    cv2.imwrite(f"bin/{time.time():.3f}_red_mask.jpg", red_mask)
 
   red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL,
                                      cv2.CHAIN_APPROX_SIMPLE)
@@ -180,7 +187,8 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       center_x = x + cw // 2
       center_y = y + ch // 2
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
-    cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
+    if not robot.linetrace_stop:
+      cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
   # if count >= 3 and robot is not None:
   # robot.write_linetrace_stop(True)
 
@@ -443,9 +451,11 @@ def Linetrace_Camera_Pre_callback(request):
       x_start = (w - crop_w) // 2
       image = image[:, x_start:x_start + crop_w]
       image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
-      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_origin.jpg", image)
+      if not robot.linetrace_slope:
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_origin.jpg", image)
       image = reduce_glare_combined(image)
-      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg", image)
+      if not robot.linetrace_slope:
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg", image)
       gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
       _, binary_image = cv2.threshold(gray_image, consts.BLACK_WHITE_THRESHOLD,
                                       255, cv2.THRESH_BINARY_INV)
@@ -454,7 +464,8 @@ def Linetrace_Camera_Pre_callback(request):
                                       cv2.MORPH_CLOSE,
                                       kernel,
                                       iterations=5)
-      cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg", binary_image)
+      if not robot.linetrace_slope:
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg", binary_image)
 
       detect_red_marks(image)
       detect_green_marks(image, binary_image)
@@ -489,7 +500,8 @@ def Linetrace_Camera_Pre_callback(request):
 
       debug_image = visualize_tracking(image, best_contour, cx, cy)
       _draw_debug_contours(debug_image)
-      cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)
+      if not robot.linetrace_slope:
+        cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)
 
   except SystemExit:
     logger.error("SystemExit caught")
