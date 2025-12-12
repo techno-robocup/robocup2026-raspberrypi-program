@@ -24,6 +24,7 @@ BASE_SPEED = 1750
 MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 250
+DP = 100
 P = 0.4
 AP = 1
 WP = 0.3
@@ -63,8 +64,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   steering = int(KP * angle_error)
 
-  motor_l = clamp(int(BASE_SPEED) - steering, MIN_SPEED, MAX_SPEED)
-  motor_r = clamp(int(BASE_SPEED) + steering, MIN_SPEED, MAX_SPEED)
+  motor_l = clamp(int(BASE_SPEED - angle_error ** 1.5 * DP) - steering, MIN_SPEED, MAX_SPEED)
+  motor_r = clamp(int(BASE_SPEED - angle_error ** 1.5 * DP) + steering, MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
