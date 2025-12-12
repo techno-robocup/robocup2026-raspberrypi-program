@@ -4,7 +4,8 @@ from enum import Enum
 from ultralytics import YOLO
 
 
-def Linetrace_Camera_precallback_func(request): """Linetrace camera pre-callback - imports camera module lazily to avoid circular import."""
+def Linetrace_Camera_precallback_func(request):
+  """Linetrace camera pre-callback - imports camera module lazily to avoid circular import."""
   import modules.camera
   modules.camera.Linetrace_Camera_Pre_callback(request)
 
