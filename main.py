@@ -303,15 +303,19 @@ if __name__ == "__main__":
         if robot.rescue_target == consts.TargetList.EXIT.value:
           motorl = 1500
           motorr = 1500
+          robot.set_speed(motorl, motorr)
         if robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
           motorl, motorr = calculate_ball(robot.rescue_offset, robot.rescue_size)
+          robot.set_speed(motorl, motorr)
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
             # TODO: Retry
         else:
           motorl, motorr = calculate_cage(robot.rescue_offset, robot.rescue_size)
+          robot.set_speed(motorl, motorr)
           if robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
             release_ball()
+      robot.send_speed()
     else:
       if not robot.linetrace_stop:
         motorl, motorr = calculate_motor_speeds()
