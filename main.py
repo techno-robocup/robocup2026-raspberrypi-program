@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
   logger.info("Starting program")
   while True:
-    if robot.is_rescue_flag:
+    if True:
       find_best_target()
       if (robot.rescue_offset is None) or (robot.rescue_size is None):
         change_position()
