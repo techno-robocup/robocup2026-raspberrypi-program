@@ -302,7 +302,7 @@ if __name__ == "__main__":
     robot.send_speed()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
-    elif robot.is_rescue_flag:
+    elif True:
       find_best_target()
       if (robot.rescue_offset is None) or (robot.rescue_size is None):
         change_position()
