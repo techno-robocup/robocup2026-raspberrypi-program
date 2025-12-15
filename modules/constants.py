@@ -83,6 +83,17 @@ TURN_90_RIGHT_TIME = 1.5
 GREEN_MARK_TURN_180_TIME = 3.5
 GREEN_MARK_Y_THRESHOLD_RATIO = 2 / 3  # Mark must be in bottom third
 
+# Maximum timeout for line-based turns (safety fallback)
+MAX_TURN_90_TIME = 3.0
+MAX_TURN_180_TIME = 7.0
+TURN_CHECK_DELAY = 0.5  # Delay before checking for line crossings
+
+# Checkpoint position for turn detection (ratio of image dimensions)
+# Point at top-center of the image
+TURN_CHECKPOINT_X_RATIO = 0.5  # Center horizontally
+TURN_CHECKPOINT_Y_RATIO = 0.1  # Near top (10% from top)
+TURN_CHECKPOINT_SIZE = 10  # Size of area to check (pixels)
+
 lower_green = np.array([20, 130, 90])
 upper_green = np.array([100, 255, 255])
 
