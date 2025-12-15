@@ -494,10 +494,6 @@ if __name__ == "__main__":
   while True:
     robot.update_button_stat()
     robot.send_speed()
-    if True:
-      robot.set_arm(1024,0)
-      time.sleep(3)
-      robot.set_arm(3072,1)
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
     elif robot.is_rescue_flag:
