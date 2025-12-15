@@ -485,6 +485,10 @@ if __name__ == "__main__":
   signal.signal(signal.SIGINT, signal_handler)
 
   logger.info("Starting program")
+  robot.set_speed(1500,1500)
+  robot.set_arm(3072,0)
+  robot.send_arm()
+  robot.send_speed()
   while True:
     robot.update_button_stat()
     robot.send_speed()
