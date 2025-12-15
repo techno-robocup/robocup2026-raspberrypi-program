@@ -71,7 +71,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     image = mapped_array.array
     image = cv2.rotate(image, cv2.ROTATE_180)
     current_time = time.time()
-    assert isinstance(robot,modules.robot.Robot)
+    assert isinstance(robot, modules.robot.Robot)
     if robot.is_rescue_flag:
       cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
     if robot is not None:
@@ -465,7 +465,8 @@ def Linetrace_Camera_Pre_callback(request):
                                       kernel,
                                       iterations=5)
       if not robot.linetrace_slope:
-        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg", binary_image)
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg",
+                    binary_image)
 
       detect_red_marks(image)
       detect_green_marks(image, binary_image)

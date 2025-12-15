@@ -146,7 +146,7 @@ class Robot:
     self.__green_marks_lock = threading.Lock()
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
-    self.__last_time_set: float|None = None
+    self.__last_time_set: float | None = None
     # Set robot reference in camera module to avoid circular import
     modules.camera.set_robot(self)
 
@@ -166,7 +166,8 @@ class Robot:
     assert isinstance(self.__MOTOR_L, int)
     assert isinstance(self.__MOTOR_R, int)
     if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
-      logger.get_logger().info(f"Stopping due to last time set too long {self.__last_time_set}")
+      logger.get_logger().info(
+          f"Stopping due to last time set too long {self.__last_time_set}")
       return self.__uart_device.send("MOTOR 1500 1500")
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
