@@ -523,6 +523,7 @@ if __name__ == "__main__":
           motorl, motorr = calculate_ball(robot.rescue_offset,
                                           robot.rescue_size)
           robot.set_speed(motorl, motorr)
+          robot.send_speed()
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
             # TODO: Retry
@@ -530,6 +531,7 @@ if __name__ == "__main__":
           motorl, motorr = calculate_cage(robot.rescue_offset,
                                           robot.rescue_size)
           robot.set_speed(motorl, motorr)
+          robot.send_speed*()
           if robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
             release_ball()
     else:
