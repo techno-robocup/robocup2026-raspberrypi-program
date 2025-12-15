@@ -72,10 +72,8 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     image = cv2.rotate(image, cv2.ROTATE_180)
     current_time = time.time()
     assert isinstance(robot, modules.robot.Robot)
-    if robot.is_rescue_flag:
-      cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
-    if robot is not None:
-      robot.write_rescue_image(image)
+    cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+    robot.write_rescue_image(image)
 
 
 green_marks: List[Tuple[int, int, int, int]] = []
