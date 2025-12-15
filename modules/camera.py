@@ -71,7 +71,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     image = mapped_array.array
     image = cv2.rotate(image, cv2.ROTATE_180)
     current_time = time.time()
-    robot: modules.robot.Robot
+    assert isinstance(robot,modules.robot.Robot)
     if robot.is_rescue_flag:
       cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
     if robot is not None:
