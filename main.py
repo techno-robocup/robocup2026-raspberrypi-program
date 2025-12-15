@@ -23,7 +23,7 @@ robot.set_uart_device(uart_dev)
 BASE_SPEED = 1700
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 230
+KP = 200
 DP = 100
 P = 0.4
 AP = 1
