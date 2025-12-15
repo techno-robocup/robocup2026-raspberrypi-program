@@ -264,9 +264,9 @@ def find_best_target() -> None:
           if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
             is_bottom_third = best_target_y and best_target_y > (image_height *
                                                                  3 / 4)
-            if best_target_w and robot.rescue_offset is not None:
-              ball_left = robot.rescue_offset - best_target_w / 2 + image_width / 2
-              ball_right = robot.rescue_offset + best_target_w / 2 + image_width / 2
+            if best_angle is not None:
+              ball_left = best_angle - best_target_w / 2 + image_width / 2
+              ball_right = best_angle + best_target_w / 2 + image_width / 2
               includes_center = ball_left <= image_width / 2 <= ball_right
             else:
               includes_center = False
