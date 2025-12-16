@@ -142,6 +142,7 @@ class Robot:
     self.__slope = None
     self.__is_stop = False
     self.__robot_stop: bool = False
+    self.__top_checkpoint_black: bool = False
     # Green mark detection state
     self.__green_marks_lock = threading.Lock()
     self.__green_marks: List[tuple[int, int, int, int]] = []
@@ -277,6 +278,15 @@ class Robot:
   def linetrace_stop(self) -> bool:
     with self.__linetrace_lock:
       return self.__is_stop
+
+  def write_top_checkpoint_black(self, is_black: bool) -> None:
+    with self.__linetrace_lock:
+      self.__top_checkpoint_black = is_black
+
+  @property
+  def top_checkpoint_black(self) -> bool:
+    with self.__linetrace_lock:
+      return self.__top_checkpoint_black
 
   def write_green_marks(self, marks: List[tuple[int, int, int, int]]) -> None:
     """Write detected green marks."""
