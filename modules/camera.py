@@ -471,6 +471,21 @@ def Linetrace_Camera_Pre_callback(request):
         cv2.imwrite(f"bin/{current_time:.3f}_linetrace_binary.jpg",
                     binary_image)
 
+      # Check top checkpoint for turn detection
+      checkpoint_x = int(w * consts.TURN_CHECKPOINT_X_RATIO)
+      checkpoint_y = int(h * consts.TURN_CHECKPOINT_Y_RATIO)
+      checkpoint_size = consts.TURN_CHECKPOINT_SIZE
+      # Extract checkpoint region
+      y1 = max(0, checkpoint_y - checkpoint_size // 2)
+      y2 = min(h, checkpoint_y + checkpoint_size // 2)
+      x1 = max(0, checkpoint_x - checkpoint_size // 2)
+      x2 = min(w, checkpoint_x + checkpoint_size // 2)
+      checkpoint_region = binary_image[y1:y2, x1:x2]
+      # Check if majority of checkpoint region is black (white in binary due to THRESH_BINARY_INV)
+      is_black = np.mean(checkpoint_region) > 127
+      if robot is not None:
+        robot.write_top_checkpoint_black(is_black)
+
       detect_red_marks(image)
       detect_green_marks(image, binary_image)
 
