@@ -262,7 +262,7 @@ class Robot:
       return self.__rescue_target
 
   @property
-  def rescue_turning_angle(self) -> Optional[int]:
+  def rescue_turning_angle(self) -> int:
     with self.__rescue_lock:
       return self.__rescue_turning_angle
 

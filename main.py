@@ -291,8 +291,11 @@ def find_best_target() -> None:
   yolo_results = robot.rescue_yolo_result# TODO: Not working
   current_time = time.time()
   result_image = robot.rescue_image
-  if yolo_results:
-    result_image = yolo_results[0].plot()
+  if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
+    try:
+      result_image = yolo_results[0].plot()
+    except TypeError as e:
+      logger.error(f"Error plotting YOLO result: {e}. Check the type of robot.rescue_yolo_result.")
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
@@ -346,7 +349,7 @@ def find_best_target() -> None:
             if is_bottom_third and includes_center:
               robot.write_rescue_ball_flag(True)
         logger.info(
-            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
+          f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         logger.info("Override")
@@ -363,7 +366,7 @@ def find_best_target() -> None:
           best_target_h = h
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
-            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
+          f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
     robot.write_rescue_offset(best_angle)
     robot.write_rescue_size(best_size)
@@ -559,6 +562,11 @@ def calculate_cage(angle: Optional[float] = None,
   return clamp(base_L, MIN_SPEED, MAX_SPEED), clamp(base_R, MIN_SPEED,
                                                     MAX_SPEED)
 
+def calculate_exit(angle: Optional[float] = None,
+                   size: Optional[int] = None) -> tuple[int, int]:
+  if angle is None or size is None:
+    return 1500, 1500
+  if 
 
 logger.debug("Objects Initialized")
 
