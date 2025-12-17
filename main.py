@@ -20,14 +20,14 @@ uart_dev.connect(uart_devices[0].device, consts.UART_BAUD_RATE,
                  consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1750
+BASE_SPEED = 1730
 TURNING_BASE_SPEED = 1650
 assert 1500 < BASE_SPEED < 2000
 assert 1500 < TURNING_BASE_SPEED < 2000
 assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 260
+KP = 230
 DP = 100
 P = 0.4
 AP = 1
