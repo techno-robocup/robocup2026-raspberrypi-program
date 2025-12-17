@@ -603,7 +603,6 @@ if __name__ == "__main__":
   robot.send_speed()
   while True:
     robot.update_button_stat()
-    robot.send_speed()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
     elif True:
@@ -648,4 +647,5 @@ if __name__ == "__main__":
           robot.set_speed(motorl, motorr)
       else:
         logger.debug("Red stop")
+    robot.send_speed()
 logger.debug("Program Stop")
