@@ -277,6 +277,7 @@ def signal_handler(sig, frame):
 
 
 def running_yolo() -> bool:
+  global last_yolo_time
   logger.debug("yolo")
   if time.time() - last_yolo_time > 0.1:
     yolo_result = consts.MODEL(robot.rescue_image, verbose=False)
