@@ -20,15 +20,15 @@ uart_dev.connect(uart_devices[0].device, consts.UART_BAUD_RATE,
                  consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1750
+BASE_SPEED = 1730
 TURNING_BASE_SPEED = 1650
 assert 1500 < BASE_SPEED < 2000
 assert 1500 < TURNING_BASE_SPEED < 2000
 assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 260
-DP = 200
+KP = 230
+DP = 100
 P = 0.4
 AP = 1
 WP = 0.3
@@ -151,14 +151,16 @@ def execute_green_mark_turn() -> bool:
         robot.send_speed()
         logger.info("Turn interrupted by button during 180° turn")
         return False
-      robot.set_speed(TURNING_BASE_SPEED, 3000 - TURNING_BASE_SPEED)  # Turn left
+      robot.set_speed(TURNING_BASE_SPEED,
+                      3000 - TURNING_BASE_SPEED)  # Turn left
       robot.send_speed()
       # Only check for line crossing after delay has passed
       if elapsed > consts.TURN_CHECK_DELAY:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(f"180° turn: line crossing {line_crossings}/{target_crossings}")
+          logger.info(
+              f"180° turn: line crossing {line_crossings}/{target_crossings}")
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"180° turn completed in {time.time() - start_time:.2f}s")
 
@@ -173,7 +175,8 @@ def execute_green_mark_turn() -> bool:
     while line_crossings < target_crossings:
       elapsed = time.time() - start_time
       if elapsed > max_time:
-        logger.warning(f"90° left turn timeout after {line_crossings} crossings")
+        logger.warning(
+            f"90° left turn timeout after {line_crossings} crossings")
         break
       robot.update_button_stat()
       if robot.robot_stop:
@@ -181,14 +184,17 @@ def execute_green_mark_turn() -> bool:
         robot.send_speed()
         logger.info("Turn interrupted by button during 90° left turn")
         return False
-      robot.set_speed(TURNING_BASE_SPEED, 3000 - TURNING_BASE_SPEED)  # Turn left
+      robot.set_speed(TURNING_BASE_SPEED,
+                      3000 - TURNING_BASE_SPEED)  # Turn left
       robot.send_speed()
       # Only check for line crossing after delay has passed
       if elapsed > consts.TURN_CHECK_DELAY:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(f"90° left turn: line crossing {line_crossings}/{target_crossings}")
+          logger.info(
+              f"90° left turn: line crossing {line_crossings}/{target_crossings}"
+          )
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"90° left turn completed in {time.time() - start_time:.2f}s")
 
@@ -203,7 +209,8 @@ def execute_green_mark_turn() -> bool:
     while line_crossings < target_crossings:
       elapsed = time.time() - start_time
       if elapsed > max_time:
-        logger.warning(f"90° right turn timeout after {line_crossings} crossings")
+        logger.warning(
+            f"90° right turn timeout after {line_crossings} crossings")
         break
       robot.update_button_stat()
       if robot.robot_stop:
@@ -211,14 +218,17 @@ def execute_green_mark_turn() -> bool:
         robot.send_speed()
         logger.info("Turn interrupted by button during 90° right turn")
         return False
-      robot.set_speed(3000 - TURNING_BASE_SPEED, TURNING_BASE_SPEED)  # Turn right
+      robot.set_speed(3000 - TURNING_BASE_SPEED,
+                      TURNING_BASE_SPEED)  # Turn right
       robot.send_speed()
       # Only check for line crossing after delay has passed
       if elapsed > consts.TURN_CHECK_DELAY:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(f"90° right turn: line crossing {line_crossings}/{target_crossings}")
+          logger.info(
+              f"90° right turn: line crossing {line_crossings}/{target_crossings}"
+          )
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"90° right turn completed in {time.time() - start_time:.2f}s")
 
@@ -259,10 +269,10 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   steering = int(KP * angle_error)
 
   motor_l = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**3 * DP), 1500, 2000) - steering,
+      clamp(int(BASE_SPEED - abs(angle_error)**6 * DP), 1500, 2000) - steering,
       MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**3 * DP), 1500, 2000) + steering,
+      clamp(int(BASE_SPEED - abs(angle_error)**6 * DP), 1500, 2000) + steering,
       MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
