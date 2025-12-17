@@ -205,7 +205,7 @@ class Robot:
       return self.__rescue_camera_image
 
 
-  def write_rescue_yolo_result(self, result: List) -> None:
+  def write_rescue_yolo_result(self, result: Optional[List]) -> None:
     with self.__rescue_lock:
       self.__rescue_yolo_result = result.copy()
 
@@ -221,11 +221,11 @@ class Robot:
   def is_rescue_flag(self) -> bool:
     return self.__is_rescue_flag
 
-  def write_rescue_offset(self, angle: float) -> None:
+  def write_rescue_offset(self, angle: Optional[float]) -> None:
     with self.__rescue_lock:
       self.__rescue_offset = angle
 
-  def write_rescue_size(self, size: int) -> None:
+  def write_rescue_size(self, size: Optional[int]) -> None:
     with self.__rescue_lock:
       self.__rescue_size = size
 
@@ -262,7 +262,7 @@ class Robot:
       return self.__rescue_target
 
   @property
-  def rescue_turning_angle(self) -> int:
+  def rescue_turning_angle(self) -> Optional[int]:
     with self.__rescue_lock:
       return self.__rescue_turning_angle
 
