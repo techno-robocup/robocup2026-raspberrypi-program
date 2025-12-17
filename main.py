@@ -293,7 +293,7 @@ def find_best_target() -> None:
   result_image = robot.rescue_image
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
-      result_image = yolo_results[0].plot()
+      result_image = yolo_results[0].plot()# BUG:Syntax 
     except TypeError as e:
       logger.error(f"Error plotting YOLO result: {e}. Check the type of robot.rescue_yolo_result.")
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
@@ -566,7 +566,12 @@ def calculate_exit(angle: Optional[float] = None,
                    size: Optional[int] = None) -> tuple[int, int]:
   if angle is None or size is None:
     return 1500, 1500
-  if 
+  diff_angle = angle * P
+  if diff_angle > 0:
+    diff_angle -= 30
+  if diff_angle < 0:
+    diff_angle += 30 # TODO:Fix value
+  return 1500,1500
 
 logger.debug("Objects Initialized")
 
