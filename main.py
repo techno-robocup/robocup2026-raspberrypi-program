@@ -27,8 +27,8 @@ assert 1500 < TURNING_BASE_SPEED < 2000
 assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 230
-DP = 180
+KP = 260
+DP = 200
 P = 0.4
 AP = 1
 WP = 0.3
@@ -259,10 +259,10 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   steering = int(KP * angle_error)
 
   motor_l = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**2 * DP), 1500, 2000) - steering,
+      clamp(int(BASE_SPEED - abs(angle_error)**3 * DP), 1500, 2000) - steering,
       MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**2 * DP), 1500, 2000) + steering,
+      clamp(int(BASE_SPEED - abs(angle_error)**3 * DP), 1500, 2000) + steering,
       MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
