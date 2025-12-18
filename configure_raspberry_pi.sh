@@ -50,7 +50,7 @@ fi
 print_info "Starting Raspberry Pi configuration..."
 echo "Root FS: $PATH_TO_ROOTFS"
 echo "Boot FS: $PATH_TO_BOOTFS"
-echo "Hostname: $HOSTNAME"
+echo "Hostname: $PI_HOSTNAME"
 echo "Username: $USERNAME"
 echo "WiFi SSID: $WIFI_SSID"
 echo ""
@@ -109,21 +109,21 @@ fi
 # ========================================
 # 2. Configure Hostname
 # ========================================
-print_info "Setting hostname to '$HOSTNAME'..."
+print_info "Setting hostname to '$PI_HOSTNAME'..."
 
 # Set hostname in /etc/hostname
-echo "$HOSTNAME" > "${PATH_TO_ROOTFS}/etc/hostname"
+echo "$PI_HOSTNAME" > "${PATH_TO_ROOTFS}/etc/hostname"
 print_success "Set hostname in /etc/hostname"
 
 # Update /etc/hosts
 if [ -f "${PATH_TO_ROOTFS}/etc/hosts" ]; then
     # Replace any existing 127.0.1.1 entry
     if grep -q "^127.0.1.1" "${PATH_TO_ROOTFS}/etc/hosts"; then
-        sed -i "s/^127.0.1.1.*/127.0.1.1\t$HOSTNAME/" "${PATH_TO_ROOTFS}/etc/hosts"
+        sed -i "s/^127.0.1.1.*/127.0.1.1\t$PI_HOSTNAME/" "${PATH_TO_ROOTFS}/etc/hosts"
         print_success "Updated hostname in /etc/hosts"
     else
         # Add 127.0.1.1 entry if it doesn't exist
-        echo -e "127.0.1.1\t$HOSTNAME" >> "${PATH_TO_ROOTFS}/etc/hosts"
+        echo -e "127.0.1.1\t$PI_HOSTNAME" >> "${PATH_TO_ROOTFS}/etc/hosts"
         print_success "Added hostname to /etc/hosts"
     fi
 fi
@@ -332,7 +332,7 @@ echo ""
 print_success "Raspberry Pi configuration complete!"
 echo ""
 echo "Configuration summary:"
-echo "  • Hostname set to '$HOSTNAME' (accessible via $HOSTNAME.local)"
+echo "  • Hostname set to '$PI_HOSTNAME' (accessible via $PI_HOSTNAME.local)"
 echo "  • User '$USERNAME' created with sudo access"
 echo "  • WiFi configured for network '$WIFI_SSID' (country: $WIFI_COUNTRY)"
 echo "  • WiFi regulatory domain set to $WIFI_COUNTRY"
@@ -345,7 +345,7 @@ echo "You can now unmount the SD card and boot your Raspberry Pi."
 echo "Default login: $USERNAME / $PASSWORD"
 echo ""
 echo "Connect via:"
-echo "  • SSH: ssh $USERNAME@$HOSTNAME.local"
+echo "  • SSH: ssh $USERNAME@$PI_HOSTNAME.local"
 echo "  • UART: screen /dev/ttyUSB0 115200"
 echo ""
 print_info "WiFi Troubleshooting:"
