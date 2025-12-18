@@ -528,8 +528,8 @@ def release_ball() -> bool:
 def change_position() -> bool:
   logger.debug("Change position")
   prev_time = time.time()
-  robot.set_speed(1750, 1250)
   while time.time() - prev_time < consts.TURN_30_TIME:
+    robot.set_speed(1750, 1250)
     robot.send_speed()
     robot.update_button_stat()
     if robot.robot_stop:
