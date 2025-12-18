@@ -225,7 +225,7 @@ print_success "WiFi configuration complete (multiple methods configured)"
 # Method 5: Set WiFi Regulatory Domain
 print_info "Setting WiFi regulatory domain to $WIFI_COUNTRY..."
 
-# Configure regulatory domain in /etc/default/crda
+# Method 5a: Configure regulatory domain in /etc/default/crda
 if [ -d "${PATH_TO_ROOTFS}/etc/default" ]; then
     if [ -f "${PATH_TO_ROOTFS}/etc/default/crda" ]; then
         if grep -q "^REGDOMAIN=" "${PATH_TO_ROOTFS}/etc/default/crda"; then
@@ -240,30 +240,79 @@ if [ -d "${PATH_TO_ROOTFS}/etc/default" ]; then
     fi
 fi
 
-# Create a combined systemd service for WiFi setup
+# Method 5b: Set cfg80211 module parameter for regulatory domain
+if [ -d "${PATH_TO_ROOTFS}/etc/modprobe.d" ]; then
+    echo "options cfg80211 ieee80211_regdom=$WIFI_COUNTRY" > "${PATH_TO_ROOTFS}/etc/modprobe.d/cfg80211.conf"
+    print_success "Set cfg80211 regulatory domain in modprobe"
+fi
+
+# Method 5c: Create udev rule to set regulatory domain when WiFi appears
+if [ -d "${PATH_TO_ROOTFS}/etc/udev/rules.d" ]; then
+    cat >"${PATH_TO_ROOTFS}/etc/udev/rules.d/99-wifi-regdomain.rules" <<UDEVEOF
+# Set WiFi regulatory domain when wireless device appears
+ACTION=="add", SUBSYSTEM=="ieee80211", KERNEL=="phy*", RUN+="/usr/sbin/iw reg set $WIFI_COUNTRY"
+UDEVEOF
+    print_success "Created udev rule for WiFi regulatory domain"
+fi
+
+# Method 5d: Create a systemd service for WiFi setup
 WIFI_SERVICE="${PATH_TO_ROOTFS}/etc/systemd/system/wifi-setup.service"
 if [ -d "${PATH_TO_ROOTFS}/etc/systemd/system" ]; then
     cat >"$WIFI_SERVICE" <<WIFIEOF
 [Unit]
 Description=WiFi Setup (Unblock and Set Region)
+DefaultDependencies=no
 Before=network-pre.target
-After=sys-subsystem-net-devices-wlan0.device
+After=systemd-modules-load.service
 Wants=network-pre.target
 
 [Service]
 Type=oneshot
+ExecStart=/bin/sleep 2
 ExecStart=/usr/sbin/rfkill unblock wifi
 ExecStart=/usr/sbin/iw reg set $WIFI_COUNTRY
+ExecStart=/bin/sleep 1
 RemainAfterExit=yes
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target
 WIFIEOF
 
     # Enable the service
-    mkdir -p "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants" 2>/dev/null || true
-    ln -sf "../wifi-setup.service" "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants/wifi-setup.service" 2>/dev/null || true
+    mkdir -p "${PATH_TO_ROOTFS}/etc/systemd/system/sysinit.target.wants" 2>/dev/null || true
+    ln -sf "../wifi-setup.service" "${PATH_TO_ROOTFS}/etc/systemd/system/sysinit.target.wants/wifi-setup.service" 2>/dev/null || true
     print_success "Created WiFi setup service (rfkill unblock + regulatory domain)"
+fi
+
+# Method 5e: Add to rc.local as fallback
+if [ -f "${PATH_TO_ROOTFS}/etc/rc.local" ]; then
+    # Check if our commands are already there
+    if ! grep -q "iw reg set" "${PATH_TO_ROOTFS}/etc/rc.local"; then
+        # Insert before 'exit 0' if it exists
+        if grep -q "^exit 0" "${PATH_TO_ROOTFS}/etc/rc.local"; then
+            sed -i "/^exit 0/i # Set WiFi regulatory domain\\nrfkill unblock wifi\\niw reg set $WIFI_COUNTRY\\n" "${PATH_TO_ROOTFS}/etc/rc.local"
+        else
+            cat >>"${PATH_TO_ROOTFS}/etc/rc.local" <<RCEOF
+
+# Set WiFi regulatory domain
+rfkill unblock wifi
+iw reg set $WIFI_COUNTRY
+RCEOF
+        fi
+        print_success "Added WiFi setup to rc.local"
+    fi
+elif [ -d "${PATH_TO_ROOTFS}/etc" ]; then
+    # Create rc.local if it doesn't exist
+    cat >"${PATH_TO_ROOTFS}/etc/rc.local" <<'RCEOF'
+#!/bin/bash
+# Set WiFi regulatory domain
+rfkill unblock wifi
+RCEOF
+    echo "iw reg set $WIFI_COUNTRY" >> "${PATH_TO_ROOTFS}/etc/rc.local"
+    echo "" >> "${PATH_TO_ROOTFS}/etc/rc.local"
+    echo "exit 0" >> "${PATH_TO_ROOTFS}/etc/rc.local"
+    chmod +x "${PATH_TO_ROOTFS}/etc/rc.local"
+    print_success "Created rc.local with WiFi setup"
 fi
 
 # ========================================
