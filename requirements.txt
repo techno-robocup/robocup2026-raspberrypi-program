@@ -6,3 +6,4 @@ matplotlib
 torch
 torchvision
 pyserial
+depth-anything-v2
