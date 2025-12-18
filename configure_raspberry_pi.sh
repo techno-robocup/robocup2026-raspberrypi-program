@@ -168,6 +168,31 @@ NM_DIR="${PATH_TO_ROOTFS}/etc/NetworkManager/system-connections"
 if [ -d "${PATH_TO_ROOTFS}/etc/NetworkManager" ]; then
     mkdir -p "$NM_DIR"
 
+    # Enable WiFi radio in NetworkManager state file
+    mkdir -p "${PATH_TO_ROOTFS}/var/lib/NetworkManager"
+    cat >"${PATH_TO_ROOTFS}/var/lib/NetworkManager/NetworkManager.state" <<NMSTATEEOF
+[main]
+NetworkingEnabled=true
+WirelessEnabled=true
+WWANEnabled=true
+NMSTATEEOF
+    print_success "Enabled WiFi radio in NetworkManager state"
+
+    # Also configure NetworkManager to enable WiFi by default
+    if [ ! -f "${PATH_TO_ROOTFS}/etc/NetworkManager/NetworkManager.conf" ]; then
+        cat >"${PATH_TO_ROOTFS}/etc/NetworkManager/NetworkManager.conf" <<NMCONFEOF
+[main]
+plugins=ifupdown,keyfile
+
+[ifupdown]
+managed=false
+
+[device]
+wifi.scan-rand-mac-address=no
+NMCONFEOF
+        print_success "Created NetworkManager.conf"
+    fi
+
     # Generate PSK hash for NetworkManager
     PSK=$(wpa_passphrase "$WIFI_SSID" "$WIFI_PASSWORD" | grep '^\spsk=' | cut -d= -f2)
 
@@ -262,7 +287,7 @@ if [ -d "${PATH_TO_ROOTFS}/etc/systemd/system" ]; then
 [Unit]
 Description=WiFi Setup (Unblock and Set Region)
 DefaultDependencies=no
-Before=network-pre.target
+Before=network-pre.target NetworkManager.service
 After=systemd-modules-load.service
 Wants=network-pre.target
 
@@ -284,19 +309,44 @@ WIFIEOF
     print_success "Created WiFi setup service (rfkill unblock + regulatory domain)"
 fi
 
+# Method 5f: Create a systemd service to enable NetworkManager WiFi radio
+NM_WIFI_SERVICE="${PATH_TO_ROOTFS}/etc/systemd/system/nm-enable-wifi.service"
+if [ -d "${PATH_TO_ROOTFS}/etc/systemd/system" ] && [ -d "${PATH_TO_ROOTFS}/etc/NetworkManager" ]; then
+    cat >"$NM_WIFI_SERVICE" <<NMWIFIEOF
+[Unit]
+Description=Enable NetworkManager WiFi Radio
+After=NetworkManager.service
+Requires=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nmcli radio wifi on
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+NMWIFIEOF
+
+    # Enable the service
+    mkdir -p "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants" 2>/dev/null || true
+    ln -sf "../nm-enable-wifi.service" "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants/nm-enable-wifi.service" 2>/dev/null || true
+    print_success "Created NetworkManager WiFi enable service"
+fi
+
 # Method 5e: Add to rc.local as fallback
 if [ -f "${PATH_TO_ROOTFS}/etc/rc.local" ]; then
     # Check if our commands are already there
     if ! grep -q "iw reg set" "${PATH_TO_ROOTFS}/etc/rc.local"; then
         # Insert before 'exit 0' if it exists
         if grep -q "^exit 0" "${PATH_TO_ROOTFS}/etc/rc.local"; then
-            sed -i "/^exit 0/i # Set WiFi regulatory domain\\nrfkill unblock wifi\\niw reg set $WIFI_COUNTRY\\n" "${PATH_TO_ROOTFS}/etc/rc.local"
+            sed -i "/^exit 0/i # Set WiFi regulatory domain and enable WiFi\\nrfkill unblock wifi\\niw reg set $WIFI_COUNTRY\\nnmcli radio wifi on 2>/dev/null || true\\n" "${PATH_TO_ROOTFS}/etc/rc.local"
         else
             cat >>"${PATH_TO_ROOTFS}/etc/rc.local" <<RCEOF
 
-# Set WiFi regulatory domain
+# Set WiFi regulatory domain and enable WiFi
 rfkill unblock wifi
 iw reg set $WIFI_COUNTRY
+nmcli radio wifi on 2>/dev/null || true
 RCEOF
         fi
         print_success "Added WiFi setup to rc.local"
@@ -305,10 +355,11 @@ elif [ -d "${PATH_TO_ROOTFS}/etc" ]; then
     # Create rc.local if it doesn't exist
     cat >"${PATH_TO_ROOTFS}/etc/rc.local" <<'RCEOF'
 #!/bin/bash
-# Set WiFi regulatory domain
+# Set WiFi regulatory domain and enable WiFi
 rfkill unblock wifi
 RCEOF
     echo "iw reg set $WIFI_COUNTRY" >> "${PATH_TO_ROOTFS}/etc/rc.local"
+    echo "nmcli radio wifi on 2>/dev/null || true" >> "${PATH_TO_ROOTFS}/etc/rc.local"
     echo "" >> "${PATH_TO_ROOTFS}/etc/rc.local"
     echo "exit 0" >> "${PATH_TO_ROOTFS}/etc/rc.local"
     chmod +x "${PATH_TO_ROOTFS}/etc/rc.local"
@@ -384,11 +435,17 @@ echo "Configuration summary:"
 echo "  • Hostname set to '$PI_HOSTNAME' (accessible via $PI_HOSTNAME.local)"
 echo "  • User '$USERNAME' created with sudo access"
 echo "  • WiFi configured for network '$WIFI_SSID' (country: $WIFI_COUNTRY)"
-echo "  • WiFi regulatory domain set to $WIFI_COUNTRY"
+echo "  • WiFi radio enabled via:"
+echo "    - NetworkManager state file (WirelessEnabled=true)"
+echo "    - nm-enable-wifi systemd service"
+echo "    - rc.local fallback"
+echo "  • WiFi regulatory domain set to $WIFI_COUNTRY via:"
+echo "    - cfg80211 kernel module parameter"
+echo "    - udev rule (automatic on WiFi device add)"
+echo "    - wifi-setup systemd service"
 echo "  • SSH enabled"
 echo "  • UART enabled (hardware serial)"
 echo "  • Serial console configured"
-echo "  • WiFi setup service enabled (unblock + region)"
 echo ""
 echo "You can now unmount the SD card and boot your Raspberry Pi."
 echo "Default login: $USERNAME / $PASSWORD"
