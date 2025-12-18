@@ -35,6 +35,7 @@ WP = 0.3
 
 last_yolo_time = 0
 
+catch_failed_cnt = 0
 
 def clamp(value: int, min_val: int = 1000, max_val: int = 2000) -> int:
   """Clamp value between min and max."""
@@ -605,6 +606,21 @@ def calculate_exit() -> tuple[int, int]:
     diff_angle += 30 # TODO:Fix value
   return 1500,1500
 
+def retry_catch() -> bool:
+  global catch_failed_cnt
+  catch_failed_cnt += 1
+  prev_time = time.time()
+  robot.set_speed(1300,1300)
+  while time.time() - prev_time > 2:
+    robot.send_speed()
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.info("Turn interrupted by button during approach")
+      return False
+  return True
+
 logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
@@ -643,6 +659,8 @@ if __name__ == "__main__":
           robot.send_speed()
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
+            if is_not_took:
+              retry_catch()
             # TODO: Retry
         else:
           motorl, motorr = calculate_cage()
