@@ -423,6 +423,15 @@ def catch_ball() -> int:
       return 1
     robot.send_speed()
   robot.set_arm(1000, 1)
+  prev_time = time.time()
+  while time.time() - prev_time < 0.5:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.info("Catch interrupted by button")
+      return 1
+    robot.send_arm()
   robot.send_arm()
   robot.set_arm(3072, 1)
   robot.send_arm()
