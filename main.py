@@ -29,7 +29,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 230
 DP = 160
-P = 0.4
+P = 0.2
 AP = 1
 WP = 0.3
 
@@ -562,6 +562,8 @@ def calculate_ball() -> tuple[int, int]:
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
   base_R = int(base_R)
+  logger.info(f"offset: {angle} size:{size}")
+  logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return clamp(base_L, MIN_SPEED, MAX_SPEED), clamp(base_R, MIN_SPEED,
                                                     MAX_SPEED)
@@ -577,6 +579,7 @@ def calculate_cage() -> tuple[int, int]:
   base_R = 1500 - diff_angle + 150
   base_L = int(base_L)
   base_R = int(base_R)
+  logger.info(f"offset: {angle} size:{size}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return clamp(base_L, MIN_SPEED, MAX_SPEED), clamp(base_R, MIN_SPEED,
                                                     MAX_SPEED)
