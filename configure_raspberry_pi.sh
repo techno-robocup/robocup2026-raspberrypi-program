@@ -197,28 +197,48 @@ fi
 
 print_success "WiFi configuration complete (multiple methods configured)"
 
-# Method 5: Ensure WiFi is not blocked by rfkill
-# Create a systemd service to unblock WiFi on boot
-RFKILL_SERVICE="${PATH_TO_ROOTFS}/etc/systemd/system/unblock-wifi.service"
+# Method 5: Set WiFi Regulatory Domain
+print_info "Setting WiFi regulatory domain to $WIFI_COUNTRY..."
+
+# Configure regulatory domain in /etc/default/crda
+if [ -d "${PATH_TO_ROOTFS}/etc/default" ]; then
+    if [ -f "${PATH_TO_ROOTFS}/etc/default/crda" ]; then
+        if grep -q "^REGDOMAIN=" "${PATH_TO_ROOTFS}/etc/default/crda"; then
+            sed -i "s/^REGDOMAIN=.*/REGDOMAIN=$WIFI_COUNTRY/" "${PATH_TO_ROOTFS}/etc/default/crda"
+        else
+            echo "REGDOMAIN=$WIFI_COUNTRY" >> "${PATH_TO_ROOTFS}/etc/default/crda"
+        fi
+        print_success "Set REGDOMAIN in /etc/default/crda"
+    else
+        echo "REGDOMAIN=$WIFI_COUNTRY" > "${PATH_TO_ROOTFS}/etc/default/crda"
+        print_success "Created /etc/default/crda with REGDOMAIN=$WIFI_COUNTRY"
+    fi
+fi
+
+# Create a combined systemd service for WiFi setup
+WIFI_SERVICE="${PATH_TO_ROOTFS}/etc/systemd/system/wifi-setup.service"
 if [ -d "${PATH_TO_ROOTFS}/etc/systemd/system" ]; then
-    cat >"$RFKILL_SERVICE" <<'RFKILLEOF'
+    cat >"$WIFI_SERVICE" <<WIFIEOF
 [Unit]
-Description=Unblock WiFi
+Description=WiFi Setup (Unblock and Set Region)
 Before=network-pre.target
+After=sys-subsystem-net-devices-wlan0.device
 Wants=network-pre.target
 
 [Service]
 Type=oneshot
 ExecStart=/usr/sbin/rfkill unblock wifi
+ExecStart=/usr/sbin/iw reg set $WIFI_COUNTRY
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-RFKILLEOF
+WIFIEOF
 
     # Enable the service
-    ln -sf "../unblock-wifi.service" "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants/unblock-wifi.service" 2>/dev/null || true
-    print_success "Created rfkill unblock service"
+    mkdir -p "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants" 2>/dev/null || true
+    ln -sf "../wifi-setup.service" "${PATH_TO_ROOTFS}/etc/systemd/system/multi-user.target.wants/wifi-setup.service" 2>/dev/null || true
+    print_success "Created WiFi setup service (rfkill unblock + regulatory domain)"
 fi
 
 # ========================================
