@@ -2,7 +2,7 @@
 Description=Robot service
 
 [Service]
-ExecStart=/home/robo/.local/bin/uv run python3 /home/robo/robocup2026-raspberrypi-program/main.py
+ExecStart=/home/robo/.local/bin/uv run python3 /home/robo/robocup2026-raspberrypi-kanto/main.py
 Restart=always
 User=robo
 Group=robo
