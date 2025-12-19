@@ -6,7 +6,7 @@ ExecStart=/home/robo/.local/bin/uv run python3 /home/robo/robocup2026-raspberryp
 Restart=always
 User=robo
 Group=robo
-WorkingDirectory=/home/robo7
+WorkingDirectory=/home/robo/robocup2026-raspberrypi-kanto/
 
 
 [Install]
