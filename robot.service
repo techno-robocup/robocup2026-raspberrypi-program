@@ -4,6 +4,8 @@ Description=Robot service
 [Service]
 ExecStart=uv run python3 /home/robo/robocup2026-raspberrypi-program/main.py
 Restart=always
+User=robo
+Group=robo
 
 [Install]
 WantedBy=multi-user.target
