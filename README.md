@@ -32,3 +32,5 @@ include-system-site-packages = true
 ```
 uv run python main.py
 ```
+
+`touch restart.trigger` on home directory
