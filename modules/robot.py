@@ -119,14 +119,14 @@ class Robot:
     self.__MOTOR_R = 1500
     self.__MOTOR_ARM = 3072
     self.__MOTOR_WIRE = 0
-    self.__Linetrace_Camera = modules.camera.Camera(
-        consts.Linetrace_Camera_Port, consts.Linetrace_Camera_Controls,
-        consts.Linetrace_Camera_Size, consts.Linetrace_Camera_Formats,
-        consts.Linetrace_Camera_lores, consts.Linetrace_Camera_precallback)
     self.__Rescue_Camera = modules.camera.Camera(
         consts.Rescue_Camera_Port, consts.Rescue_Camera_Controls,
         consts.Rescue_Camera_Size, consts.Rescue_Camera_Formats,
         consts.Rescue_Camera_lores, consts.Rescue_Camera_precallback)
+    self.__Linetrace_Camera = modules.camera.Camera(
+        consts.Linetrace_Camera_Port, consts.Linetrace_Camera_Controls,
+        consts.Linetrace_Camera_Size, consts.Linetrace_Camera_Formats,
+        consts.Linetrace_Camera_lores, consts.Linetrace_Camera_precallback)
     self.__rescue_camera_lock = threading.Lock()
     self.__linetrace_lock = threading.Lock()
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
