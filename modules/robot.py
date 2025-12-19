@@ -139,7 +139,6 @@ class Robot:
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0
     self.__rescue_ball_flag = False
-    self.__rescue_yolo_result:List = None
     self.__slope = None
     self.__is_stop = False
     self.__robot_stop: bool = False
@@ -203,19 +202,6 @@ class Robot:
   def rescue_image(self) -> Optional[npt.NDArray[np.uint8]]:
     with self.__rescue_camera_lock:
       return self.__rescue_camera_image
-
-
-  def write_rescue_yolo_result(self, result: Optional[List[Any]]) -> None:
-    with self.__rescue_lock:
-        if result is None:
-            self.__rescue_yolo_result = None
-        else:
-            self.__rescue_yolo_result = result.copy()
-
-  @property
-  def rescue_yolo_result(self) -> Optional[List[Any]]:
-    with self.__rescue_lock:
-      return self.__rescue_yolo_result
 
   def write_is_rescue_flag(self, flag: bool) -> None:
     with self.__rescue_lock:

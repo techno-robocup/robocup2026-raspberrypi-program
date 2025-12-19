@@ -312,7 +312,7 @@ def find_best_target() -> None:
     try:
       result_image = yolo_results[0].plot()
     except TypeError as e:
-      logger.error(f"Error plotting YOLO result: {e}. Check the type of robot.rescue_yolo_result.")
+      logger.error(f"Error plotting YOLO result: {e}.")
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
