@@ -38,6 +38,7 @@ last_yolo_time = 0
 
 catch_failed_cnt = 0
 
+
 def clamp(value: int, min_val: int = 1000, max_val: int = 2000) -> int:
   """Clamp value between min and max."""
   return max(min_val, min(max_val, value))
@@ -367,7 +368,7 @@ def find_best_target() -> None:
             if is_bottom_third and includes_center:
               robot.write_rescue_ball_flag(True)
         logger.info(
-          f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
+            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         logger.info("Override")
@@ -384,7 +385,7 @@ def find_best_target() -> None:
           best_target_h = h
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
-          f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
+            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
     if best_angle is None:
       robot.write_rescue_offset(None)
@@ -559,6 +560,7 @@ def change_position() -> bool:
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
   return True  # Completed successfully
 
+
 def set_target() -> bool:
   if robot.rescue_turning_angle is None:
     robot.write_rescue_turning_angle(0)
@@ -570,6 +572,7 @@ def set_target() -> bool:
   else:
     robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   return True
+
 
 def calculate_ball() -> tuple[int, int]:
   angle = robot.rescue_offset
@@ -592,8 +595,8 @@ def calculate_ball() -> tuple[int, int]:
   logger.info(f"offset: {angle} size:{size}")
   logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED, MAX_SPEED), clamp(int(base_R), MIN_SPEED,
-                                                    MAX_SPEED)
+  return clamp(int(base_L), MIN_SPEED,
+               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
 def calculate_cage() -> tuple[int, int]:
@@ -606,8 +609,9 @@ def calculate_cage() -> tuple[int, int]:
   base_R = 1500 - diff_angle + 150
   logger.info(f"offset: {angle} size:{size}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED, MAX_SPEED), clamp(int(base_R), MIN_SPEED,
-                                                    MAX_SPEED)
+  return clamp(int(base_L), MIN_SPEED,
+               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+
 
 def calculate_exit() -> tuple[int, int]:
   angle = robot.rescue_offset
@@ -618,19 +622,20 @@ def calculate_exit() -> tuple[int, int]:
   if diff_angle > 0:
     diff_angle = max(diff_angle - 10, 0)
   if diff_angle < 0:
-    diff_angle = min(diff_angle + 10, 0) # TODO(K10-K10):Fix value
+    diff_angle = min(diff_angle + 10, 0)  # TODO(K10-K10):Fix value
   base_L = 1500 + diff_angle + 150
   base_R = 1500 - diff_angle + 150
   logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED, MAX_SPEED), clamp(int(base_R), MIN_SPEED,
-                                                    MAX_SPEED)
+  return clamp(int(base_L), MIN_SPEED,
+               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+
 
 def retry_catch() -> bool:
   global catch_failed_cnt
   catch_failed_cnt += 1
   prev_time = time.time()
-  robot.set_speed(1300,1300)
-  while time.time() - prev_time > 2:#TODO(K10-K10): random walk
+  robot.set_speed(1300, 1300)
+  while time.time() - prev_time > 2:  #TODO(K10-K10): random walk
     robot.send_speed()
     robot.update_button_stat()
     if robot.robot_stop:
@@ -639,6 +644,7 @@ def retry_catch() -> bool:
       logger.info("Turn interrupted by button during approach")
       return False
   return True
+
 
 logger.debug("Objects Initialized")
 
