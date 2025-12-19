@@ -221,6 +221,7 @@ def Rescue_Depth_precallback_func(request: CompletedRequest) -> None:
       robot.write_rescue_image(image)
 
 
+
 def Rescue_precallback_func(request: CompletedRequest) -> None:
   """
   Rescue camera pre-callback that switches behavior based on mode.
