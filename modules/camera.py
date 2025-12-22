@@ -613,7 +613,7 @@ def reduce_glare_combined(image, contrast_factor=0.5, clip_limit=2.0):
 
 def Linetrace_Camera_Pre_callback(request):
   global lastblackline, LASTBLACKLINE_LOCK
-  # logger.debug("Linetrace Camera Pre call-back called")
+  logger.debug("Linetrace Camera Pre call-back called")
   current_time = time.time()
   try:
     with MappedArray(request, "lores") as m:
