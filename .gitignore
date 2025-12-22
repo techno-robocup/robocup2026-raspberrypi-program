@@ -1,4 +1,4 @@
 .serena
 .venv
 .direnv
-checkpoints/
+# checkpoints/
