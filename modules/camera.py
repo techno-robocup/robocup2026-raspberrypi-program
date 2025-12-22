@@ -294,7 +294,7 @@ def detect_green_marks(orig_image: np.ndarray,
     if cv2.contourArea(contour) > consts.MIN_GREEN_AREA:
       # Get bounding box
       x, y, w, h = cv2.boundingRect(contour)
-      logger.debug(f"Green mark found at ({x}, {y}) with size ({w}, {h})")
+      # logger.debug(f"Green mark found at ({x}, {y}) with size ({w}, {h})")
 
       # Calculate center point
       center_x = x + w // 2
@@ -613,14 +613,13 @@ def reduce_glare_combined(image, contrast_factor=0.5, clip_limit=2.0):
 
 def Linetrace_Camera_Pre_callback(request):
   global lastblackline, LASTBLACKLINE_LOCK
-  logger.debug("Linetrace Camera Pre call-back called")
+  # logger.debug("Linetrace Camera Pre call-back called")
   current_time = time.time()
   try:
     with MappedArray(request, "lores") as m:
       image = m.array
       image = cv2.rotate(image, cv2.ROTATE_180)
       h, w = image.shape[:2]
-      logger.info(f"Image dimensions after rotate: h={h}, w={w}")
       crop_w = int(w * consts.LINETRACE_CROP_WIDTH_RATIO)
       x_start = (w - crop_w) // 2
       image = image[:, x_start:x_start + crop_w]
@@ -683,9 +682,6 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       if robot is not None:
-        logger.info(
-            f"Current slope: {calculate_slope(best_contour, cx, cy, w, h), cx, cy}"
-        )
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 
       debug_image = visualize_tracking(image, best_contour, cx, cy)

@@ -125,7 +125,6 @@ def execute_green_mark_turn() -> bool:
       has_right = True
 
   # First, drive forward slightly to clear the intersection marker
-  logger.info("Green mark detected - approaching intersection")
   start_time = time.time()
   while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME:
     robot.update_button_stat()
@@ -139,7 +138,6 @@ def execute_green_mark_turn() -> bool:
 
   # Execute turn based on detected directions
   if has_left and has_right:
-    logger.info("Green marks: both sides detected - turning 180°")
     start_time = time.time()
     max_time = consts.MAX_TURN_180_TIME
     target_crossings = 2
@@ -165,13 +163,10 @@ def execute_green_mark_turn() -> bool:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(
-              f"180° turn: line crossing {line_crossings}/{target_crossings}")
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"180° turn completed in {time.time() - start_time:.2f}s")
 
   elif has_left:
-    logger.info("Green mark: left side detected - turning 90° left")
     start_time = time.time()
     max_time = consts.MAX_TURN_90_TIME
     target_crossings = 1
@@ -198,14 +193,10 @@ def execute_green_mark_turn() -> bool:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(
-              f"90° left turn: line crossing {line_crossings}/{target_crossings}"
-          )
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"90° left turn completed in {time.time() - start_time:.2f}s")
 
   elif has_right:
-    logger.info("Green mark: right side detected - turning 90° right")
     start_time = time.time()
     max_time = consts.MAX_TURN_90_TIME
     target_crossings = 1
@@ -232,16 +223,12 @@ def execute_green_mark_turn() -> bool:
         current_checkpoint_black = robot.top_checkpoint_black
         if current_checkpoint_black and not prev_checkpoint_black:
           line_crossings += 1
-          logger.info(
-              f"90° right turn: line crossing {line_crossings}/{target_crossings}"
-          )
         prev_checkpoint_black = current_checkpoint_black
     logger.info(f"90° right turn completed in {time.time() - start_time:.2f}s")
 
   # Stop after turn
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  logger.info("Turn complete")
   return True  # Completed successfully
 
 
