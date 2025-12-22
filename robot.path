@@ -3,6 +3,7 @@ Description=Restart robot when config file changes
 
 [Path]
 PathModified=/home/robo/restart.trigger
+Unit=robot-restart.service
 # Alternative options:
 # PathChanged=
 # PathExists=

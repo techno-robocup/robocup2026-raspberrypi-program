@@ -1,0 +1,7 @@
+[Unit]
+Description=Trigger robot service restart
+After=robot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart robot.service
