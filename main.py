@@ -42,7 +42,6 @@ BSP = 1  # Ball Size P
 COP = 0.3  # Cage Offset P
 EOP = 1  # Exit Offset P
 
-last_yolo_time = 0
 
 catch_failed_cnt = 0
 
@@ -269,7 +268,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     slope = robot.linetrace_slope
 
   if slope is None:
+    if time.time() - robot.last_slope_get_time > consts.RESCUE_FLAG_TIME:
+      robot.is_rescue_flag = True
+      return 1500, 1500
     return BASE_SPEED, BASE_SPEED
+  else:
+    robot.write_last_slope_get_time = time.time()
 
   angle = math.atan(slope)
   if angle < 0:
@@ -310,11 +314,10 @@ def signal_handler(sig, frame):
 
 
 def find_best_target() -> None:
-  global last_yolo_time
   yolo_results = None
-  if time.time() - last_yolo_time > 0.1:
+  if time.time() - robot.last_yolo_time > 0.1:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
-    last_yolo_time = time.time()
+    robot.write_last_yolo_time = time.time()
   logger.debug("Find target")
   current_time = time.time()
   result_image = robot.rescue_image
@@ -679,7 +682,10 @@ if __name__ == "__main__":
         if robot.rescue_target == consts.TargetList.EXIT.value:
           motorl, motorr = calculate_exit()
           robot.set_speed(motorl, motorr)
-          # TODO: check Entry/Exit
+          if robot.linetrace_slope is not None:
+            robot.set_speed(1500, 1500)
+            robot.send_speed()
+            robot.is_rescue_flag = False
         elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
           motorl, motorr = calculate_ball()
           robot.set_speed(motorl, motorr)
