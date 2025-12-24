@@ -190,8 +190,8 @@ def Rescue_Depth_precallback_func(request: CompletedRequest) -> None:
     current_time = time.time()
     assert isinstance(robot, modules.robot.Robot)
 
-    # Save original image
-    cv2.imwrite(f"bin/{current_time:.3f}_linetrace_rescue_origin.jpg", image)
+    # Save original image (input for depth estimation)
+    cv2.imwrite(f"bin/{current_time:.3f}_depth_input.jpg", image)
 
     # Perform depth estimation
     depth_map = predict_depth(image)
