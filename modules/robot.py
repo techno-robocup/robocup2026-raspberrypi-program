@@ -92,6 +92,7 @@ class uart_io:
       assert self.__Serial_port != None
       self.__Serial_port.write(str(message).encode("ascii"))
       logger.get_logger().info(f"Sent message: {str(message)}")
+      logger.get_logger().debug(f"Waiting for reply (timeout: {self.__timeout}s)...")
       while True:
         message_str = self.__Serial_port.read_until(b'\n').decode(
             'ascii').strip()
@@ -101,18 +102,22 @@ class uart_io:
             retMessage = Message(message_str)
             logger.get_logger().debug(f"Parsed message: {str(retMessage)}")
             if retMessage.Id == message.Id:
+              logger.get_logger().info(f"✓ Reply received: '{retMessage.Message}'")
               return retMessage.Message
             elif retMessage.Id < message.Id:
+              logger.get_logger().warning(f"Ignoring old message (ID {retMessage.Id}, expected {message.Id})")
               continue
             else:
+              logger.get_logger().error(f"Received unexpected message ID {retMessage.Id} (sent {message.Id})")
               return False
           except ValueError as e:
-            logger.get_logger().exception(
-                f"Failed to parse UART response '{message_str}': {e}")
-            return False
+            # Log corrupted message and skip it (likely UART data loss)
+            logger.get_logger().warning(
+                f"Skipping corrupted UART message '{message_str}': {e}")
+            continue  # Wait for next message instead of returning False
         else:
           logger.get_logger().error(
-              f"No response from ESP32 for message id {self.__message_id_increment}"
+              f"✗ No response from ESP32 for message ID {message.Id} (timeout after {self.__timeout}s)"
           )
           return False
 
