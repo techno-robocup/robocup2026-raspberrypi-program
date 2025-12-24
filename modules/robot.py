@@ -107,9 +107,10 @@ class uart_io:
             else:
               return False
           except ValueError as e:
-            logger.get_logger().exception(
-                f"Failed to parse UART response '{message_str}': {e}")
-            return False
+            # Log corrupted message and skip it (likely UART data loss)
+            logger.get_logger().warning(
+                f"Skipping corrupted UART message '{message_str}': {e}")
+            continue  # Wait for next message instead of returning False
         else:
           logger.get_logger().error(
               f"No response from ESP32 for message id {self.__message_id_increment}"
