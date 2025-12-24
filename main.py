@@ -660,6 +660,7 @@ if __name__ == "__main__":
   robot.set_arm(3072, 0)
   robot.send_arm()
   robot.send_speed()
+  robot.write_is_rescue_flag(True)
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
