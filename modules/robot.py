@@ -19,9 +19,14 @@ class Message:
       self.__id = int(args[0])
       self.__message = args[1]
     elif len(args) == 1:
-      temp_id, self.__message = args[0].split(" ", 1)
-      self.__id = int(temp_id)
-      self.__message = self.__message.strip()
+      try:
+        temp_id, self.__message = args[0].split(" ", 1)
+        self.__id = int(temp_id)
+        self.__message = self.__message.strip()
+      except ValueError as e:
+        logger.get_logger().exception(
+            f"Failed to parse message. Expected format 'ID MESSAGE', got: '{args[0]}'. Error: {e}")
+        raise
     else:
       logger.get_logger().error(
           f"Invalid number of arguments to construct Message object {args}")
@@ -91,13 +96,19 @@ class uart_io:
         message_str = self.__Serial_port.read_until(b'\n').decode(
             'ascii').strip()
         if message_str:
-          retMessage = Message(message_str)
-          logger.get_logger().debug(f"Received message: {str(retMessage)}")
-          if retMessage.Id == message.Id:
-            return retMessage.Message
-          elif retMessage.Id < message.Id:
-            continue
-          else:
+          logger.get_logger().debug(f"Raw received from UART: '{message_str}'")
+          try:
+            retMessage = Message(message_str)
+            logger.get_logger().debug(f"Parsed message: {str(retMessage)}")
+            if retMessage.Id == message.Id:
+              return retMessage.Message
+            elif retMessage.Id < message.Id:
+              continue
+            else:
+              return False
+          except ValueError as e:
+            logger.get_logger().exception(
+                f"Failed to parse UART response '{message_str}': {e}")
             return False
         else:
           logger.get_logger().error(
