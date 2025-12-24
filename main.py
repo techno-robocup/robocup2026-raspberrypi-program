@@ -311,7 +311,8 @@ def find_best_target() -> None:
       try:
         cls = int(box.cls[0])
         detected_classes.append(cls)
-      except Exception:
+      except Exception as e:
+        logger.exception(f"Error processing detection box: {e}")
         continue
       if cls == robot.rescue_target:
         x_center, y_center, w, h = map(float, box.xywh[0])
