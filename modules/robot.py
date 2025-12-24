@@ -243,6 +243,7 @@ class Robot:
 
   def update_button_stat(self) -> None:
     response = self.__uart_device.send("GET button")
+    logger.get_logger().info(f"Button response: {response} (type: {type(response).__name__})")
     self.__robot_stop = response == "OFF"
     return None
 

@@ -271,7 +271,7 @@ def detect_green_marks(orig_image: np.ndarray,
     if cv2.contourArea(contour) > consts.MIN_GREEN_AREA:
       # Get bounding box
       x, y, w, h = cv2.boundingRect(contour)
-      logger.debug(f"Green mark found at ({x}, {y}) with size ({w}, {h})")
+      # logger.debug(f"Green mark found at ({x}, {y}) with size ({w}, {h})")
 
       # Calculate center point
       center_x = x + w // 2
@@ -321,10 +321,12 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   left, right = margin_x, w - margin_x
   top, bottom = margin_y, h - margin_y
 
-  count = 0
   red_valid_contours = []
   for contour in red_contours:
-    if cv2.contourArea(red_contours) > consts.MIN_RED_AREA:
+    if cv2.contourArea(contour) > consts.MIN_RED_AREA:
+      logger.debug("Red Stop--")
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
       robot.write_linetrace_stop(True)
     if cv2.contourArea(contour) > 20:
       x, y, cw, ch = cv2.boundingRect(contour)
@@ -332,7 +334,6 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       center_y = y + ch // 2
       if left <= center_x <= right and top <= center_y <= bottom:
         red_valid_contours.append(contour)
-        count += 1
   if red_valid_contours:
     cv2.drawContours(orig_image, red_valid_contours, -1, (0, 0, 255), 2)
     for contour in red_valid_contours:
@@ -342,8 +343,8 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
       cv2.circle(orig_image, (center_x, center_y), 5, (0, 0, 255), -1)
     if not robot.linetrace_stop:
       cv2.imwrite(f"bin/{time.time():.3f}_red_detected.jpg", orig_image)
-  if count >= 3 and robot is not None:
-    robot.write_linetrace_stop(True)
+  # if len(red_valid_contours) >= 3 and robot is not None:
+  #   robot.write_linetrace_stop(True)
 
 
 def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
@@ -599,7 +600,6 @@ def Linetrace_Camera_Pre_callback(request):
       image = m.array
       image = cv2.rotate(image, cv2.ROTATE_180)
       h, w = image.shape[:2]
-      logger.info(f"Image dimensions after rotate: h={h}, w={w}")
       crop_w = int(w * consts.LINETRACE_CROP_WIDTH_RATIO)
       x_start = (w - crop_w) // 2
       image = image[:, x_start:x_start + crop_w]
@@ -662,9 +662,6 @@ def Linetrace_Camera_Pre_callback(request):
       with LASTBLACKLINE_LOCK:
         lastblackline = cx
       if robot is not None:
-        logger.info(
-            f"Current slope: {calculate_slope(best_contour, cx, cy, w, h), cx, cy}"
-        )
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 
       debug_image = visualize_tracking(image, best_contour, cx, cy)
