@@ -16,7 +16,7 @@ def Rescue_Camera_precallback_func(request):
   modules.camera.Rescue_precallback_func(request)
 
 
-UART_BAUD_RATE = 9600
+UART_BAUD_RATE = 4800
 UART_TIMEOUT = 1
 MOTOR_MAX_SPEED = 2000
 MOTOR_MIN_SPEED = 1000
