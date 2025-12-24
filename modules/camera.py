@@ -347,9 +347,6 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   red_valid_contours = []
   for contour in red_contours:
     if cv2.contourArea(contour) > consts.MIN_RED_AREA:
-      logger.debug("Red Stop--")
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
       robot.write_linetrace_stop(True)
     if cv2.contourArea(contour) > 20:
       x, y, cw, ch = cv2.boundingRect(contour)
