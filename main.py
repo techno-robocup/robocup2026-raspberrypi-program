@@ -37,8 +37,8 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 230
 DP = 160
-BOP = 0.1  # Ball Offset P
-BSP = 0.8  # Ball Size P
+BOP = 0.05  # Ball Offset P
+BSP = 1.2  # Ball Size P
 COP = 0.3  # Cage Offset P
 EOP = 1  # Exit Offset P
 
