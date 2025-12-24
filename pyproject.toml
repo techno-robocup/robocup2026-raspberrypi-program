@@ -10,6 +10,7 @@ dependencies = [
     "gradio-imageslider>=0.0.20",
     "huggingface-hub>=1.2.3",
     "matplotlib>=3.10.8",
+    "numba>=0.63.1",
     "opencv-python>=4.12.0.88",
     "pillow>=12.0.0",
     "pyserial>=3.5",
