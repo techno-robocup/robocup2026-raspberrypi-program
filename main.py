@@ -315,8 +315,9 @@ def signal_handler(sig, frame):
 
 def find_best_target() -> None:
   yolo_results = None
-  if time.time() - robot.last_yolo_time > 0.1:
+  if time.time() - robot.last_yolo_time > 0.05:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
+    logger.debug(f"Yolo Type{type(yolo_results)}")
     robot.write_last_yolo_time = time.time()
   logger.debug("Find target")
   current_time = time.time()
