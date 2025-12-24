@@ -260,7 +260,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       return 1500, 1500
     return BASE_SPEED, BASE_SPEED
   else:
-    robot.write_last_slope_get_time = time.time()
+    robot.write_last_slope_get_time(time.time())
 
   angle = math.atan(slope)
   if angle < 0:
@@ -304,7 +304,7 @@ def find_best_target() -> None:
   yolo_results = None
   if time.time() - robot.last_yolo_time > 0.1:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
-    robot.write_last_yolo_time = time.time()
+    robot.write_last_yolo_time(time.time())
   logger.debug("Find target")
   current_time = time.time()
   result_image = robot.rescue_image
