@@ -37,7 +37,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 230
 DP = 160
-BOP = 0.1  # Ball Offset P
+BOP = 0.2  # Ball Offset P
 BSP = 1  # Ball Size P
 COP = 0.3  # Cage Offset P
 EOP = 1  # Exit Offset P
@@ -315,7 +315,7 @@ def signal_handler(sig, frame):
 
 def find_best_target() -> None:
   yolo_results = None
-  if time.time() - robot.last_yolo_time > 0.05:
+  if time.time() - robot.last_yolo_time > 0.1:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
     robot.write_last_yolo_time = time.time()
   logger.debug("Find target")
@@ -594,7 +594,7 @@ def calculate_ball() -> tuple[int, int]:
   if angle is None or size is None:
     return 1500, 1500
   diff_angle = 0
-  if abs(angle) > 60:
+  if abs(angle) > 30:
     diff_angle = angle * BOP
   else:
     diff_angle = 0
