@@ -317,7 +317,6 @@ def find_best_target() -> None:
   yolo_results = None
   if time.time() - robot.last_yolo_time > 0.05:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
-    logger.debug(f"Yolo Type{type(yolo_results)}")
     robot.write_last_yolo_time = time.time()
   logger.debug("Find target")
   current_time = time.time()
@@ -327,7 +326,7 @@ def find_best_target() -> None:
       result_image = yolo_results[0].plot()
     except TypeError as e:
       logger.error(f"Error plotting YOLO result: {e}.")
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result_{type(yolo_results)}.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
