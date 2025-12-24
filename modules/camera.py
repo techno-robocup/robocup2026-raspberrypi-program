@@ -85,7 +85,7 @@ def get_depth_model():
           logger.info(
               f"Depth-Anything-V2 model loaded successfully on {device}")
         except Exception as e:
-          logger.error(f"Failed to load Depth-Anything-V2 model: {e}")
+          logger.exception(f"Failed to load Depth-Anything-V2 model: {e}")
           _depth_model = None
   return _depth_model
 
@@ -113,7 +113,7 @@ def predict_depth(image: np.ndarray) -> Optional[np.ndarray]:
 
     return depth
   except Exception as e:
-    logger.error(f"Depth prediction failed: {e}")
+    logger.exception(f"Depth prediction failed: {e}")
     return None
 
 
@@ -513,7 +513,7 @@ def calculate_slope(contour: np.ndarray, cx: int, cy: int, img_width: int,
     else:
       return 10**9
   except Exception as e:
-    logger.error(f"Error in calculate_slope: {e}")
+    logger.exception(f"Error in calculate_slope: {e}")
     return 0.0
 
 
@@ -670,7 +670,7 @@ def Linetrace_Camera_Pre_callback(request):
         cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)
 
   except SystemExit:
-    logger.error("SystemExit caught")
+    logger.exception("SystemExit caught")
     raise
   except Exception as e:
-    logger.error(f"Error in line tracing: {e}")
+    logger.exception(f"Error in line tracing: {e}")
