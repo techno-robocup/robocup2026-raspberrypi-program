@@ -559,6 +559,7 @@ if __name__ == "__main__":
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
+      logger.debug("robot stop true, stopping..")
       robot.write_linetrace_stop = False
     elif robot.is_rescue_flag:
       find_best_target()
