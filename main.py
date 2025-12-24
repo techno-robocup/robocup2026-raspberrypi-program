@@ -17,7 +17,7 @@ robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
 uart_devices = uart_dev.list_ports()
 
-# Prioritize USB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
+# Prioritize USsB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
 usb_devices = [
     d for d in uart_devices if 'USB' in d.device or 'ACM' in d.device
 ]
@@ -37,7 +37,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 230
 DP = 160
-BOP = 0.2  # Ball Offset P
+BOP = 0.1  # Ball Offset P
 BSP = 0.8  # Ball Size P
 COP = 0.3  # Cage Offset P
 EOP = 1  # Exit Offset P
