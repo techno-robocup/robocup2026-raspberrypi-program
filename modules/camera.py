@@ -211,7 +211,7 @@ def Rescue_Depth_precallback_func(request: CompletedRequest) -> None:
                   depth_normalized)
 
       logger.debug(
-          f"Depth prediction completed (linetrace mode), saved to bin/{current_time:.3f}_linetrace_depth.jpg"
+          f"Depth saved: {current_time:.3f}_depth_input.jpg, _linetrace_depth.jpg, _linetrace_depth_raw.jpg"
       )
     else:
       logger.warning("Depth prediction returned None")
