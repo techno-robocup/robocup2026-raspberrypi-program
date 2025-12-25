@@ -450,41 +450,7 @@ def _draw_green_mark_debug(image: np.ndarray, x: int, y: int, w: int, h: int,
   cv2.line(image, (x + w, y), (x, y + h), (0, 255, 0), 2)
   # Draw center point
   cv2.circle(image, (center_x, center_y), 5, (0, 0, 255), -1)
-  
-  # Define ROI sizes (same as in _check_black_lines_around_mark)
-  roi_width = int(w * 0.5)
-  roi_height = int(h * 0.5)
-  
-  # Draw ROI rectangles where black lines are checked
-  # Bottom ROI - cyan rectangle
-  bottom_y1 = center_y + h // 2
-  bottom_y2 = min(bottom_y1 + roi_height, consts.LINETRACE_CAMERA_LORES_HEIGHT)
-  bottom_x1 = center_x - roi_width // 2
-  bottom_x2 = center_x + roi_width // 2
-  cv2.rectangle(image, (bottom_x1, bottom_y1), (bottom_x2, bottom_y2), (255, 255, 0), 1)
-  
-  # Top ROI - cyan rectangle
-  top_y2 = center_y - h // 2
-  top_y1 = max(top_y2 - roi_height, 0)
-  top_x1 = center_x - roi_width // 2
-  top_x2 = center_x + roi_width // 2
-  cv2.rectangle(image, (top_x1, top_y1), (top_x2, top_y2), (255, 255, 0), 1)
-  
-  # Left ROI - cyan rectangle
-  left_x2 = center_x - w // 2
-  left_x1 = max(left_x2 - roi_width, 0)
-  left_y1 = center_y - roi_height // 2
-  left_y2 = center_y + roi_height // 2
-  cv2.rectangle(image, (left_x1, left_y1), (left_x2, left_y2), (255, 255, 0), 1)
-  
-  # Right ROI - cyan rectangle
-  right_x1 = center_x + w // 2
-  right_x2 = min(right_x1 + roi_width, consts.LINETRACE_CAMERA_LORES_WIDTH)
-  right_y1 = center_y - roi_height // 2
-  right_y2 = center_y + roi_height // 2
-  cv2.rectangle(image, (right_x1, right_y1), (right_x2, right_y2), (255, 255, 0), 1)
-  
-  # Draw black line detection indicators (stronger color if detected)
+  # Draw black line detection indicators
   if black_detections[0]:
     cv2.line(image, (center_x - 10, center_y + 10),
              (center_x + 10, center_y + 10), (255, 0, 0), 2)
