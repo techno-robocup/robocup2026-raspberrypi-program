@@ -252,10 +252,11 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   - angle < π/2: line tilts right, turn right
   - angle > π/2: line tilts left, turn left
   """
-  if slope is None:
+  if slope is None: # When the were no args
     slope = robot.linetrace_slope
-  else:
-    robot.write_last_slope_get_time(time.time())
+  if slope is None: # When the robot could not find an appropriate slope
+    return BASE_SPEED, BASE_SPEED
+  robot.write_last_slope_get_time(time.time())
 
   assert is_valid_number(slope), str(slope)
   angle = math.atan(slope)
