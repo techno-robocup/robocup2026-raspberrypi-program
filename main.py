@@ -415,8 +415,18 @@ def catch_ball() -> int:
   logger.info(
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
-  robot.set_arm(1400, 0)
   robot.send_speed()
+  robot.set_speed(1400 , 1400)
+  prev_time = time.time()
+  while time.time() - prev_time < 0.8:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.info("Catch interrupted by button")
+      return 1
+    robot.send_speed()
+  robot.set_arm(1400, 0)
   robot.send_arm()
   robot.set_speed(1650, 1650)
   prev_time = time.time()
