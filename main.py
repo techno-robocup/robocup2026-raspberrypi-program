@@ -236,7 +236,7 @@ def execute_green_mark_turn() -> bool:
   robot.send_speed()
   robot.set_speed(1350, 1350)
   robot.send_speed()
-  time.sleep(0.3)
+  time.sleep(0.6)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   return True  # Completed successfully
