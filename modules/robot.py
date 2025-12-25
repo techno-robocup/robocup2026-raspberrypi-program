@@ -157,6 +157,7 @@ class Robot:
     self.__rescue_turning_angle: int = 0  # Total revolutions
     self.__rescue_ball_status: int = 0  # ball position
     self.__slope = None
+    self.__line_area: Optional[float] = None
     self.__is_stop = False
     self.__robot_stop: bool = False
     self.__top_checkpoint_black: bool = False
@@ -300,6 +301,15 @@ class Robot:
   def linetrace_slope(self) -> Optional[float]:
     with self.__linetrace_lock:
       return self.__slope
+
+  def write_line_area(self, area: Optional[float]) -> None:
+    with self.__linetrace_lock:
+      self.__line_area = area
+
+  @property
+  def line_area(self) -> Optional[float]:
+    with self.__linetrace_lock:
+      return self.__line_area
 
   @property
   def linetrace_stop(self) -> bool:

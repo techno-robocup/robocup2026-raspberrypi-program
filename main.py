@@ -244,10 +244,11 @@ def execute_green_mark_turn() -> bool:
 
 def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   """
-  Calculate left and right motor speeds based on line slope.
+  Calculate left and right motor speeds based on line slope and area.
 
   Uses arctan to convert slope to angle, then calculates the difference
   from π/2 (vertical). This gives a normalized angular error for steering.
+  Also reduces speed when the black line gets smaller for better control.
 
   Args:
     slope: Line slope value. If None, reads from robot.read_linetrace_slope().
@@ -275,11 +276,31 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   steering = int(KP * angle_error)
 
+  # Calculate speed adjustment based on line area
+  line_area = robot.line_area
+  speed_multiplier = 1.0  # Default: full speed
+  
+  if line_area is not None and is_valid_number(line_area):
+    # Reduce speed when line gets smaller
+    # Area thresholds:
+    # > 1000: full speed (100%)
+    # 500-1000: gradual reduction
+    # < 500: significant reduction (60-80%)
+    if line_area < 1000:
+      # Linear interpolation between 0.6 (at area=300) and 1.0 (at area=1000)
+      speed_multiplier = 0.6 + (line_area - consts.MIN_BLACK_LINE_AREA) / (1000 - consts.MIN_BLACK_LINE_AREA) * 0.4
+      speed_multiplier = max(0.6, min(1.0, speed_multiplier))
+      logger.info(f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}")
+
+  # Apply speed multiplier only to the increment above 1500 (stop position)
+  # 1500 = stop, so we only reduce the forward speed component
+  adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier)
+  
   motor_l = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**6 * DP), 1500, 2000) - steering,
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) - steering,
       MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(BASE_SPEED - abs(angle_error)**6 * DP), 1500, 2000) + steering,
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) + steering,
       MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
