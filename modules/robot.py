@@ -1,6 +1,6 @@
 import modules.constants as consts
 import modules.logger as logger
-from typing import Optional, List
+from typing import Optional, List, Any
 import serial
 import serial.tools.list_ports
 import modules.camera
@@ -150,11 +150,12 @@ class Robot:
     self.__Rescue_Camera.start_cam()
     self.__rescue_lock = threading.Lock()
     self.__is_rescue_flag = False
+    self.__last_yolo_time: float = 0
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
-    self.__rescue_turning_angle: int = 0
-    self.__rescue_ball_flag = False
+    self.__rescue_turning_angle: int = 0  # Total revolutions
+    self.__rescue_ball_flag = False  # catch ball flag
     self.__slope = None
     self.__is_stop = False
     self.__robot_stop: bool = False
@@ -164,6 +165,7 @@ class Robot:
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
     self.__last_time_set: float | None = None
+    self.__last_slope_get_time: float = 0
     # Set robot reference in camera module to avoid circular import
     modules.camera.set_robot(self)
 
@@ -211,7 +213,7 @@ class Robot:
 
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
     with self.__rescue_camera_lock:
-      self.__rescue_camera_image = image
+      self.__rescue_camera_image = image.copy()
     return None
 
   @property
@@ -227,11 +229,19 @@ class Robot:
   def is_rescue_flag(self) -> bool:
     return self.__is_rescue_flag
 
-  def write_rescue_offset(self, angle: float) -> None:
+  def write_last_yolo_time(self, time: float) -> None:
+    with self.__rescue_lock:
+      self.__last_yolo_time = time
+
+  @property
+  def last_yolo_time(self) -> float:
+    return self.__last_yolo_time
+
+  def write_rescue_offset(self, angle: Optional[float]) -> None:
     with self.__rescue_lock:
       self.__rescue_offset = angle
 
-  def write_rescue_size(self, size: int) -> None:
+  def write_rescue_size(self, size: Optional[int]) -> None:
     with self.__rescue_lock:
       self.__rescue_size = size
 
@@ -326,6 +336,15 @@ class Robot:
     """Get green mark black line detections."""
     with self.__green_marks_lock:
       return self.__green_black_detected.copy()
+
+  def write_last_slope_get_time(self, time:float) -> None:
+    with self.__linetrace_lock:
+      self.__last_slope_get_time = time
+
+  @property
+  def last_slope_get_time(self) -> float:
+    return self.__last_slope_get_time
+
 
   @property
   def robot_stop(self) -> bool:

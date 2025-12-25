@@ -204,55 +204,21 @@ def Rescue_Depth_precallback_func(request: CompletedRequest) -> None:
   Rescue camera pre-callback with depth estimation.
   This is called during LINETRACE mode to perform depth estimation.
   """
-  global robot, _depth_evaluation_running
-  
-  # Check if depth evaluation is already running
-  with _depth_evaluation_lock:
-    if _depth_evaluation_running:
-      logger.debug("Skipping depth evaluation - one is already in progress")
-      return
-    _depth_evaluation_running = True
-  
+  global robot
+  modules.logger.get_logger().info("Rescue Camera pre-callback triggered")
   try:
-    logger.debug("Rescue Depth Camera pre-callback triggered (linetrace mode)")
-    with MappedArray(request, "lores") as mapped_array:
-      image = mapped_array.array
+    with MappedArray(request, "lores") as m:
+      image = m.array
       image = cv2.rotate(image, cv2.ROTATE_180)
       current_time = time.time()
       assert isinstance(robot, modules.robot.Robot)
-
-      # Save original image (input for depth estimation)
-      cv2.imwrite(f"bin/{current_time:.3f}_depth_input.jpg", image)
-
-      # Perform depth estimation
-      depth_map = predict_depth(image)
-
-      if depth_map is not None:
-        # Colorize depth map
-        depth_colored = colorize_depth(depth_map)
-
-        # Save depth maps
-        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_depth.jpg", depth_colored)
-
-        # Use JIT-optimized normalization for raw depth
-        depth_normalized = _normalize_depth_array(depth_map)
-        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_depth_raw.jpg",
-                    depth_normalized)
-
-        logger.debug(
-            f"Depth saved: {current_time:.3f}_depth_input.jpg, _linetrace_depth.jpg, _linetrace_depth_raw.jpg"
-        )
-      else:
-        logger.warning("Depth prediction returned None")
-
-      # Still save the original image to robot (in case needed)
-      if robot is not None:
-        robot.write_rescue_image(image)
-  finally:
-    # Always reset the flag, even if an exception occurs
-    with _depth_evaluation_lock:
-      _depth_evaluation_running = False
-
+      cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+      robot.write_rescue_image(image)
+  except SystemExit:
+    logger.error("SystemExit caught")
+    raise
+  except Exception as e:
+    logger.error(f"Error in Rescue: {e}")
 
 
 def Rescue_precallback_func(request: CompletedRequest) -> None:

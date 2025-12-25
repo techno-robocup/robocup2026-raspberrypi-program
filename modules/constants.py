@@ -64,7 +64,7 @@ Linetrace_Camera_lores = (Linetrace_Camera_Size[0] // 8,
 Linetrace_Camera_precallback = Linetrace_Camera_precallback_func
 
 BLACK_WHITE_THRESHOLD = 100
-BALL_CATCH_SIZE = 140000
+BALL_CATCH_SIZE = 280000
 LINETRACE_CAMERA_LORES_HEIGHT = 180
 LINETRACE_CAMERA_LORES_WIDTH = 320
 LINETRACE_CROP_WIDTH_RATIO = 0.65
@@ -73,8 +73,8 @@ MIN_BLACK_LINE_AREA = 300
 MIN_GREEN_AREA = 200
 MIN_RED_AREA = 400
 
-TURN_180_TIME = 12
-TURN_30_TIME = 3
+TURN_180_TIME = 3
+TURN_30_TIME = 0.5
 
 # Green mark intersection turning times (seconds)
 GREEN_MARK_APPROACH_TIME = 0.2
@@ -93,6 +93,8 @@ TURN_CHECK_DELAY = 0.5  # Delay before checking for line crossings
 TURN_CHECKPOINT_X_RATIO = 0.5  # Center horizontally
 TURN_CHECKPOINT_Y_RATIO = 0.1  # Near top (10% from top)
 TURN_CHECKPOINT_SIZE = 10  # Size of area to check (pixels)
+
+RESCUE_FLAG_TIME = 3.0
 
 lower_green = np.array([20, 130, 90])
 upper_green = np.array([100, 255, 255])
