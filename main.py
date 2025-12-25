@@ -42,7 +42,6 @@ BSP = 3  # Ball Size P
 COP = 0.3  # Cage Offset P
 EOP = 1  # Exit Offset P
 
-
 catch_failed_cnt = 0
 
 
@@ -357,7 +356,7 @@ def find_best_target() -> None:
           best_target_h = h
           if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
             is_bottom_third = best_target_y and best_target_y > (image_height *
-                                                                 3 / 4)
+                                                                 2 / 3)
             if best_angle is not None:
               ball_left = best_angle - best_target_w / 2 + image_width / 2
               ball_right = best_angle + best_target_w / 2 + image_width / 2
