@@ -631,20 +631,20 @@ def calculate_exit() -> tuple[int, int]:
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
-def retry_catch() -> bool:
-  global catch_failed_cnt
-  catch_failed_cnt += 1
-  prev_time = time.time()
-  robot.set_speed(1300, 1300)
-  while time.time() - prev_time > 2:  #TODO(K10-K10): random walk
-    robot.send_speed()
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Turn interrupted by button during approach")
-      return False
-  return True
+# def retry_catch() -> bool:
+#   global catch_failed_cnt
+#   catch_failed_cnt += 1
+#   prev_time = time.time()
+#   robot.set_speed(1300, 1300)
+#   while time.time() - prev_time > 2:  #TODO(K10-K10): random walk
+#     robot.send_speed()
+#     robot.update_button_stat()
+#     if robot.robot_stop:
+#       robot.set_speed(1500, 1500)
+#       robot.send_speed()
+#       logger.info("Turn interrupted by button during approach")
+#       return False
+#   return True
 
 
 logger.debug("Objects Initialized")
