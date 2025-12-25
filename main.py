@@ -453,6 +453,9 @@ def catch_ball() -> int:
     robot.send_speed()
   robot.set_speed(1500, 1500)
   robot.send_speed()
+  prev_time = time.time()
+  while time.time() - prev_time < 0.2:
+    robot.send_speed()
   find_best_target()
   if robot.rescue_offset is None:
     logger.info("Catch successful")
@@ -554,9 +557,6 @@ def change_position() -> bool:
       return False
   robot.set_speed(1500, 1500)
   prev_time = time.time()
-  current_turning_angle = robot.rescue_turning_angle
-  current_turning_angle += 30
-  robot.write_rescue_turning_angle(current_turning_angle)
   while time.time() - prev_time < 0.2:
     robot.send_speed
   find_best_target()
