@@ -133,7 +133,6 @@ def predict_depth(image: np.ndarray) -> Optional[np.ndarray]:
     # Use the model's infer_image method which handles all preprocessing
     with torch.no_grad():
       depth = model.infer_image(image)
-
     return depth
   except Exception as e:
     logger.exception(f"Depth prediction failed: {e}")
@@ -247,6 +246,8 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
       image = cv2.rotate(image, cv2.ROTATE_180)
       current_time = time.time()
       cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+      depth_image = predict_depth(image)
+      cv2.imwrite(f"bin/{current_time:.3f}_rescue_depth.jpg", depth_image)
       if robot is not None:
         robot.write_rescue_image(image)
 
