@@ -10,7 +10,7 @@ mkdir -p ./bin
 if command -v parallel &>/dev/null; then
   echo "Using GNU parallel for maximum speed..."
   ssh robo@roboberry.local "find robocup2026-raspberrypi-kanto/bin/ -type f -printf '%P\n'" 2>/dev/null |
-    parallel -j 20 --bar \
+    parallel -j 16 --bar \
       rsync -az robo@roboberry.local:robocup2026-raspberrypi-kanto/bin/{} ./bin/{}
 
   # Cleanup deleted files
