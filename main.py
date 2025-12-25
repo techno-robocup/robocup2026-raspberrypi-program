@@ -404,7 +404,7 @@ def catch_ball() -> int:
     robot.send_speed()
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1024, 0)
+  robot.set_arm(1000, 0)
   robot.send_arm()
   robot.set_speed(1600, 1600)
   prev_time = time.time()
@@ -426,7 +426,7 @@ def catch_ball() -> int:
       logger.debug("Catch interrupted by button")
       return 1
     robot.send_speed()
-  robot.set_arm(1024, 1)
+  robot.set_arm(1000, 1)
   prev_time = time.time()
   while time.time() - prev_time < 0.5:
     robot.update_button_stat()
