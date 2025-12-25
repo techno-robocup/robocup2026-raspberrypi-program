@@ -7,9 +7,9 @@ echo "Fetching debug images in parallel..."
 mkdir -p ./bin
 
 # Method 1: If you have GNU parallel installed (fastest)
-if command -v parallel &> /dev/null; then
+if command -v parallel &>/dev/null; then
   echo "Using GNU parallel for maximum speed..."
-  ssh robo@roboberry.local "find robocup2026-raspberrypi-kanto/bin/ -type f -printf '%P\n'" 2>/dev/null | \
+  ssh robo@roboberry.local "find robocup2026-raspberrypi-kanto/bin/ -type f -printf '%P\n'" 2>/dev/null |
     parallel -j 8 --bar \
       rsync -az robo@roboberry.local:robocup2026-raspberrypi-kanto/bin/{} ./bin/{}
 
@@ -19,8 +19,8 @@ if command -v parallel &> /dev/null; then
 # Method 2: Fallback to xargs (works everywhere)
 else
   echo "GNU parallel not found, using xargs (install 'parallel' for faster transfers)..."
-  ssh robo@roboberry.local "cd robocup2026-raspberrypi-kanto/bin && find . -type f" 2>/dev/null | \
-    xargs -P 8 -I {} \
+  ssh robo@roboberry.local "cd robocup2026-raspberrypi-kanto/bin && find . -type f" 2>/dev/null |
+    xargs -P 32 -I {} \
       rsync -az robo@roboberry.local:robocup2026-raspberrypi-kanto/bin/{} ./bin/{}
 
   # Cleanup deleted files
