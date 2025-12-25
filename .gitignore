@@ -1,4 +1,5 @@
 .serena
 .venv
 .direnv
+.vscode
 # checkpoints/
