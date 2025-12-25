@@ -154,8 +154,8 @@ class Robot:
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
-    self.__rescue_turning_angle: int = 0
-    self.__rescue_ball_flag = False
+    self.__rescue_turning_angle: int = 0  # Total revolutions
+    self.__rescue_ball_flag = False  # catch ball flag
     self.__slope = None
     self.__is_stop = False
     self.__robot_stop: bool = False
