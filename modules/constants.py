@@ -100,7 +100,7 @@ TURN_CHECKPOINT_X_RATIO = 0.5  # Center horizontally
 TURN_CHECKPOINT_Y_RATIO = 0.3  # Lowered to 30% from top
 TURN_CHECKPOINT_SIZE = 10  # Size of area to check (pixels)
 
-RESCUE_FLAG_TIME = 3.0
+RESCUE_FLAG_TIME = 5.0
 
 lower_green = np.array([20, 130, 90])
 upper_green = np.array([100, 255, 255])
