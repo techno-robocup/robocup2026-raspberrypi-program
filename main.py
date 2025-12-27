@@ -772,6 +772,7 @@ if __name__ == "__main__":
   robot.set_arm(3072, 0)
   robot.send_arm()
   robot.send_speed()
+  robot.write_rescue_turning_angle(0)
   robot.write_last_slope_get_time(time.time())
   while True:
     robot.update_button_stat()
