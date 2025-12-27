@@ -813,8 +813,6 @@ if __name__ == "__main__":
               robot.write_rescue_target(consts.TargetList.GREEN_CAGE)
             if robot.rescue_target == consts.TargetList.BLACK_BALL.value:
               robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
-            # if is_not_took:
-              # retry_catch()
         else:
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
