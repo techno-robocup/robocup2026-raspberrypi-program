@@ -64,7 +64,7 @@ Linetrace_Camera_lores = (Linetrace_Camera_Size[0] // 8,
 Linetrace_Camera_precallback = Linetrace_Camera_precallback_func
 
 BLACK_WHITE_THRESHOLD = 100
-BALL_CATCH_SIZE = 120000
+BALL_CATCH_SIZE = 280000
 LINETRACE_CAMERA_LORES_HEIGHT = 180
 LINETRACE_CAMERA_LORES_WIDTH = 320
 LINETRACE_CROP_WIDTH_RATIO = 0.65
