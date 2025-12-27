@@ -811,7 +811,7 @@ if __name__ == "__main__":
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
             if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
-              robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
+              robot.write_rescue_target(consts.TargetList.GREEN_CAGE)
             if robot.rescue_target == consts.TargetList.BLACK_BALL.value:
               robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
         else:
