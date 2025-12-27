@@ -393,8 +393,10 @@ def signal_handler(sig, frame):
   robot.send_speed()
   sys.exit(0)
 
+is_bottom_sixth = False
 
 def find_best_target() -> None:
+  global is_bottom_sixth
   yolo_results = None
   current_time = time.time()
   with yolo_mutex:
@@ -455,6 +457,8 @@ def find_best_target() -> None:
           if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
             is_bottom_third = best_target_y and best_target_y > (image_height *
                                                                  2 / 3)
+            is_bottom_sixth = best_target_y and best_target_y > (image_height *
+                                                                  5/6)
             if best_angle is not None:
               ball_left = best_angle - best_target_w / 2 + image_width / 2
               ball_right = best_angle + best_target_w / 2 + image_width / 2
@@ -500,16 +504,6 @@ def catch_ball() -> int:
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_speed(1400 , 1400)
-  prev_time = time.time()
-  while time.time() - prev_time < 0.8:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Catch interrupted by button")
-      return 1
-    robot.send_speed()
   robot.set_arm(1400, 0)
   robot.send_arm()
   robot.set_speed(1650, 1650)
@@ -756,6 +750,18 @@ def calculate_exit() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
+def back() -> None:
+  prev_time = time.time()
+  robot.set_speed(1400, 1400)
+  while time.time - prev_time < 0.8:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.debug("Release interrupted by button")
+    robot.send_speed()
+  robot.set_speed(1400, 1400)
+  robot.send_speed()
 
 # def retry_catch() -> bool:
 #   global catch_failed_cnt
@@ -816,6 +822,8 @@ if __name__ == "__main__":
           motorl, motorr = calculate_ball()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
+          if is_bottom_sixth:
+
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
             if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
