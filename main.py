@@ -47,7 +47,7 @@ catch_failed_cnt = 0
 def is_valid_number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
-def clamp(value: int, min_val: int = 1000, max_val: int = 2000) -> int:
+def clamp(value: int, min_val: int = MIN_SPEED, max_val: int = MAX_SPEED) -> int:
   """Clamp value between min and max."""
   return max(min_val, min(max_val, value))
 
