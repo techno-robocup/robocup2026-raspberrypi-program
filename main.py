@@ -424,7 +424,7 @@ def find_best_target() -> None:
     best_size = None
     best_target_y = None
     best_target_w = None
-    best_target_h = None
+    # best_target_h = None
     min_dist = float("inf")
     cx = image_width / 2.0
     for box in boxes:
@@ -445,7 +445,7 @@ def find_best_target() -> None:
           best_size = area
           best_target_y = y_center
           best_target_w = w
-          best_target_h = h
+          # best_target_h = h
           if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
             is_bottom_third = best_target_y and best_target_y > (image_height *
                                                                  2 / 3)
@@ -472,7 +472,7 @@ def find_best_target() -> None:
           best_size = area
           best_target_y = y_center
           best_target_w = w
-          best_target_h = h
+          # best_target_h = h
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.debug(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
