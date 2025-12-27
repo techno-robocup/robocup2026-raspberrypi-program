@@ -298,6 +298,7 @@ def execute_line_recovery() -> bool:
   robot.send_speed()
   
   logger.info(f"Line recovery completed in {time.time() - start_time:.2f}s")
+  robot.write_last_slope_get_time(time.time())
   return True
 
 
