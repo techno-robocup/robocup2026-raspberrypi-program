@@ -785,12 +785,12 @@ if __name__ == "__main__":
       robot.set_speed(1500, 1500)
       robot.set_arm(3072, 0)
       robot.send_arm()
-      if robot.rescue_target == (consts.TargetList.SILVER_BALL or consts.TargetList.GREEN_CAGE):
-        robot.write_rescue_target(consts.TargetList.SILVER_BALL)
-      elif robot.rescue_target == (consts.TargetList.BLACK_BALL or consts.TargetList.RED_CAGE):
-        robot.write_rescue_target(consts.TargetList.BLACK_BALL)
+      if robot.rescue_target == (consts.TargetList.SILVER_BALL.value or consts.TargetList.GREEN_CAGE.value):
+        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+      elif robot.rescue_target == (consts.TargetList.BLACK_BALL.value or consts.TargetList.RED_CAGE.value):
+        robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
       else:
-        robot.write_rescue_target(consts.TargetList.EXIT)
+        robot.write_rescue_target(consts.TargetList.EXIT.value)
       logger.debug("robot stop true, stopping..")
       robot.write_linetrace_stop(False)
       robot.write_is_rescue_flag(False)
@@ -817,9 +817,9 @@ if __name__ == "__main__":
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
             if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
-              robot.write_rescue_target(consts.TargetList.GREEN_CAGE)
+              robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
             if robot.rescue_target == consts.TargetList.BLACK_BALL.value:
-              robot.write_rescue_target(consts.TargetList.RED_CAGE)
+              robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
             # if is_not_took:
               # retry_catch()
         else:
