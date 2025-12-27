@@ -243,7 +243,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
       image = mapped_array.array
       image = cv2.rotate(image, cv2.ROTATE_180)
       current_time = time.time()
-      cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
+      # cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
       image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
       depth = predict_depth(image_rgb)
       if depth is not None:
