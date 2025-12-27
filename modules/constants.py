@@ -64,7 +64,7 @@ Linetrace_Camera_lores = (Linetrace_Camera_Size[0] // 8,
 Linetrace_Camera_precallback = Linetrace_Camera_precallback_func
 
 BLACK_WHITE_THRESHOLD = 100
-BALL_CATCH_SIZE = 120000
+BALL_CATCH_SIZE = 140000
 LINETRACE_CAMERA_LORES_HEIGHT = 180
 LINETRACE_CAMERA_LORES_WIDTH = 320
 LINETRACE_CROP_WIDTH_RATIO = 0.65
@@ -79,8 +79,8 @@ LINE_RECOVERY_BACKUP_SPEED = 1200  # Motor speed for backing up (< 1500 = revers
 MIN_GREEN_AREA = 200
 MIN_RED_AREA = 400
 
-TURN_180_TIME = 3
-TURN_30_TIME = 0.5
+TURN_180_TIME = 1.8
+TURN_30_TIME = 0.3
 
 # Green mark intersection turning times (seconds)
 GREEN_MARK_APPROACH_TIME = 0.5
