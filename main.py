@@ -397,13 +397,12 @@ def signal_handler(sig, frame):
 def find_best_target() -> None:
   yolo_results = None
   current_time = time.time()
-  with yolo_mutex:
-    image = robot.rescue_image.copy()
+  # with yolo_mutex:
+  image = robot.rescue_image
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", image)
-  with yolo_mutex:
-    if time.time() - robot.last_yolo_time > 0.1:
-      yolo_results = consts.MODEL(image, verbose=False)
-      robot.write_last_yolo_time(time.time())
+  if time.time() - robot.last_yolo_time > 0.1:
+    yolo_results = consts.MODEL(image, verbose=False)
+    robot.write_last_yolo_time(time.time())
   result_image = robot.rescue_image
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
@@ -673,7 +672,7 @@ def change_position() -> bool:
   robot.set_speed(1500, 1500)
   prev_time = time.time()
   while time.time() - prev_time < 0.2:
-    robot.send_speed
+    robot.send_speed()
   find_best_target()
   # robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
