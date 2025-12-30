@@ -737,8 +737,8 @@ if __name__ == "__main__":
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
-          robot.set_speed(1700,1300)
-          sleep_sec(1, robot.send_speed)
+          robot.set_speed(1750,1250)
+          sleep_sec(1.3, robot.send_speed)
           while robot.linetrace_slope is None or robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
