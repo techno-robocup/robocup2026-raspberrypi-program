@@ -741,6 +741,7 @@ if __name__ == "__main__":
           sleep_sec(1, robot.send_speed)
           while robot.linetrace_slope is None:
             logger.info("Turning around in object avoidance...")
+            robot.write_last_slope_get_time(time.time())
             robot.set_speed(1550, 1650)
             robot.send_speed()
             if robot.robot_stop:
