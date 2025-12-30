@@ -205,7 +205,7 @@ class Robot:
   def ultrasonic(self) -> List[float]:
     assert self.__uart_device != None
     return list(map(float,
-                    Message(self.__uart_device.send("GET usonic")).Message))
+                    Message(self.__uart_device.send("GET usonic")).Message.split()))
 
   @property
   def button(self) -> bool:
