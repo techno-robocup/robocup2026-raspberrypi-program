@@ -40,7 +40,7 @@ class Message:
     return self.__id
 
   @property
-  def Message(self):
+  def Message(self) -> str:
     return self.__message
 
 
