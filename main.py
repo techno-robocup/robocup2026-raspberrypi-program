@@ -747,6 +747,7 @@ if __name__ == "__main__":
             if robot.robot_stop:
               logger.info("Robot interrupted during object avoidance")
               break
+          logger.info("Object avoidance ejected")
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
