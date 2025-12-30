@@ -280,7 +280,7 @@ def execute_line_recovery() -> bool:
   logger.info("Executing line recovery - backing up")
   
   start_time = time.time()
-  while time.time() - start_time < consts.LINE_RECOVERY_BACKUP_TIME:
+  while robot.line_area <= 5500:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
