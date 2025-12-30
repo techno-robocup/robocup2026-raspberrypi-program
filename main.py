@@ -391,7 +391,7 @@ def signal_handler(sig, frame):
   robot.send_speed()
   sys.exit(0)
 
-def sleep_sec(sec: float) -> int:
+def sleep_sec(sec: float, function) -> int:
   """Sleep for the specified number of seconds, checking for robot stop."""
   prev_time = time.time()
   while time.time() - prev_time < sec:
@@ -401,6 +401,8 @@ def sleep_sec(sec: float) -> int:
       robot.send_speed()
       logger.debug("Sleep interrupted by button")
       return 1
+    else:
+      function()
     robot.send_speed()
   return 0
 
