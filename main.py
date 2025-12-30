@@ -729,9 +729,19 @@ if __name__ == "__main__":
         robot.set_speed(motorl, motorr)
     else:
       if not robot.linetrace_stop:
+        ultrasonic_info = robot.ultrasonic
         # Check for green mark intersections before normal line following
         if should_process_green_mark():
           execute_green_mark_turn()
+        elif ultrasonic_info[0] <= 3: # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+          robot.set_speed(1650,1350)
+          sleep_sec(1, robot.send_speed)
+          while robot.linetrace_slope is not None:
+            robot.set_speed(1400, 1600)
+            robot.send_speed
+            if robot.robot_stop:
+              logger.info("Robot interrupted during object avoidance")
+              break
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
