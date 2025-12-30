@@ -739,7 +739,7 @@ if __name__ == "__main__":
           sleep_sec(1, robot.send_speed)
           robot.set_speed(1700,1300)
           sleep_sec(1, robot.send_speed)
-          while robot.linetrace_slope is None:
+          while robot.linetrace_slope is None or robot.line_area <= 10000:
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
             robot.set_speed(1550, 1650)
@@ -747,7 +747,7 @@ if __name__ == "__main__":
             if robot.robot_stop:
               logger.info("Robot interrupted during object avoidance")
               break
-          logger.info("Object avoidance ejected")
+          logger.info(f"Object avoidance ejected {robot.linetrace_slope} {robot.line_area}")
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
