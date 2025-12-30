@@ -744,6 +744,8 @@ if __name__ == "__main__":
             robot.write_last_slope_get_time(time.time())
             robot.set_speed(1430, 1670)
             robot.send_speed()
+            robot.set_speed(1650, 1650)
+            robot.send_speed()
             robot.update_button_stat()
             if robot.robot_stop:
               logger.info("Robot interrupted during object avoidance")
