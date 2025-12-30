@@ -738,11 +738,11 @@ if __name__ == "__main__":
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
           robot.set_speed(1750,1250)
-          sleep_sec(1.3, robot.send_speed)
+          sleep_sec(1.7, robot.send_speed)
           while robot.linetrace_slope is None or robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
-            robot.set_speed(1540, 1660)
+            robot.set_speed(1530, 1670)
             robot.send_speed()
             robot.update_button_stat()
             if robot.robot_stop:
