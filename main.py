@@ -685,6 +685,7 @@ if __name__ == "__main__":
   robot.write_last_slope_get_time(time.time())
   while True:
     robot.update_button_stat()
+    logger.info(robot.ultrasonic)
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.set_arm(3072, 0)
