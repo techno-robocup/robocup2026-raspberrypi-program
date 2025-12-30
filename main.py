@@ -737,7 +737,7 @@ if __name__ == "__main__":
           logger.info("Object avoidance triggered")
           robot.set_speed(1650,1350)
           sleep_sec(1, robot.send_speed)
-          while robot.linetrace_slope is not None:
+          while robot.linetrace_slope is None:
             logger.info("Turning around in object avoidance...")
             robot.set_speed(1550, 1650)
             robot.send_speed()
