@@ -25,7 +25,8 @@ class Message:
         self.__message = self.__message.strip()
       except ValueError as e:
         logger.get_logger().exception(
-            f"Failed to parse message. Expected format 'ID MESSAGE', got: '{args[0]}'. Error: {e}")
+            f"Failed to parse message. Expected format 'ID MESSAGE', got: '{args[0]}'. Error: {e}"
+        )
         raise
     else:
       logger.get_logger().error(
@@ -92,7 +93,8 @@ class uart_io:
       assert self.__Serial_port != None
       self.__Serial_port.write(str(message).encode("ascii"))
       logger.get_logger().debug(f"Sent message: {str(message)}")
-      logger.get_logger().debug(f"Waiting for reply (timeout: {self.__timeout}s)...")
+      logger.get_logger().debug(
+          f"Waiting for reply (timeout: {self.__timeout}s)...")
       while True:
         message_str = self.__Serial_port.read_until(b'\n').decode(
             'ascii').strip()
@@ -102,13 +104,18 @@ class uart_io:
             retMessage = Message(message_str)
             logger.get_logger().debug(f"Parsed message: {str(retMessage)}")
             if retMessage.Id == message.Id:
-              logger.get_logger().debug(f"✓ Reply received: '{retMessage.Message}'")
+              logger.get_logger().debug(
+                  f"✓ Reply received: '{retMessage.Message}'")
               return retMessage.Message
             elif retMessage.Id < message.Id:
-              logger.get_logger().debug(f"Ignoring old message (ID {retMessage.Id}, expected {message.Id})")
+              logger.get_logger().debug(
+                  f"Ignoring old message (ID {retMessage.Id}, expected {message.Id})"
+              )
               continue
             else:
-              logger.get_logger().warning(f"Received unexpected message ID {retMessage.Id} (sent {message.Id})")
+              logger.get_logger().warning(
+                  f"Received unexpected message ID {retMessage.Id} (sent {message.Id})"
+              )
               return False
           except ValueError as e:
             # Log corrupted message and skip it (likely UART data loss)
@@ -188,7 +195,7 @@ class Robot:
     # if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
     #   logger.get_logger().info(
     #       f"Stopping due to last time set too long {self.__last_time_set}")
-      # return self.__uart_device.send("MOTOR 1500 1500")
+    # return self.__uart_device.send("MOTOR 1500 1500")
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
@@ -204,8 +211,9 @@ class Robot:
   @property
   def ultrasonic(self) -> List[float]:
     assert self.__uart_device != None
-    return list(map(float,
-                    Message(self.__uart_device.send("GET usonic")).Message.split()))
+    return list(
+        map(float,
+            Message(self.__uart_device.send("GET usonic")).Message.split()))
 
   @property
   def button(self) -> bool:
@@ -260,7 +268,8 @@ class Robot:
 
   def update_button_stat(self) -> None:
     response = self.__uart_device.send("GET button")
-    logger.get_logger().debug(f"Button response: {response} (type: {type(response).__name__})")
+    logger.get_logger().debug(
+        f"Button response: {response} (type: {type(response).__name__})")
     self.__robot_stop = response == "OFF"
     return None
 
@@ -354,7 +363,6 @@ class Robot:
   @property
   def last_slope_get_time(self) -> float:
     return self.__last_slope_get_time
-
 
   @property
   def robot_stop(self) -> bool:

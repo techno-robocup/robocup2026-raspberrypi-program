@@ -44,10 +44,16 @@ EOP = 1  # Exit Offset P
 
 catch_failed_cnt = 0
 
-def is_valid_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
-def clamp(value: int, min_val: int = MIN_SPEED, max_val: int = MAX_SPEED) -> int:
+def is_valid_number(value):
+  return isinstance(
+      value,
+      (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def clamp(value: int,
+          min_val: int = MIN_SPEED,
+          max_val: int = MAX_SPEED) -> int:
   """Clamp value between min and max."""
   return max(min_val, min(max_val, value))
 
@@ -243,7 +249,8 @@ def execute_green_mark_turn() -> bool:
   return True  # Completed successfully
 
 
-def should_execute_line_recovery(line_area: Optional[float], angle_error: float) -> bool:
+def should_execute_line_recovery(line_area: Optional[float],
+                                 angle_error: float) -> bool:
   """
   Check if line recovery should be executed.
   
@@ -260,10 +267,10 @@ def should_execute_line_recovery(line_area: Optional[float], angle_error: float)
   """
   if line_area is None or not is_valid_number(line_area):
     return False
-  
+
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   angle_condition = abs(angle_error) > consts.LINE_RECOVERY_ANGLE_THRESHOLD
-  
+
   return area_condition and angle_condition
 
 
@@ -279,7 +286,7 @@ def execute_line_recovery() -> bool:
     False if interrupted by button
   """
   logger.info("Executing line recovery - backing up")
-  
+
   start_time = time.time()
   while robot.line_area <= 5500:
     robot.update_button_stat()
@@ -288,16 +295,16 @@ def execute_line_recovery() -> bool:
       robot.send_speed()
       logger.debug("Line recovery interrupted by button")
       return False
-    
+
     # Back up with both motors at the same speed
-    robot.set_speed(consts.LINE_RECOVERY_BACKUP_SPEED, 
+    robot.set_speed(consts.LINE_RECOVERY_BACKUP_SPEED,
                     consts.LINE_RECOVERY_BACKUP_SPEED)
     robot.send_speed()
-  
+
   # Stop after backup
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  
+
   logger.info(f"Line recovery completed in {time.time() - start_time:.2f}s")
   robot.write_last_slope_get_time(time.time())
   return True
@@ -313,11 +320,11 @@ def get_current_angle_error() -> Optional[float]:
   slope = robot.linetrace_slope
   if slope is None or not is_valid_number(slope):
     return None
-  
+
   angle = math.atan(slope)
   if angle < 0:
     angle += math.pi
-  
+
   return angle - (math.pi / 2)
 
 
@@ -337,9 +344,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   - angle < π/2: line tilts right, turn right
   - angle > π/2: line tilts left, turn left
   """
-  if slope is None: # When the were no args
+  if slope is None:  # When the were no args
     slope = robot.linetrace_slope
-  if slope is None: # When the robot could not find an appropriate slope
+  if slope is None:  # When the robot could not find an appropriate slope
     if time.time() - robot.last_slope_get_time > consts.RESCUE_FLAG_TIME:
       robot.write_is_rescue_flag(True)
       return 1500, 1500
@@ -358,7 +365,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # Calculate speed adjustment based on line area
   line_area = robot.line_area
   speed_multiplier = 1.0  # Default: full speed
-  
+
   if line_area is not None and is_valid_number(line_area):
     # Reduce speed when line gets smaller
     # Area thresholds:
@@ -367,20 +374,23 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     # < 500: significant reduction (60-80%)
     if line_area < 1000:
       # Linear interpolation between 0.6 (at area=300) and 1.0 (at area=1000)
-      speed_multiplier = 0.2 + (line_area - consts.MIN_BLACK_LINE_AREA) / (1000 - consts.MIN_BLACK_LINE_AREA) * 0.8
+      speed_multiplier = 0.2 + (line_area - consts.MIN_BLACK_LINE_AREA) / (
+          1000 - consts.MIN_BLACK_LINE_AREA) * 0.8
       speed_multiplier = max(0.6, min(1.0, speed_multiplier))
-      logger.info(f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}")
+      logger.info(
+          f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
+      )
 
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
   adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier)
-  
+
   motor_l = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) - steering,
-      MIN_SPEED, MAX_SPEED)
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
+      steering, MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) + steering,
-      MIN_SPEED, MAX_SPEED)
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
+      steering, MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
@@ -392,7 +402,8 @@ def signal_handler(sig, frame):
   robot.send_speed()
   sys.exit(0)
 
-def sleep_sec(sec: float, function = None) -> int:
+
+def sleep_sec(sec: float, function=None) -> int:
   """Sleep for the specified number of seconds, checking for robot stop."""
   prev_time = time.time()
   while time.time() - prev_time < sec:
@@ -406,6 +417,7 @@ def sleep_sec(sec: float, function = None) -> int:
       function()
     robot.send_speed()
   return 0
+
 
 def find_best_target() -> None:
   yolo_results = None
@@ -509,7 +521,7 @@ def catch_ball() -> int:
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_speed(1400 , 1400)
+  robot.set_speed(1400, 1400)
   sleep_sec(0.8)
   robot.set_speed(1500, 1500)
   robot.send_speed()
@@ -523,7 +535,7 @@ def catch_ball() -> int:
   robot.send_arm()
   robot.set_speed(1600, 1600)
   sleep_sec(2)
-  robot.set_speed(1400,1400)
+  robot.set_speed(1400, 1400)
   sleep_sec(1)
   robot.set_arm(1000, 1)
   sleep_sec(0.5)
@@ -672,7 +684,6 @@ def calculate_exit() -> tuple[int, int]:
 #       return False
 #   return True
 
-
 logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
@@ -735,11 +746,12 @@ if __name__ == "__main__":
         # Check for green mark intersections before normal line following
         if should_process_green_mark():
           execute_green_mark_turn()
-        elif ultrasonic_info[0] <= 3: # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+        elif ultrasonic_info[
+            0] <= 3:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
-          robot.set_speed(1750,1250)
+          robot.set_speed(1750, 1250)
           sleep_sec(1.7, robot.send_speed)
           while robot.linetrace_slope is None or robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
             logger.info("Turning around in object avoidance...")
@@ -750,15 +762,18 @@ if __name__ == "__main__":
             if robot.robot_stop:
               logger.info("Robot interrupted during object avoidance")
               break
-          logger.info(f"Ejecting object avoidance by {robot.linetrace_slope} {robot.line_area}")
+          logger.info(
+              f"Ejecting object avoidance by {robot.linetrace_slope} {robot.line_area}"
+          )
           robot.set_speed(1600, 1600)
           sleep_sec(1)
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
           line_area = robot.line_area
-          
-          if angle_error is not None and should_execute_line_recovery(line_area, angle_error):
+
+          if angle_error is not None and should_execute_line_recovery(
+              line_area, angle_error):
             execute_line_recovery()
           else:
             motorl, motorr = calculate_motor_speeds()
