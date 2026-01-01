@@ -494,12 +494,20 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
+          robot.write_rescue_ball_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
           best_target_y = y_center
           best_target_w = w
           # best_target_h = h
+          # Check if ball is close enough to catch (same logic as primary target)
+          is_bottom_third = best_target_y and best_target_y > (image_height * 2 / 3)
+          ball_left = best_angle - best_target_w / 2 + image_width / 2
+          ball_right = best_angle + best_target_w / 2 + image_width / 2
+          includes_center = ball_left <= image_width / 2 <= ball_right
+          if is_bottom_third and includes_center:
+            robot.write_rescue_ball_flag(True)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.debug(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
