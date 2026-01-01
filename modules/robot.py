@@ -181,6 +181,16 @@ class Robot:
     self.__uart_device = device
 
   def set_speed(self, motor_l: int, motor_r: int) -> None:
+    """
+    Sets the motor speed in the robot class
+
+    Args:
+        motor_l (int): The left motor's speed
+        motor_r (int): The right motor's speed
+
+    Returns:
+        None: Always returns None
+    """
     self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l),
                          consts.MOTOR_MAX_SPEED)
     self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r),
@@ -189,6 +199,12 @@ class Robot:
     return None
 
   def send_speed(self):
+    """
+    Sends the speed currently set in the robot class
+
+    Returns:
+        string: The reply from ESP32
+    """
     assert self.__uart_device != None
     assert isinstance(self.__MOTOR_L, int)
     assert isinstance(self.__MOTOR_R, int)
@@ -199,11 +215,24 @@ class Robot:
     return self.__uart_device.send(f"MOTOR {self.__MOTOR_L} {self.__MOTOR_R}")
 
   def set_arm(self, angle: int, wire: int):
+    """
+    Sets the information of the arm
+
+    Args:
+        angle (int): The angle range from 0 ~ 4095
+        wire (int): The state of the wire(0 or 1)
+    """
     assert wire == 0 or wire == 1
     self.__MOTOR_ARM = angle
     self.__MOTOR_WIRE = wire
 
   def send_arm(self):
+    """
+    Sends the information about the arm angle and wire tension
+
+    Returns:
+        string: The reply from ESP32
+    """
     assert self.__uart_device != None
     return self.__uart_device.send(
         f"Rescue {self.__MOTOR_ARM:4d} {self.__MOTOR_WIRE}")
