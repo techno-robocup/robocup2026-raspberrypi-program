@@ -727,6 +727,7 @@ if __name__ == "__main__":
         if robot.rescue_target == consts.TargetList.EXIT.value:
           motorl, motorr = calculate_exit()
           robot.set_speed(motorl, motorr)
+          robot.send_speed()
           if robot.linetrace_slope is not None:
             robot.set_speed(1500, 1500)
             robot.send_speed()
