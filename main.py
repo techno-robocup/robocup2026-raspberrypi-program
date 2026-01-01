@@ -737,7 +737,7 @@ if __name__ == "__main__":
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
-          if robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
+          if robot.rescue_size is not None and robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
             release_ball()
         robot.set_speed(motorl, motorr)
     else:
