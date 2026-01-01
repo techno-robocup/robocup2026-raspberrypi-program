@@ -818,12 +818,15 @@ if __name__ == "__main__":
   robot.send_arm()
   robot.send_speed()
   robot.write_rescue_turning_angle(0)
+  robot.write_linetrace_stop(False)
+  robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.set_arm(3072, 0)
+      robot.send_speed()
       robot.send_arm()
       robot.write_rescue_turning_angle(0)
       logger.debug("robot stop true, stopping..")
