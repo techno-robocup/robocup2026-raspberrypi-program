@@ -740,8 +740,9 @@ def calculate_ball() -> tuple[int, int]:
   logger.info(f"offset: {angle} size:{size}")
   logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED,
-               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+  base_L, base_R = clamp(base_L), clamp(base_R)
+  logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
+  return base_L, base_R
 
 
 def calculate_cage() -> tuple[int, int]:
