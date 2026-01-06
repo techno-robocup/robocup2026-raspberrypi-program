@@ -655,6 +655,7 @@ def release_ball() -> bool:
   robot.send_arm()
   sleep_sec(1.5)
   robot.set_arm(3072, 0)
+  robot.send_arm()
   sleep_sec(0.5)
   robot.set_speed(1400, 1400)
   sleep_sec(1)
