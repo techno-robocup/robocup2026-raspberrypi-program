@@ -239,7 +239,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     Rescue_Depth_precallback_func(request)
   else:
     # In rescue mode - just capture image for YOLO detection
-    logger.debug("Rescue Camera pre-callback triggered (rescue mode)")
+    logger.info("Rescue Camera pre-callback triggered (rescue mode)")
     with MappedArray(request, "lores") as mapped_array:
       image = mapped_array.array
       image = cv2.rotate(image, cv2.ROTATE_180)
