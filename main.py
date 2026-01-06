@@ -6,12 +6,16 @@ import signal
 import sys
 import cv2
 import math
+import threading
 from typing import Optional
 from ultralytics import YOLO
 
 logger = modules.logger.get_logger()
 
 logger.debug("Logger initialized")
+
+# Mutex lock for thread-safe YOLO evaluation
+yolo_lock = threading.Lock()
 
 robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
@@ -471,7 +475,7 @@ def find_best_target() -> None:
   # Reset ball flag at start - will be set True only if catchable ball detected
   robot.write_rescue_ball_flag(False)
   yolo_results = None
-  if time.time() - robot.last_yolo_time > 0.1:
+  with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
     robot.write_last_yolo_time(time.time())
   current_time = time.time()
