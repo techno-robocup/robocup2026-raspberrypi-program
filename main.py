@@ -765,6 +765,8 @@ def calculate_cage() -> tuple[int, int]:
   if angle is None or size is None:
     return 1500, 1500
   diff_angle = angle * COP
+  diff_min_max = 100
+  diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
   base_L = 1500 + diff_angle + 150
   base_R = 1500 - diff_angle + 150
   logger.info(f"offset: {angle} size:{size}")
