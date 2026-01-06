@@ -487,13 +487,13 @@ def find_best_target() -> None:
       logger.error(f"Error plotting YOLO result: {e}.")
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
-    logger.debug("Target not found")
+    logger.info("Target not found")
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
     return
   boxes = yolo_results[0].boxes
   if boxes is None or len(boxes) == 0:
-    logger.debug("Target not found")
+    logger.info("Target not found")
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
     return
@@ -538,11 +538,11 @@ def find_best_target() -> None:
               includes_center = False
             if is_bottom_third and includes_center:
               robot.write_rescue_ball_flag(True)
-        logger.debug(
+        logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-        logger.debug("Override")
+        logger.info("Override")
         robot.write_rescue_turning_angle(0)
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
@@ -563,7 +563,7 @@ def find_best_target() -> None:
           if is_bottom_third and includes_center:
             robot.write_rescue_ball_flag(True)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-        logger.debug(
+        logger.info(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
     if best_angle is None:
