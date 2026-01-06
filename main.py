@@ -850,7 +850,10 @@ if __name__ == "__main__":
       if (robot.rescue_offset is None) or (robot.rescue_size is None):
         change_position()
         robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
-        set_target()
+        # Only call set_target() if searching for balls (rotation-based logic).
+        # For cages/exit, keep searching the current target.
+        if robot.rescue_target in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
+          set_target()
       else:
         if robot.rescue_target == consts.TargetList.EXIT.value:
           motorl, motorr = calculate_exit()
