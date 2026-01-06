@@ -843,6 +843,10 @@ if __name__ == "__main__":
       robot.write_last_slope_get_time(time.time())
     elif robot.is_rescue_flag:
       find_best_target()
+      try:
+        logger.info(f"Searching for target: {consts.TargetList(robot.rescue_target).name} (id={robot.rescue_target})")
+      except Exception:
+        logger.info(f"Searching for target id: {robot.rescue_target}")
       if (robot.rescue_offset is None) or (robot.rescue_size is None):
         change_position()
         robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
