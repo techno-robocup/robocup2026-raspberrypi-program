@@ -866,6 +866,12 @@ if __name__ == "__main__":
               robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
             elif robot.rescue_target == consts.TargetList.BLACK_BALL.value:
               robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
+            # After catching, clear cached target data and force an immediate
+            # YOLO evaluation so the robot can detect and move toward the cage.
+            robot.write_rescue_offset(None)
+            robot.write_rescue_size(None)
+            robot.write_last_yolo_time(0)
+            logger.info("Post-catch: reset rescue_offset/size and forced YOLO run")
         else:
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
