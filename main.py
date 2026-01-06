@@ -6,12 +6,16 @@ import signal
 import sys
 import cv2
 import math
+import threading
 from typing import Optional
 from ultralytics import YOLO
 
 logger = modules.logger.get_logger()
 
 logger.debug("Logger initialized")
+
+# Mutex lock for thread-safe YOLO evaluation
+yolo_lock = threading.Lock()
 
 robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
@@ -36,7 +40,7 @@ assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 230
-DP = 160
+DP = 180
 BOP = 0.05  # Ball Offset P
 BSP = 3  # Ball Size P
 COP = 0.3  # Cage Offset P
@@ -44,11 +48,34 @@ EOP = 1  # Exit Offset P
 
 catch_failed_cnt = 0
 
-def is_valid_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
-def clamp(value: int, min_val: int = MIN_SPEED, max_val: int = MAX_SPEED) -> int:
-  """Clamp value between min and max."""
+def is_valid_number(value) -> bool:
+  """Check if value is a valid finite number (int or float, not bool).
+
+  Args:
+    value: The value to check.
+
+  Returns:
+    True if value is a finite int or float (excluding bool).
+  """
+  return isinstance(
+      value,
+      (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def clamp(value: int,
+          min_val: int = MIN_SPEED,
+          max_val: int = MAX_SPEED) -> int:
+  """Clamp value between min and max.
+
+  Args:
+    value: The value to clamp.
+    min_val: Minimum allowed value (default: MIN_SPEED).
+    max_val: Maximum allowed value (default: MAX_SPEED).
+
+  Returns:
+    The clamped value within [min_val, max_val].
+  """
   return max(min_val, min(max_val, value))
 
 
@@ -234,15 +261,17 @@ def execute_green_mark_turn() -> bool:
   # Stop after turn
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_speed(1350, 1350)
+  robot.set_speed(1330, 1330)
   robot.send_speed()
   time.sleep(0.8)
   robot.set_speed(1500, 1500)
   robot.send_speed()
+  robot.write_last_slope_get_time(time.time())
   return True  # Completed successfully
 
 
-def should_execute_line_recovery(line_area: Optional[float], angle_error: float) -> bool:
+def should_execute_line_recovery(line_area: Optional[float],
+                                 angle_error: float) -> bool:
   """
   Check if line recovery should be executed.
   
@@ -259,10 +288,10 @@ def should_execute_line_recovery(line_area: Optional[float], angle_error: float)
   """
   if line_area is None or not is_valid_number(line_area):
     return False
-  
+
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   angle_condition = abs(angle_error) > consts.LINE_RECOVERY_ANGLE_THRESHOLD
-  
+
   return area_condition and angle_condition
 
 
@@ -278,25 +307,25 @@ def execute_line_recovery() -> bool:
     False if interrupted by button
   """
   logger.info("Executing line recovery - backing up")
-  
+
   start_time = time.time()
-  while time.time() - start_time < consts.LINE_RECOVERY_BACKUP_TIME:
+  while robot.line_area <= 5500:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       logger.debug("Line recovery interrupted by button")
       return False
-    
+
     # Back up with both motors at the same speed
-    robot.set_speed(consts.LINE_RECOVERY_BACKUP_SPEED, 
+    robot.set_speed(consts.LINE_RECOVERY_BACKUP_SPEED,
                     consts.LINE_RECOVERY_BACKUP_SPEED)
     robot.send_speed()
-  
+
   # Stop after backup
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  
+
   logger.info(f"Line recovery completed in {time.time() - start_time:.2f}s")
   robot.write_last_slope_get_time(time.time())
   return True
@@ -312,11 +341,11 @@ def get_current_angle_error() -> Optional[float]:
   slope = robot.linetrace_slope
   if slope is None or not is_valid_number(slope):
     return None
-  
+
   angle = math.atan(slope)
   if angle < 0:
     angle += math.pi
-  
+
   return angle - (math.pi / 2)
 
 
@@ -336,9 +365,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   - angle < π/2: line tilts right, turn right
   - angle > π/2: line tilts left, turn left
   """
-  if slope is None: # When the were no args
+  if slope is None:  # When the were no args
     slope = robot.linetrace_slope
-  if slope is None: # When the robot could not find an appropriate slope
+  if slope is None:  # When the robot could not find an appropriate slope
     if time.time() - robot.last_slope_get_time > consts.RESCUE_FLAG_TIME:
       robot.write_is_rescue_flag(True)
       return 1500, 1500
@@ -357,7 +386,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # Calculate speed adjustment based on line area
   line_area = robot.line_area
   speed_multiplier = 1.0  # Default: full speed
-  
+
   if line_area is not None and is_valid_number(line_area):
     # Reduce speed when line gets smaller
     # Area thresholds:
@@ -366,35 +395,87 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     # < 500: significant reduction (60-80%)
     if line_area < 1000:
       # Linear interpolation between 0.6 (at area=300) and 1.0 (at area=1000)
-      speed_multiplier = 0.2 + (line_area - consts.MIN_BLACK_LINE_AREA) / (1000 - consts.MIN_BLACK_LINE_AREA) * 0.8
+      speed_multiplier = 0.2 + (line_area - consts.MIN_BLACK_LINE_AREA) / (
+          1000 - consts.MIN_BLACK_LINE_AREA) * 0.8
       speed_multiplier = max(0.6, min(1.0, speed_multiplier))
-      logger.info(f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}")
+      logger.info(
+          f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
+      )
 
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
   adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier)
-  
+
   motor_l = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) - steering,
-      MIN_SPEED, MAX_SPEED)
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
+      steering, MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) + steering,
-      MIN_SPEED, MAX_SPEED)
+      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
+      steering, MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
 
 def signal_handler(sig, frame):
-  """Handle SIGINT for graceful shutdown."""
+  """Handle SIGINT (Ctrl+C) for graceful shutdown.
+
+  Stops the robot motors and exits the program cleanly.
+
+  Args:
+    sig: Signal number received.
+    frame: Current stack frame (unused).
+  """
   logger.info("Received shutdown signal")
   robot.set_speed(1500, 1500)
   robot.send_speed()
   sys.exit(0)
 
 
+def sleep_sec(sec: float, function=None) -> int:
+  """Sleep for the specified duration while monitoring robot stop button.
+
+  Continuously sends motor speed commands during sleep and can execute
+  an optional callback function each iteration.
+
+  Args:
+    sec: Duration to sleep in seconds.
+    function: Optional callback function to execute each iteration.
+
+  Returns:
+    1 if interrupted by robot stop button, 0 if completed normally.
+  """
+  prev_time = time.time()
+  while time.time() - prev_time < sec:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.debug("Sleep interrupted by button")
+      return 1
+    elif function is not None:
+      function()
+    robot.send_speed()
+  return 0
+
+
 def find_best_target() -> None:
+  """Detect and track the best rescue target using YOLO object detection.
+
+  Runs YOLO inference on the rescue camera image to find balls and cages.
+  Updates robot state with the offset angle and size of the closest target
+  matching the current rescue_target type. Also handles override logic
+  when searching for black ball but finding silver ball.
+
+  Updates:
+    - robot.rescue_offset: Horizontal offset from image center (pixels).
+    - robot.rescue_size: Area of the detected target (pixels^2).
+    - robot.rescue_ball_flag: True if ball is close enough to catch.
+    - robot.rescue_target: May switch to SILVER_BALL on override.
+  """
+  # Reset ball flag at start - will be set True only if catchable ball detected
+  robot.write_rescue_ball_flag(False)
   yolo_results = None
-  if time.time() - robot.last_yolo_time > 0.1:
+  with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
     robot.write_last_yolo_time(time.time())
   current_time = time.time()
@@ -424,7 +505,7 @@ def find_best_target() -> None:
     best_size = None
     best_target_y = None
     best_target_w = None
-    best_target_h = None
+    # best_target_h = None
     min_dist = float("inf")
     cx = image_width / 2.0
     for box in boxes:
@@ -445,7 +526,7 @@ def find_best_target() -> None:
           best_size = area
           best_target_y = y_center
           best_target_w = w
-          best_target_h = h
+          # best_target_h = h
           if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
             is_bottom_third = best_target_y and best_target_y > (image_height *
                                                                  2 / 3)
@@ -467,12 +548,20 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
+          robot.write_rescue_ball_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
           best_target_y = y_center
           best_target_w = w
-          best_target_h = h
+          # best_target_h = h
+          # Check if ball is close enough to catch (same logic as primary target)
+          is_bottom_third = best_target_y and best_target_y > (image_height * 2 / 3)
+          ball_left = best_angle - best_target_w / 2 + image_width / 2
+          ball_right = best_angle + best_target_w / 2 + image_width / 2
+          includes_center = ball_left <= image_width / 2 <= ball_right
+          if is_bottom_third and includes_center:
+            robot.write_rescue_ball_flag(True)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.debug(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
@@ -488,81 +577,44 @@ def find_best_target() -> None:
 
 
 def catch_ball() -> int:
+  """Execute the ball catching sequence using the robot arm.
+
+  Performs a timed sequence of motor and arm movements to approach,
+  lower the arm, grab the ball, and lift it. The sequence includes
+  forward movement, arm positioning, and grip activation.
+
+  Returns:
+    0 on successful completion (catch verification is not implemented).
+  """
   logger.debug("Executing catch_ball()")
   # Store which ball type we're catching
   logger.info(
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_speed(1400 , 1400)
-  prev_time = time.time()
-  while time.time() - prev_time < 0.8:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Catch interrupted by button")
-      return 1
-    robot.send_speed()
+  robot.set_speed(1400, 1400)
+  sleep_sec(0.8)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
   robot.set_arm(1400, 0)
   robot.send_arm()
   robot.set_speed(1650, 1650)
-  prev_time = time.time()
-  while time.time() - prev_time < 2:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Catch interrupted by button")
-      return 1
-    robot.send_speed()
+  sleep_sec(2)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1000, 0)
   robot.send_arm()
   robot.set_speed(1600, 1600)
-  prev_time = time.time()
-  while time.time() - prev_time < 2:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Catch interrupted by button")
-      return 1
-    robot.send_speed()
-  prev_time = time.time()
-  robot.set_speed(1400,1400)
-  while time.time() - prev_time < 1:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Catch interrupted by button")
-      return 1
-    robot.send_speed()
+  sleep_sec(2)
+  robot.set_speed(1400, 1400)
+  sleep_sec(1)
   robot.set_arm(1000, 1)
-  prev_time = time.time()
-  while time.time() - prev_time < 0.5:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Catch interrupted by button")
-      return 1
-    robot.send_arm()
+  sleep_sec(0.5)
   robot.send_arm()
   robot.set_arm(3072, 1)
   robot.send_arm()
   robot.set_speed(1450, 1450)
-  prev_time = time.time()
-  while time.time() - prev_time < 1:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Catch interrupted by button")
-      return 1
-    robot.send_speed()
+  sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   return 0
@@ -582,71 +634,32 @@ def catch_ball() -> int:
 
 
 def release_ball() -> bool:
+  """Execute the ball release sequence at the cage.
+
+  Drives forward to approach the cage, opens the gripper to release
+  the ball, backs up slightly, then performs a 180-degree turn to
+  face away from the cage. Calls set_target() to determine next target.
+
+  Returns:
+    True on successful completion.
+  """
   logger.debug("Executing release_ball()")
-  prev_time = time.time()
   robot.set_speed(1700, 1700)
-  while time.time() - prev_time < 2.2:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_speed()
+  sleep_sec(2.2)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  prev_time = time.time()
   robot.set_speed(1400, 1400)
-  while time.time() - prev_time < 0.5:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_speed()
+  sleep_sec(0.5)
   robot.set_speed(1500, 1500)
   robot.set_arm(1536, 0)
   robot.send_speed()
-  prev_time = time.time()
-  while time.time() - prev_time < 1.5:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_arm()
+  sleep_sec(1.5)
   robot.set_arm(3072, 0)
-  prev_time = time.time()
-  while time.time() - prev_time < 0.5:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_arm()
-  prev_time = time.time()
+  sleep_sec(0.5)
   robot.set_speed(1400, 1400)
-  while time.time() - prev_time < 1:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_speed()
-  prev_time = time.time()
+  sleep_sec(1)
   robot.set_speed(1750, 1250)
-  while time.time() - prev_time < consts.TURN_180_TIME:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Release interrupted by button")
-      return False
-    robot.send_speed()
+  sleep_sec(consts.TURN_180_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   set_target()
@@ -654,21 +667,20 @@ def release_ball() -> bool:
 
 
 def change_position() -> bool:
+  """Rotate approximately 30 degrees to search for targets.
+
+  Called when no target is visible. Rotates the robot in place,
+  then runs find_best_target() to check for newly visible targets.
+
+  Returns:
+    True on successful completion.
+  """
   logger.debug("Change position")
   prev_time = time.time()
-  while time.time() - prev_time < consts.TURN_30_TIME:
-    robot.set_speed(1750, 1250)
-    robot.send_speed()
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.debug("Position change interrupted by button")
-      return False
+  robot.set_speed(1750, 1250)
+  sleep_sec(consts.TURN_30_TIME)
   robot.set_speed(1500, 1500)
-  prev_time = time.time()
-  while time.time() - prev_time < 0.2:
-    robot.send_speed
+  sleep_sec(0.2)
   find_best_target()
   # robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
@@ -676,6 +688,17 @@ def change_position() -> bool:
 
 
 def set_target() -> bool:
+  """Set the rescue target based on cumulative rotation angle.
+
+  Determines which target to search for based on how much the robot
+  has rotated during the rescue phase:
+    - 0-360 degrees: Search for SILVER_BALL
+    - 360-720 degrees: Search for BLACK_BALL
+    - >720 degrees: Search for EXIT
+
+  Returns:
+    True if target was set, False if turning angle was None.
+  """
   if robot.rescue_turning_angle is None:
     robot.write_rescue_turning_angle(0)
     return False
@@ -690,9 +713,20 @@ def set_target() -> bool:
 
 
 def calculate_ball() -> tuple[int, int]:
+  """Calculate motor speeds to approach a ball target.
+
+  Uses the ball's horizontal offset for steering and its apparent size
+  (area) for speed control. Larger offset = more steering correction.
+  Smaller size = faster approach speed (ball is further away).
+
+  Returns:
+    Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
+    Returns (1500, 1500) if target data is unavailable.
+  """
   angle = robot.rescue_offset
   size = robot.rescue_size
   if angle is None or size is None:
+    logger.warning(f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}")
     return 1500, 1500
   diff_angle = 0
   if abs(angle) > 30:
@@ -710,11 +744,21 @@ def calculate_ball() -> tuple[int, int]:
   logger.info(f"offset: {angle} size:{size}")
   logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED,
-               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+  base_L, base_R = clamp(base_L), clamp(base_R)
+  logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
+  return base_L, base_R
 
 
 def calculate_cage() -> tuple[int, int]:
+  """Calculate motor speeds to approach a cage target.
+
+  Uses the cage's horizontal offset for steering correction.
+  Applies a constant forward speed bias for steady approach.
+
+  Returns:
+    Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
+    Returns (1500, 1500) if target data is unavailable.
+  """
   angle = robot.rescue_offset
   size = robot.rescue_size
   if angle is None or size is None:
@@ -729,6 +773,15 @@ def calculate_cage() -> tuple[int, int]:
 
 
 def calculate_exit() -> tuple[int, int]:
+  """Calculate motor speeds to approach the exit target.
+
+  Uses the exit marker's horizontal offset for steering correction.
+  Includes a deadband (±10) to reduce oscillation when nearly aligned.
+
+  Returns:
+    Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
+    Returns (1500, 1500) if target data is unavailable.
+  """
   angle = robot.rescue_offset
   size = robot.rescue_size
   if angle is None or size is None:
@@ -760,10 +813,10 @@ def calculate_exit() -> tuple[int, int]:
 #       return False
 #   return True
 
-
 logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
+  assert isinstance(robot, modules.robot.Robot)
   # Register signal handler for graceful shutdown
   signal.signal(signal.SIGINT, signal_handler)
 
@@ -772,19 +825,18 @@ if __name__ == "__main__":
   robot.set_arm(3072, 0)
   robot.send_arm()
   robot.send_speed()
+  robot.write_rescue_turning_angle(0)
+  robot.write_linetrace_stop(False)
+  robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.set_arm(3072, 0)
+      robot.send_speed()
       robot.send_arm()
-      if robot.rescue_target == (consts.TargetList.SILVER_BALL or consts.TargetList.GREEN_CAGE):
-        robot.write_rescue_target(consts.TargetList.SILVER_BALL)
-      elif robot.rescue_target == (consts.TargetList.BLACK_BALL or consts.TargetList.RED_CAGE):
-        robot.write_rescue_target(consts.TargetList.BLACK_BALL)
-      else:
-        robot.write_rescue_target(consts.TargetList.EXIT)
+      robot.write_rescue_turning_angle(0)
       logger.debug("robot stop true, stopping..")
       robot.write_linetrace_stop(False)
       robot.write_is_rescue_flag(False)
@@ -799,6 +851,7 @@ if __name__ == "__main__":
         if robot.rescue_target == consts.TargetList.EXIT.value:
           motorl, motorr = calculate_exit()
           robot.set_speed(motorl, motorr)
+          robot.send_speed()
           if robot.linetrace_slope is not None:
             robot.set_speed(1500, 1500)
             robot.send_speed()
@@ -809,32 +862,56 @@ if __name__ == "__main__":
           robot.send_speed()
           if robot.rescue_ball_flag:
             is_not_took = catch_ball()
-            # if is_not_took:
-              # retry_catch()
+            if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+              robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
+            elif robot.rescue_target == consts.TargetList.BLACK_BALL.value:
+              robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
         else:
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
-          if robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
+          if robot.rescue_size is not None and robot.rescue_size >= consts.BALL_CATCH_SIZE * 3.8:
             release_ball()
-        robot.set_speed(motorl, motorr)
     else:
       if not robot.linetrace_stop:
+        ultrasonic_info = robot.ultrasonic
         # Check for green mark intersections before normal line following
         if should_process_green_mark():
           execute_green_mark_turn()
+        elif ultrasonic_info[
+            0] <= 3:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+          logger.info("Object avoidance triggered")
+          robot.set_speed(1400, 1400)
+          sleep_sec(1, robot.send_speed)
+          robot.set_speed(1750, 1250)
+          sleep_sec(1.7, robot.send_speed)
+          while robot.linetrace_slope is None or robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+            logger.info("Turning around in object avoidance...")
+            robot.write_last_slope_get_time(time.time())
+            robot.set_speed(1550, 1800)
+            robot.send_speed()
+            robot.update_button_stat()
+            if robot.robot_stop:
+              logger.info("Robot interrupted during object avoidance")
+              break
+          logger.info(
+              f"Ejecting object avoidance by {robot.linetrace_slope} {robot.line_area}"
+          )
+          robot.set_speed(1600, 1600)
+          sleep_sec(1)
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
           line_area = robot.line_area
-          
-          if angle_error is not None and should_execute_line_recovery(line_area, angle_error):
+
+          if angle_error is not None and should_execute_line_recovery(
+              line_area, angle_error):
             execute_line_recovery()
           else:
             motorl, motorr = calculate_motor_speeds()
             robot.set_speed(motorl, motorr)
       else:
-        logger.debug("Red stop")
+        logger.info("Red stop")
         robot.set_speed(1500, 1500)
     robot.send_speed()
 logger.debug("Program Stop")

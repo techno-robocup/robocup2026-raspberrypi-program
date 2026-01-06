@@ -12,11 +12,11 @@ class ColoredFormatter(UnixTimeFormatter):
 
   # ANSI color codes
   COLORS = {
-      'DEBUG': '\033[36m',      # Cyan
-      'INFO': '\033[32m',       # Green
-      'WARNING': '\033[33m',    # Yellow
-      'ERROR': '\033[31m',      # Red
-      'CRITICAL': '\033[1;31m', # Bold Red
+      'DEBUG': '\033[36m',  # Cyan
+      'INFO': '\033[32m',  # Green
+      'WARNING': '\033[33m',  # Yellow
+      'ERROR': '\033[31m',  # Red
+      'CRITICAL': '\033[1;31m',  # Bold Red
   }
   RESET = '\033[0m'
 
@@ -44,7 +44,7 @@ def get_logger(name="Logger", file="log.log"):
 
     # Console handler with COLORS
     colored_formatter = ColoredFormatter(
-      '[%(asctime)s] [%(levelname)-8s] [%(filename)s:%(lineno)d] [%(funcName)s] %(message)s'
+        '[%(asctime)s] [%(levelname)-8s] [%(filename)s:%(lineno)d] [%(funcName)s] %(message)s'
     )
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(colored_formatter)

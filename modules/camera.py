@@ -95,7 +95,6 @@ def get_depth_model():
   return _depth_model
 
 
-
 @jit(nopython=True, cache=True)
 def _normalize_depth_array(depth: np.ndarray) -> np.ndarray:
   """
@@ -321,7 +320,7 @@ def detect_green_marks(orig_image: np.ndarray,
       if debug_image is not None:
         _draw_green_mark_debug(debug_image, x, y, w, h, center_x, center_y,
                                black_detections)
-  
+
   # Save debug image if there were green marks
   if green_marks and debug_image is not None:
     # Add checkpoint visualization to green mark debug images
@@ -387,7 +386,6 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   #   robot.write_linetrace_stop(True)
 
 
-
 @jit(nopython=True, cache=True)
 def _count_black_pixels(roi: np.ndarray, threshold: int) -> tuple:
   """
@@ -416,14 +414,18 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_height = int(h * 0.5)
   black_threshold_ratio = 0.75  # 75% of pixels must be black
 
-  logger.info(f"Checking black lines around green mark at center ({center_x}, {center_y}), size ({w}x{h})")
+  logger.info(
+      f"Checking black lines around green mark at center ({center_x}, {center_y}), size ({w}x{h})"
+  )
 
   # Check bottom
   roi_b_y1 = center_y + h // 2
-  roi_b_y2 = min(center_y + h // 2 + roi_height, consts.LINETRACE_CAMERA_LORES_HEIGHT)
+  roi_b_y2 = min(center_y + h // 2 + roi_height,
+                 consts.LINETRACE_CAMERA_LORES_HEIGHT)
   roi_b_x1 = center_x - roi_width // 2
   roi_b_x2 = center_x + roi_width // 2
-  logger.info(f"  Bottom ROI: x[{roi_b_x1}:{roi_b_x2}], y[{roi_b_y1}:{roi_b_y2}]")
+  logger.info(
+      f"  Bottom ROI: x[{roi_b_x1}:{roi_b_x2}], y[{roi_b_y1}:{roi_b_y2}]")
   roi_b = blackline_image[roi_b_y1:roi_b_y2, roi_b_x1:roi_b_x2]
   black_count, total = _count_black_pixels(roi_b, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
@@ -458,8 +460,10 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_r_y1 = center_y - roi_height // 2
   roi_r_y2 = center_y + roi_height // 2
   roi_r_x1 = center_x + w // 2
-  roi_r_x2 = min(center_x + w // 2 + roi_width, consts.LINETRACE_CAMERA_LORES_WIDTH)
-  logger.info(f"  Right ROI: x[{roi_r_x1}:{roi_r_x2}], y[{roi_r_y1}:{roi_r_y2}]")
+  roi_r_x2 = min(center_x + w // 2 + roi_width,
+                 consts.LINETRACE_CAMERA_LORES_WIDTH)
+  logger.info(
+      f"  Right ROI: x[{roi_r_x1}:{roi_r_x2}], y[{roi_r_y1}:{roi_r_y2}]")
   roi_r = blackline_image[roi_r_y1:roi_r_y2, roi_r_x1:roi_r_x2]
   black_count, total = _count_black_pixels(roi_r, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
@@ -595,7 +599,6 @@ def calculate_contour_center(contour: np.ndarray) -> Tuple[int, int]:
   return cx, cy
 
 
-
 @jit(nopython=True, cache=True)
 def _compute_slope(cx: int, cy: int, base_x: int, base_y: int) -> float:
   """
@@ -674,9 +677,10 @@ lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
 
-
 @jit(nopython=True, cache=True)
-def _apply_contrast_reduction(v_channel: np.ndarray, factor: float, mean: float = 128.0) -> np.ndarray:
+def _apply_contrast_reduction(v_channel: np.ndarray,
+                              factor: float,
+                              mean: float = 128.0) -> np.ndarray:
   """
   JIT-optimized contrast reduction on V channel.
   
@@ -721,9 +725,9 @@ def reduce_glare_combined(image, contrast_factor=0.5, clip_limit=2.0):
   return image
 
 
-
 @jit(nopython=True, cache=True)
-def _check_region_is_black(region: np.ndarray, threshold: float = 127.0) -> bool:
+def _check_region_is_black(region: np.ndarray,
+                           threshold: float = 127.0) -> bool:
   """
   JIT-optimized check if region is predominantly black.
   
