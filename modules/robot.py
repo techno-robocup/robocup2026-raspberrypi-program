@@ -107,7 +107,7 @@ class uart_io:
   def __connect(self) -> None:
     logger.get_logger().info(f"Connecting to {self.__device_name}")
     while True:
-      assert self.__baud_rate != None
+      assert self.__baud_rate is not None
       self.__Serial_port = serial.Serial(self.__device_name,
                                          self.__baud_rate,
                                          timeout=self.__timeout)
@@ -121,6 +121,8 @@ class uart_io:
     Returns:
       True if connected, False otherwise.
     """
+    if self.__Serial_port is None:
+      return False
     return self.__Serial_port.isOpen()
 
   def reConnect(self) -> None:
@@ -147,7 +149,7 @@ class uart_io:
 
   def __send(self, message: Message) -> bool | str:
     if self.isConnected():
-      assert self.__Serial_port != None
+      assert self.__Serial_port is not None
       self.__Serial_port.write(str(message).encode("ascii"))
       logger.get_logger().debug(f"Sent message: {str(message)}")
       logger.get_logger().debug(
@@ -290,7 +292,7 @@ class Robot:
     Returns:
         string: The reply from ESP32
     """
-    assert self.__uart_device != None
+    assert self.__uart_device is not None
     assert isinstance(self.__MOTOR_L, int)
     assert isinstance(self.__MOTOR_R, int)
     # if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
@@ -318,7 +320,7 @@ class Robot:
     Returns:
         string: The reply from ESP32
     """
-    assert self.__uart_device != None
+    assert self.__uart_device is not None
     return self.__uart_device.send(
         f"Rescue {self.__MOTOR_ARM:4d} {self.__MOTOR_WIRE}")
 
@@ -329,7 +331,7 @@ class Robot:
     Returns:
       List of distance values in centimeters.
     """
-    assert self.__uart_device != None
+    assert self.__uart_device is not None
     return list(
         map(float,
             Message(self.__uart_device.send("GET usonic")).Message.split()))
@@ -341,7 +343,7 @@ class Robot:
     Returns:
       True if button is pressed (ON), False otherwise.
     """
-    assert self.__uart_device != None
+    assert self.__uart_device is not None
     return self.__uart_device.send("GET button") == "ON"
 
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
