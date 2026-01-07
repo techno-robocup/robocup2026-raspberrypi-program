@@ -3,3 +3,8 @@
 .direnv
 .vscode
 # checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
