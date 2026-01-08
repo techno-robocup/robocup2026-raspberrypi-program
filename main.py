@@ -922,6 +922,7 @@ if __name__ == "__main__":
       if not robot.linetrace_stop:
         ultrasonic_info = robot.ultrasonic
         # Check for green mark intersections before normal line following
+        logger.info(ultrasonic_info);
         if should_process_green_mark():
           execute_green_mark_turn()
         elif ultrasonic_info[
