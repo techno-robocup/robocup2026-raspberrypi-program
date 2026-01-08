@@ -79,7 +79,7 @@ LINE_RECOVERY_ANGLE_THRESHOLD = 0.20  # Trigger when angle error exceeds this (r
 LINE_RECOVERY_BACKUP_TIME = 1.0  # Seconds to back up
 LINE_RECOVERY_BACKUP_SPEED = 1200  # Motor speed for backing up (< 1500 = reverse)
 MIN_GREEN_AREA = 200
-MIN_RED_AREA = 400
+MIN_RED_AREA = 600
 MIN_OBJECT_AVOIDANCE_LINE_AREA = 5000
 
 TURN_180_TIME = 1.8
@@ -106,7 +106,7 @@ RESCUE_FLAG_TIME = 5.0
 lower_green = np.array([20, 100, 90])
 upper_green = np.array([100, 255, 255])
 
-lower_red = np.array([160, 100, 110])
+lower_red = np.array([160, 120, 110])
 upper_red = np.array([179, 255, 255])
 
 if __name__ == "__main__":
