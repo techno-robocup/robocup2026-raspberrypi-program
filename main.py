@@ -8,7 +8,6 @@ import cv2
 import math
 import threading
 from typing import Optional
-from ultralytics import YOLO
 
 logger = modules.logger.get_logger()
 
@@ -21,11 +20,17 @@ robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
 uart_devices = uart_dev.list_ports()
 
-# Prioritize USsB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
+# Prioritize USB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
 usb_devices = [
     d for d in uart_devices if 'USB' in d.device or 'ACM' in d.device
 ]
-selected_device = usb_devices[0] if usb_devices else uart_devices[0]
+if usb_devices:
+  selected_device = usb_devices[0]
+elif uart_devices:
+  selected_device = uart_devices[0]
+else:
+  logger.error("No UART devices found")
+  sys.exit(1)
 
 logger.info(f"Connecting to UART device: {selected_device.device}")
 uart_dev.connect(selected_device.device, consts.UART_BAUD_RATE,
@@ -151,7 +156,7 @@ def execute_green_mark_turn() -> bool:
     if detection[1] == 0:
       continue
 
-    if detection[2] == 1:  # Left blackfith
+    if detection[2] == 1:  # Left black line
       has_left = True
     if detection[3] == 1:  # Right black line
       has_right = True
@@ -677,7 +682,6 @@ def change_position() -> bool:
     True on successful completion.
   """
   logger.debug("Change position")
-  prev_time = time.time()
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_30_TIME)
   robot.set_speed(1500, 1500)
@@ -835,6 +839,12 @@ if __name__ == "__main__":
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
+      if robot.rescue_target == consts.TargetList.SILVER_BALL.value or robot.rescue_target == consts.TargetList.GREEN_CAGE.value:
+        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+      elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.RED_CAGE.value:
+        robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
+      else:
+        robot.write_rescue_target(consts.TargetList.EXIT.value)
       robot.set_speed(1500, 1500)
       robot.set_arm(3072, 0)
       robot.send_speed()

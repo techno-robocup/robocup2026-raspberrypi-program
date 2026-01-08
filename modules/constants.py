@@ -88,7 +88,7 @@ GREEN_MARK_APPROACH_TIME = 0.5
 TURN_90_LEFT_TIME = 1.5
 TURN_90_RIGHT_TIME = 1.5
 GREEN_MARK_TURN_180_TIME = 3.5
-GREEN_MARK_Y_THRESHOLD_RATIO = 4 / 5  # Mark must be in bottom fith
+GREEN_MARK_Y_THRESHOLD_RATIO = 4 / 5  # Mark must be in bottom fifth
 
 # Maximum timeout for line-based turns (safety fallback)
 MAX_TURN_90_TIME = 5.0
