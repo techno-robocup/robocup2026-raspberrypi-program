@@ -564,7 +564,8 @@ def find_best_target() -> None:
           best_target_w = w
           # best_target_h = h
           # Check if ball is close enough to catch (same logic as primary target)
-          is_bottom_third = best_target_y and best_target_y > (image_height * 2 / 3)
+          is_bottom_third = best_target_y and best_target_y > (image_height *
+                                                               2 / 3)
           ball_left = best_angle - best_target_w / 2 + image_width / 2
           ball_right = best_angle + best_target_w / 2 + image_width / 2
           includes_center = ball_left <= image_width / 2 <= ball_right
@@ -740,7 +741,9 @@ def calculate_ball() -> tuple[int, int]:
   angle = robot.rescue_offset
   size = robot.rescue_size
   if angle is None or size is None:
-    logger.warning(f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}")
+    logger.warning(
+        f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}"
+    )
     return 1500, 1500
   diff_angle = 0
   if abs(angle) > 30:
@@ -749,7 +752,7 @@ def calculate_ball() -> tuple[int, int]:
     diff_angle = 0
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
-    dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) ** 2 * BSP
+    dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
   dist_term = int(max(200, dist_term))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
@@ -866,7 +869,9 @@ if __name__ == "__main__":
     elif robot.is_rescue_flag:
       find_best_target()
       try:
-        logger.info(f"Searching for target: {consts.TargetList(robot.rescue_target).name} (id={robot.rescue_target})")
+        logger.info(
+            f"Searching for target: {consts.TargetList(robot.rescue_target).name} (id={robot.rescue_target})"
+        )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if (robot.rescue_offset is None) or (robot.rescue_size is None):
@@ -874,7 +879,10 @@ if __name__ == "__main__":
         robot.write_rescue_turning_angle(robot.rescue_turning_angle + 20)
         # Only call set_target() if searching for balls (rotation-based logic).
         # For cages/exit, keep searching the current target.
-        if robot.rescue_target in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
+        if robot.rescue_target in [
+            consts.TargetList.SILVER_BALL.value,
+            consts.TargetList.BLACK_BALL.value
+        ]:
           set_target()
       else:
         if robot.rescue_target == consts.TargetList.EXIT.value:
@@ -901,12 +909,14 @@ if __name__ == "__main__":
             robot.write_rescue_size(None)
             robot.write_rescue_y(None)
             robot.write_last_yolo_time(0)
-            logger.info("Post-catch: reset rescue_offset/size/y and forced YOLO run")
+            logger.info(
+                "Post-catch: reset rescue_offset/size/y and forced YOLO run")
         else:
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
-          if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (robot.rescue_image.shape[0] * 1 / 2):
+          if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
+              robot.rescue_image.shape[0] * 1 / 2):
             release_ball()
     else:
       if not robot.linetrace_stop:
@@ -935,7 +945,7 @@ if __name__ == "__main__":
           )
           robot.set_speed(1600, 1600)
           sleep_sec(1)
-          robot.set_speed(1600,1400)
+          robot.set_speed(1600, 1400)
           sleep_sec(1)
         else:
           # Check if line recovery is needed (small line area + steep angle)

@@ -35,7 +35,8 @@ Rescue_Camera_Size = (4608, 2592)
 Rescue_Camera_Formats = "RGB888"
 Rescue_Camera_lores = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
 Rescue_Camera_precallback = Rescue_Camera_precallback_func
-IMAGE_SZ = Rescue_Camera_Size[0] * Rescue_Camera_Size[1]  # Total pixels in rescue image
+IMAGE_SZ = Rescue_Camera_Size[0] * Rescue_Camera_Size[
+    1]  # Total pixels in rescue image
 MODEL = YOLO("best.pt")
 
 
