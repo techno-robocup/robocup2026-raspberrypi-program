@@ -474,6 +474,7 @@ def find_best_target() -> None:
   Updates:
     - robot.rescue_offset: Horizontal offset from image center (pixels).
     - robot.rescue_size: Area of the detected target (pixels^2).
+    - robot.rescue_y: Vertical center (pixels) of the best target.
     - robot.rescue_ball_flag: True if ball is close enough to catch.
     - robot.rescue_target: May switch to SILVER_BALL on override.
   """
@@ -495,12 +496,14 @@ def find_best_target() -> None:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
+    robot.write_rescue_y(None)
     return
   boxes = yolo_results[0].boxes
   if boxes is None or len(boxes) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
+    robot.write_rescue_y(None)
     return
   else:
     image_height = yolo_results[0].orig_shape[0]
@@ -579,6 +582,11 @@ def find_best_target() -> None:
       robot.write_rescue_size(None)
     else:
       robot.write_rescue_size(int(best_size))
+    # Persist best target vertical center (y), if available
+    if best_target_y is None:
+      robot.write_rescue_y(None)
+    else:
+      robot.write_rescue_y(float(best_target_y))
 
 
 def catch_ball() -> int:
@@ -890,13 +898,14 @@ if __name__ == "__main__":
             # YOLO evaluation so the robot can detect and move toward the cage.
             robot.write_rescue_offset(None)
             robot.write_rescue_size(None)
+            robot.write_rescue_y(None)
             robot.write_last_yolo_time(0)
-            logger.info("Post-catch: reset rescue_offset/size and forced YOLO run")
+            logger.info("Post-catch: reset rescue_offset/size/y and forced YOLO run")
         else:
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
-          if robot.rescue_size is not None and robot.rescue_size >= consts.BALL_CATCH_SIZE * 6:
+          if robot.rescue_size is not None and robot.rescue_size >= consts.BALL_CATCH_SIZE * 6 and robot.rescue_y is not None and robot.rescue_y > (robot.rescue_image.shape[0] * 2 / 3):
             release_ball()
     else:
       if not robot.linetrace_stop:

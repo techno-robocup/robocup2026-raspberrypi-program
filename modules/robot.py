@@ -242,6 +242,7 @@ class Robot:
     self.__last_yolo_time: float = 0
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
+    self.__rescue_y: Optional[float] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0  # Total revolutions
     self.__rescue_ball_flag = False  # catch ball flag
@@ -412,6 +413,15 @@ class Robot:
     with self.__rescue_lock:
       self.__rescue_size = size
 
+  def write_rescue_y(self, y: Optional[float]) -> None:
+    """Set vertical center (y) of rescue target (thread-safe).
+
+    Args:
+      y: Pixel y-coordinate of bbox center, or None if no target.
+    """
+    with self.__rescue_lock:
+      self.__rescue_y = y
+
   def write_rescue_target(self, target: int) -> None:
     """Set current rescue target type (thread-safe).
 
@@ -461,6 +471,12 @@ class Robot:
     """Get detected target size in pixels^2 (thread-safe)."""
     with self.__rescue_lock:
       return self.__rescue_size
+
+  @property
+  def rescue_y(self) -> Optional[float]:
+    """Get vertical center (y) of rescue target (thread-safe)."""
+    with self.__rescue_lock:
+      return self.__rescue_y
 
   @property
   def rescue_target(self) -> int:
