@@ -348,7 +348,7 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   """Detect red marks and set stop_requested flag."""
   global red_contours, robot
 
-  hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
+  hsv = cv2.cvtColor(orig_image, cv2.COLOR_BGR2HSV)
 
   red_mask1 = cv2.inRange(hsv, consts.lower_red1, consts.upper_red1)
   red_mask2 = cv2.inRange(hsv, consts.lower_red2, consts.upper_red2)
