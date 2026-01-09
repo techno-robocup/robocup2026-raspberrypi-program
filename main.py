@@ -700,7 +700,7 @@ def release_ball() -> bool:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(0.5)
+  sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.set_arm(1700, 0)
   robot.send_arm()
@@ -739,7 +739,7 @@ def change_position() -> bool:
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
-  sleep_sec(0.2)
+  sleep_sec(0.1)
   find_best_target()
   # robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
@@ -810,7 +810,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-  dist_term = int(max(120, dist_term))
+    dist_term = int(max(120, min(dist_term, 250)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
