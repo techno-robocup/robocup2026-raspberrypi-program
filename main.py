@@ -57,7 +57,7 @@ catch_failed_cnt = 0
 
 # Gap recovery state - timestamp of last recovery to prevent immediate re-trigger
 last_gap_recovery_time: float = 0.0
-GAP_RECOVERY_COOLDOWN = 2.0  # Seconds to wait after recovery before allowing another
+GAP_RECOVERY_COOLDOWN = 0.5  # Seconds to wait after recovery before allowing another
 
 
 def is_valid_number(value) -> bool:
