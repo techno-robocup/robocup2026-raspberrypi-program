@@ -669,7 +669,7 @@ def release_ball() -> bool:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(0.5)
+  sleep_sec(0.4)
   robot.set_speed(1500, 1500)
   robot.set_arm(1536, 0)
   robot.send_arm()
@@ -770,7 +770,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-  dist_term = int(max(200, dist_term))
+  dist_term = int(max(120, dist_term))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
@@ -870,6 +870,7 @@ if __name__ == "__main__":
   robot.send_arm()
   robot.send_speed()
   robot.write_rescue_turning_angle(0)
+  robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
