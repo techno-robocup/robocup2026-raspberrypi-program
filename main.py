@@ -49,6 +49,7 @@ DP = 200
 BOP = 0.055  # Ball Offset P
 BSP = 1.5  # Ball Size P
 COP = 0.03  # Cage Offset P
+CSP = 0.5
 EOP = 0.03  # Exit Offset P
 ESP = 2  # Exit Size P
 
@@ -839,8 +840,10 @@ def calculate_cage() -> tuple[int, int]:
   diff_angle = angle * COP
   diff_min_max = 100
   diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
-  base_L = 1500 + diff_angle + 180
-  base_R = 1500 - diff_angle + 180
+  dist_term = (math.sqrt(consts.IMAGE_SZ * 0.5) - math.sqrt(robot.rescue_size)) * CSP
+  dist_term = int(max(130,dist_term))
+  base_L = 1500 + diff_angle + dist_term
+  base_R = 1500 - diff_angle + dist_term
   logger.info(f"offset: {angle} size:{size}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return clamp(int(base_L), MIN_SPEED,
