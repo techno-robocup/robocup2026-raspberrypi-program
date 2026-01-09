@@ -397,12 +397,16 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     # Reduce speed when line gets smaller
     # Area thresholds:
     # > 3000: full speed (100%)
-    # 500-3000: gradual reduction
-    # < 500: significant reduction (60-80%)
+    # 300-3000: power curve for realistic gradual ramp-up
+    # < 300: clamped to minimum (30%)
     if line_area < 3000:
-      # Linear interpolation between 0.6 (at area=300) and 1.0 (at area=3000)
-      speed_multiplier = 0.2 + (line_area - consts.MIN_BLACK_LINE_AREA) / (
-          3000 - consts.MIN_BLACK_LINE_AREA) * 0.8
+      # Power function (quadratic) for realistic response curve
+      # Normalized to 0-1 range, then apply pow(x,2) for aggressive acceleration
+      normalized = (line_area - consts.MIN_BLACK_LINE_AREA) / (
+          3000 - consts.MIN_BLACK_LINE_AREA)
+      power_curve = normalized ** 2  # Quadratic gives aggressive ramp
+      # Scale to 0.3-1.0 range
+      speed_multiplier = 0.3 + power_curve * 0.7
       speed_multiplier = max(0.3, min(1.0, speed_multiplier))
       logger.info(
           f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
