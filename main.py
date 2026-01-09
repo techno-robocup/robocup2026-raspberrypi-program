@@ -313,7 +313,7 @@ def should_execute_line_recovery(line_area: Optional[float],
   x_offset = abs(line_center_x - image_center_x) if line_center_x is not None else 0
   
   # Check if x-offset is significant
-  x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.15
+  x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.1
 
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   x_offset_condition = x_offset_significant
