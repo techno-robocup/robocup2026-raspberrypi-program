@@ -49,7 +49,7 @@ DP = 200
 BOP = 0.045  # Ball Offset P
 BSP = 1.5  # Ball Size P
 COP = 0.03  # Cage Offset P
-CSP = 0.09
+CSP = 1.5
 EOP = 0.03  # Exit Offset P
 ESP = 2  # Exit Size P
 
