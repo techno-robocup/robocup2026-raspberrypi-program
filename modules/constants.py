@@ -76,7 +76,7 @@ MIN_BLACK_LINE_AREA = 300 # BE CAREFUL WHEN REWRITING THIS VALUE
 # END OF REWRITING PROHIBITION
 
 # Line recovery constants - for backing up when losing the line
-LINE_RECOVERY_AREA_THRESHOLD = 5000  # Trigger recovery when line area drops below this
+LINE_RECOVERY_AREA_THRESHOLD = 3000  # Trigger recovery when line area drops below this
 LINE_RECOVERY_ANGLE_THRESHOLD = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
 LINE_RECOVERY_BACKUP_TIME = 1.0  # Seconds to back up
 LINE_RECOVERY_BACKUP_SPEED = 1300  # Motor speed for backing up (< 1500 = reverse)
