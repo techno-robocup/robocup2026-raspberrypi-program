@@ -317,14 +317,13 @@ def should_execute_line_recovery(line_area: Optional[float],
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   x_offset_condition = x_offset_significant
   
-  if area_condition and x_offset_condition:
-    logger.info(f"Line recovery triggered: Low area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})")
-  elif area_condition:
-    logger.info(f"Line recovery triggered: Low line area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD})")
-  elif x_offset_condition:
-    logger.info(f"Line recovery triggered: Large x-offset ({x_offset:.1f}px from center, line at x={line_center_x})")
+  # Only trigger when area is small AND x-offset is significant
+  should_recover = area_condition and x_offset_condition
   
-  return area_condition or x_offset_condition
+  if should_recover:
+    logger.info(f"Line recovery triggered: Low area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})")
+  
+  return should_recover
 
 
 def execute_line_recovery() -> bool:
