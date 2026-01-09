@@ -48,7 +48,7 @@ KP = 225
 DP = 200
 BOP = 0.045  # Ball Offset P
 BSP = 1.5  # Ball Size P
-COP = 0.03  # Cage Offset P
+COP = 0.05  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
 ESP = 2  # Exit Size P
@@ -709,7 +709,7 @@ def release_ball() -> bool:
   robot.send_arm()
   sleep_sec(0.5)
   robot.write_rescue_turning_angle(0)
-  robot.set_speed(1400, 1400)
+  robot.set_speed(1300, 1300)
   sleep_sec(2.5)
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_180_TIME)
@@ -810,7 +810,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-  dist_term = int(max(120, min(dist_term, 250)))
+  dist_term = int(max(140, min(dist_term, 250)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
@@ -841,7 +841,7 @@ def calculate_cage() -> tuple[int, int]:
   diff_min_max = 100
   diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
   dist_term = (math.sqrt(consts.IMAGE_SZ * 0.5) - math.sqrt(robot.rescue_size)) * CSP
-  dist_term = int(max(130, min(dist_term, 200)))
+  dist_term = int(max(150, min(dist_term, 200)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   logger.info(f"offset: {angle} size:{size}")
