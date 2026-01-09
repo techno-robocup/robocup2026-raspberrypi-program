@@ -841,7 +841,7 @@ def calculate_cage() -> tuple[int, int]:
   diff_min_max = 100
   diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
   dist_term = (math.sqrt(consts.IMAGE_SZ * 0.5) - math.sqrt(robot.rescue_size)) * CSP
-  dist_term = int(max(130,dist_term))
+  dist_term = int(max(130, min(dist_term, 200)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   logger.info(f"offset: {angle} size:{size}")
