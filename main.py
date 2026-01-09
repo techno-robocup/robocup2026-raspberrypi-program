@@ -48,7 +48,7 @@ KP = 225
 DP = 200
 BOP = 0.05  # Ball Offset P
 BSP = 2  # Ball Size P
-COP = 0.3  # Cage Offset P
+COP = 0.03  # Cage Offset P
 EOP = 1  # Exit Offset P
 
 catch_failed_cnt = 0
