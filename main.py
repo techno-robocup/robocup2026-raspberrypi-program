@@ -567,9 +567,12 @@ def find_best_target() -> None:
         logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
-      elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
+      # elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
+      elif consts.TargetList.SILVER_BALL.value != robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         logger.info("Override")
         robot.write_rescue_turning_angle(0)
+        if robot.rescue_target in (consts.TargetList.RED_CAGE, consts.TargetList.GREEN_CAGE):
+          drop_ball()
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
         area = w * h
@@ -699,6 +702,14 @@ def release_ball() -> bool:
   set_target()
   return True
 
+def drop_ball() -> bool:
+  logger.debug("Drop ball")
+  robot.set_speed(1500,1500)
+  robot.set_arm(1536,0)
+  sleep_sec(0.4)
+  robot.set_arm(3072, 0)
+  robot.send_arm()
+  return 0
 
 def change_position() -> bool:
   """Rotate approximately 30 degrees to search for targets.
