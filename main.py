@@ -683,8 +683,7 @@ def release_ball() -> bool:
 
   Drives forward to approach the cage, opens the gripper to release
   the ball, backs up slightly, then performs a 180-degree turn to
-  face away from the cage. Calls set_target() to determine next target.
-
+  face away from the cage.
   Returns:
     True on successful completion.
   """
@@ -704,12 +703,11 @@ def release_ball() -> bool:
   sleep_sec(0.5)
   robot.write_rescue_turning_angle(0)
   robot.set_speed(1400, 1400)
-  sleep_sec(1)
+  sleep_sec(1.5)
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_180_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  set_target()
   return True
 
 def drop_ball() -> bool:
@@ -765,17 +763,19 @@ def set_target() -> bool:
     robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   return True
 
-def clump_turning_angle() -> bool:
-  if robot.rescue_turning_angle is None:
-    robot.write_rescue_turning_angle(0)
-    return False
-  if robot.rescue_turning_angle >= 720:
-    robot.write_rescue_turning_angle(720)
-  elif robot.rescue_turning_angle >= 360:
-    robot.write_rescue_turning_angle(360)
-  else:
-    robot.write_rescue_turning_angle(0)
-  return True
+def clamp_turning_angle() -> bool:
+    angle = robot.rescue_turning_angle
+    if angle is None:
+        robot.write_rescue_turning_angle(0)
+        return False
+    if angle >= 720:
+        angle = 720
+    elif angle >= 360:
+        angle = 360
+    else:
+        angle = 0
+    robot.write_rescue_turning_angle(angle)
+    return True
 
 def calculate_ball() -> tuple[int, int]:
   """Calculate motor speeds to approach a ball target.
@@ -973,13 +973,14 @@ if __name__ == "__main__":
             logger.info(
                 "Post-catch: reset rescue_offset/size/y and forced YOLO run")
         else:
-          clump_turning_angle()
+          clamp_turning_angle()
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
           if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
               robot.rescue_image.shape[0] * 1 / 2):
             release_ball()
+            set_target()
     else:
       if not robot.linetrace_stop:
         ultrasonic_info = robot.ultrasonic
