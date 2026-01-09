@@ -47,7 +47,7 @@ MIN_SPEED = 1000
 KP = 225
 DP = 200
 BOP = 0.05  # Ball Offset P
-BSP = 1.8  # Ball Size P
+BSP = 1.5  # Ball Size P
 COP = 0.03  # Cage Offset P
 EOP = 0.03  # Exit Offset P
 ESP = 2  # Exit Size P
@@ -624,14 +624,14 @@ def catch_ball() -> int:
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_speed(1400, 1400)
+  robot.set_speed(1370, 1370)
   sleep_sec(1.5)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1450, 0)
   robot.send_arm()
   robot.set_speed(1650, 1650)
-  sleep_sec(2)
+  sleep_sec(2.2)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1000, 0)
@@ -681,7 +681,7 @@ def release_ball() -> bool:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(0.5)
+  sleep_sec(0.4)
   robot.set_speed(1500, 1500)
   robot.set_arm(1536, 0)
   robot.send_arm()
@@ -735,15 +735,26 @@ def set_target() -> bool:
   if robot.rescue_turning_angle is None:
     robot.write_rescue_turning_angle(0)
     return False
-  if robot.rescue_turning_angle > 720:
+  if robot.rescue_turning_angle >= 720:
     robot.write_rescue_target(consts.TargetList.EXIT.value)
     # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-  elif robot.rescue_turning_angle > 360:
+  elif robot.rescue_turning_angle >= 360:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
   else:
     robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   return True
 
+def clump_turning_angle() -> bool:
+  if robot.rescue_turning_angle is None:
+    robot.write_rescue_turning_angle(0)
+    return False
+  if robot.rescue_turning_angle >= 720:
+    robot.write_rescue_turning_angle(720)
+  elif robot.rescue_turning_angle >= 360:
+    robot.write_rescue_turning_angle(360)
+  else:
+    robot.write_rescue_turning_angle(0)
+  return True
 
 def calculate_ball() -> tuple[int, int]:
   """Calculate motor speeds to approach a ball target.
@@ -771,7 +782,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-  dist_term = int(max(200, dist_term))
+  dist_term = int(max(120, dist_term))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
@@ -871,6 +882,7 @@ if __name__ == "__main__":
   robot.send_arm()
   robot.send_speed()
   robot.write_rescue_turning_angle(0)
+  robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
@@ -940,6 +952,7 @@ if __name__ == "__main__":
             logger.info(
                 "Post-catch: reset rescue_offset/size/y and forced YOLO run")
         else:
+          clump_turning_angle()
           motorl, motorr = calculate_cage()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
