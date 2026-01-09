@@ -287,7 +287,8 @@ def should_execute_line_recovery(line_area: Optional[float],
   
   Recovery triggers when:
   1. Line area is below threshold (robot losing sight of line / gap)
-  2. Not in cooldown period (prevents immediate re-trigger after recovery)
+  2. Line center x is too far from image center (robot veering off)
+  3. Cooldown is bypassed when x-offset is significant
   
   Args:
     line_area: Current detected line area in pixels
@@ -301,13 +302,22 @@ def should_execute_line_recovery(line_area: Optional[float],
   if line_area is None or not is_valid_number(line_area):
     return False
   
-  # Check cooldown to prevent looping
-  if time.time() - last_gap_recovery_time < GAP_RECOVERY_COOLDOWN:
+  # Get line center x-coordinate and check offset from image center
+  line_center_x = robot.line_center_x
+  image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
+  x_offset = abs(line_center_x - image_center_x) if line_center_x is not None else 0
+  
+  # Check if x-offset is significant (bypasses cooldown)
+  x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.15
+  
+  # Check cooldown only if x-offset is not significant
+  if not x_offset_significant and time.time() - last_gap_recovery_time < GAP_RECOVERY_COOLDOWN:
     return False
 
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
+  x_offset_condition = x_offset_significant
   
-  return area_condition
+  return area_condition or x_offset_condition
 
 
 def execute_line_recovery() -> bool:

@@ -248,6 +248,7 @@ class Robot:
     self.__rescue_ball_flag = False  # catch ball flag
     self.__slope = None
     self.__line_area: Optional[float] = None
+    self.__line_center_x: Optional[int] = None
     self.__is_stop = False
     self.__robot_stop: bool = False
     self.__top_checkpoint_black: bool = False
@@ -538,6 +539,21 @@ class Robot:
     """Get detected black line area in pixels (thread-safe)."""
     with self.__linetrace_lock:
       return self.__line_area
+
+  def write_line_center_x(self, center_x: Optional[int]) -> None:
+    """Set detected line center x-coordinate (thread-safe).
+
+    Args:
+      center_x: Line center x-coordinate in pixels, or None if not detected.
+    """
+    with self.__linetrace_lock:
+      self.__line_center_x = center_x
+
+  @property
+  def line_center_x(self) -> Optional[int]:
+    """Get detected line center x-coordinate in pixels (thread-safe)."""
+    with self.__linetrace_lock:
+      return self.__line_center_x
 
   @property
   def linetrace_stop(self) -> bool:
