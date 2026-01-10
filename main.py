@@ -774,7 +774,7 @@ def set_target() -> bool:
     return False
   if robot.rescue_turning_angle >= 720:
     # robot.write_rescue_target(consts.TargetList.EXIT.value)
-      robot.write_rescue_target(consts.TargetList.RED_CAGE)
+      robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
     # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   elif robot.rescue_turning_angle >= 360:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
@@ -1021,7 +1021,9 @@ if __name__ == "__main__":
           set_target()
       else:
         if robot.rescue_target == consts.TargetList.EXIT.value:
+          ultrasonic_info = robot.ultrasonic
           if not exit_cage_flag:
+            logger.info("Finding Red Cage")
             if robot.rescue_offset is None:
               change_position()
             else:
@@ -1032,7 +1034,6 @@ if __name__ == "__main__":
               robot.rescue_image.shape[0] * 1 / 2):
                 robot.set_speed(1700, 1700)
                 sleep_sec(1)
-                ultrasonic_info = robot.ultrasonic
                 while True:
                   ultrasonic_info = robot.ultrasonic
                   if ultrasonic_info[0] > 4:
@@ -1049,6 +1050,7 @@ if __name__ == "__main__":
               sleep_sec(consts.TURN_90_TIME)
               exit_cage_flag = True
           else:
+            logger.info("wall follow ccw")
             if wall_follow_ccw():
               robot.set_speed(1700, 1300)
               sleep_sec(1)
