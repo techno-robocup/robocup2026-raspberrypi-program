@@ -882,9 +882,9 @@ def wall_follow_ccw() -> bool:
   Follow the wall counter-clockwise using ultrasonic[1].
   Returns True if an opening is detected.
   """
-  TARGET_MIN = 5.0
-  TARGET_MAX = 7.0
-  OPEN_THRESHOLD = 20.0
+  TARGET_MIN = 20.0
+  TARGET_MAX = 150.0
+  OPEN_THRESHOLD = 300.0
   BASE_SPEED = 1600
   BASE_TURN = 50
   ultrasonic = robot.ultrasonic
@@ -895,9 +895,9 @@ def wall_follow_ccw() -> bool:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
-  elif front_dist <= 4:
+  elif front_dist <= 30:
     robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(0.9)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
@@ -1011,7 +1011,7 @@ if __name__ == "__main__":
       robot.write_is_rescue_flag(False)
       robot.write_last_slope_get_time(time.time())
       robot.write_rescue_ball_flag(False)
-      exit_cage_flag = True
+      exit_cage_flag = False
     elif True:
       find_best_target()
       try:
@@ -1051,7 +1051,9 @@ if __name__ == "__main__":
                 robot.set_speed(1500, 1500)
                 robot.send_speed()
                 robot.set_speed(1250, 1750)
-                sleep_sec(consts.TURN_90_TIME)
+                sleep_sec(0.5)
+                robot.set_speed(1500, 1500)
+                robot.send_speed()
                 exit_cage_flag = True
           else:
             logger.info("wall follow ccw")
