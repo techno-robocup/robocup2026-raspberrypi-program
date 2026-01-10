@@ -1028,7 +1028,7 @@ if __name__ == "__main__":
         ]:
           set_target()
       else:
-        if True:
+        if robot.rescue_target == consts.TargetList.EXIT.value:
           ultrasonic_info = robot.ultrasonic
           if not exit_cage_flag:
             logger.info("Finding Red Cage for exiting")
