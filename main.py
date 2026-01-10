@@ -883,7 +883,7 @@ def wall_follow_ccw() -> bool:
   Returns True if an opening is detected.
   """
   TARGET_MIN = 20.0
-  TARGET_MAX = 60.0
+  TARGET_MAX = 150.0
   OPEN_THRESHOLD = 300.0
   BASE_SPEED = 1600
   BASE_TURN = 50
@@ -1058,7 +1058,8 @@ if __name__ == "__main__":
                 exit_cage_flag = True
           else:
             logger.info("wall follow ccw")
-            if wall_follow_ccw:
+            result = wall_follow_ccw()
+            if result:
               robot.set_speed(1800, 1300)
               sleep_sec(consts.TURN_90_TIME)
               while True:
