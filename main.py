@@ -1032,7 +1032,7 @@ if __name__ == "__main__":
         if True:
           ultrasonic_info = robot.ultrasonic
           if not exit_cage_flag:
-            logger.info("Finding Red Cage")
+            logger.info("Finding Red Cage for exiting")
             if robot.rescue_offset is None:
               change_position()
             else:
