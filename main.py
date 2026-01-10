@@ -1053,7 +1053,7 @@ if __name__ == "__main__":
             logger.info("wall follow ccw")
             if wall_follow_ccw():
               robot.set_speed(1700, 1300)
-              sleep_sec(1)
+              sleep_sec(consts.TURN_90_TIME)
             while True:
               robot.update_button_stat()
               if robot.robot_stop:
