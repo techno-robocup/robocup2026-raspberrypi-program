@@ -897,7 +897,7 @@ def wall_follow_ccw() -> bool:
     return False
   elif front_dist <= 30:
     robot.set_speed(1250, 1750)
-    sleep_sec(0.9)
+    sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
@@ -1051,7 +1051,7 @@ if __name__ == "__main__":
                 robot.set_speed(1500, 1500)
                 robot.send_speed()
                 robot.set_speed(1250, 1750)
-                sleep_sec(0.5)
+                sleep_sec(consts.TURN_90_TIME)
                 robot.set_speed(1500, 1500)
                 robot.send_speed()
                 exit_cage_flag = True
