@@ -895,12 +895,6 @@ def wall_follow_ccw() -> bool:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
-  elif front_dist <= 30:
-    robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME)
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    return False
   if side_dist is None or side_dist <= 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -909,6 +903,12 @@ def wall_follow_ccw() -> bool:
   if side_dist > OPEN_THRESHOLD:
     logger.info("Wall opening detected")
     return True
+  elif front_dist <= 2:
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return False
 
   if side_dist > TARGET_MAX:
     turn = BASE_TURN * -1
