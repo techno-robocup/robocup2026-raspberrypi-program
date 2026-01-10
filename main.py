@@ -1020,7 +1020,7 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if robot.rescue_target != consts.TargetList.EXIT.value and (robot.rescue_offset is None) or (robot.rescue_size is None):
+      if not exit_cage_flag and (robot.rescue_offset is None) or (robot.rescue_size is None):
         change_position()
         if not robot.rescue_ball_flag:
           robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
