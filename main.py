@@ -1059,7 +1059,7 @@ if __name__ == "__main__":
             logger.info("wall follow ccw")
             result = wall_follow_ccw()
             if result:
-              robot.set_speed(1700, 1300)
+              robot.set_speed(1800, 1300)
               sleep_sec(consts.TURN_90_TIME)
               while True:
                 robot.update_button_stat()
@@ -1071,7 +1071,7 @@ if __name__ == "__main__":
                 robot.set_speed(1650, 1650)
                 robot.send_speed()
 
-                if robot.linetrace_slope is not None:
+                if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
                   logger.info("Line detected, exit rescue mode")
                   robot.set_speed(1500, 1500)
                   robot.send_speed()
