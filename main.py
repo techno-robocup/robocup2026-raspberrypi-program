@@ -1054,22 +1054,22 @@ if __name__ == "__main__":
             if wall_follow_ccw():
               robot.set_speed(1700, 1300)
               sleep_sec(consts.TURN_90_TIME)
-            while True:
-              robot.update_button_stat()
-              if robot.robot_stop:
-                robot.set_speed(1500, 1500)
-                robot.send_speed()
-                break
+              while True:
+                robot.update_button_stat()
+                if robot.robot_stop:
+                  robot.set_speed(1500, 1500)
+                  robot.send_speed()
+                  break
 
-              robot.set_speed(1650, 1650)
-              robot.send_speed()
-
-              if robot.linetrace_slope is not None:
-                logger.info("Line detected, exit rescue mode")
-                robot.set_speed(1500, 1500)
+                robot.set_speed(1650, 1650)
                 robot.send_speed()
-                robot.write_is_rescue_flag(False)
-                break
+
+                if robot.linetrace_slope is not None:
+                  logger.info("Line detected, exit rescue mode")
+                  robot.set_speed(1500, 1500)
+                  robot.send_speed()
+                  robot.write_is_rescue_flag(False)
+                  break
             robot.set_speed(1500, 1500)
             robot.send_speed()
             robot.write_is_rescue_flag(False)
