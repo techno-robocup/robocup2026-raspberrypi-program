@@ -182,7 +182,7 @@ def execute_green_mark_turn() -> bool:
   # Execute turn based on detected directions
   if has_left and has_right:
     start_time = time.time()
-    max_time = consts.MAX_TURN_180_TIME
+    max_time = consts.MAX_TURN_90_TIME
     target_crossings = 2
     line_crossings = 0
     prev_checkpoint_black = False  # Initialize after delay
@@ -723,7 +723,7 @@ def release_ball() -> bool:
   robot.set_speed(1300, 1300)
   sleep_sec(2.5)
   robot.set_speed(1750, 1250)
-  sleep_sec(consts.TURN_180_TIME)
+  sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   return True
@@ -773,7 +773,8 @@ def set_target() -> bool:
     robot.write_rescue_turning_angle(0)
     return False
   if robot.rescue_turning_angle >= 720:
-    robot.write_rescue_target(consts.TargetList.EXIT.value)
+    # robot.write_rescue_target(consts.TargetList.EXIT.value)
+      robot.write_rescue_target(consts.TargetList.RED_CAGE)
     # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   elif robot.rescue_turning_angle >= 360:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
@@ -860,39 +861,89 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
-
-def calculate_exit() -> tuple[int, int]:
-  """Calculate motor speeds to approach the exit target.
-
-  Uses the exit marker's horizontal offset for steering correction.
-  Includes a deadband (±10) to reduce oscillation when nearly aligned.
-
-  Returns:
-    Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
-    Returns (1500, 1500) if target data is unavailable.
+def wall_follow_ccw() -> bool:
   """
-  angle = robot.rescue_offset
-  size = robot.rescue_size
-  if angle is None or size is None:
-    return 1500, 1500
-  if abs(angle) > 30:
-    diff_angle = angle * EOP
-    if diff_angle > 0:
-      diff_angle = max(diff_angle - 10, 0)
-    else:
-      diff_angle = max(diff_angle + 10, 0)
-  else:
-    diff_angle = 0
-  dist_term = 0
-  if consts.BALL_CATCH_SIZE * 3 > size:
-    dist_tern = (math.sqrt(consts.BALL_CATCH_SIZE * 3) - math.sqrt(size)) ** 2 * ESP
-  dist_term = int(max(150, dist_term))
-  base_L = 1500 + diff_angle + dist_term
-  base_R = 1500 - diff_angle + dist_term
-  logger.info(f"offset: {angle} size: {size}")
-  logger.info(f"Motor speed L{base_L} R{base_R}")
-  return clamp(int(base_L), MIN_SPEED,
-               MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+  Follow the wall counter-clockwise using ultrasonic[1].
+  Returns True if an opening is detected.
+  """
+  TARGET_MIN = 4.0
+  TARGET_MAX = 6.0
+  OPEN_THRESHOLD = 9.0
+
+  BASE_SPEED = 1550
+  TURN_GAIN = 20
+
+  ultrasonic = robot.ultrasonic
+  front_dist = ultrasonic[0]
+  side_dist = ultrasonic[1]
+  if front_dist is None:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return False
+  elif front_dist <= 4:
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
+    return False
+  if side_dist is None or side_dist <= 0:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return False
+
+  if side_dist > OPEN_THRESHOLD:
+    logger.info("Wall opening detected")
+    return True
+
+  error = 0
+  if side_dist < TARGET_MIN:
+    error = TARGET_MIN - side_dist
+  elif side_dist > TARGET_MAX:
+    error = TARGET_MAX - side_dist
+
+  turn = int(error * TURN_GAIN)
+
+  left_speed  = BASE_SPEED - turn
+  right_speed = BASE_SPEED + turn
+
+  left_speed, right_speed = clamp(left_speed), clamp(right_speed)
+
+  robot.set_speed(left_speed, right_speed)
+  robot.send_speed()
+
+  return False
+
+
+# def calculate_exit() -> tuple[int, int]:
+#   """Calculate motor speeds to approach the exit target.
+
+#   Uses the exit marker's horizontal offset for steering correction.
+#   Includes a deadband (±10) to reduce oscillation when nearly aligned.
+
+#   Returns:
+#     Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
+#     Returns (1500, 1500) if target data is unavailable.
+#   """
+#   angle = robot.rescue_offset
+#   size = robot.rescue_size
+#   if angle is None or size is None:
+#     return 1500, 1500
+#   if abs(angle) > 30:
+#     diff_angle = angle * EOP
+#     if diff_angle > 0:
+#       diff_angle = max(diff_angle - 10, 0)
+#     else:
+#       diff_angle = max(diff_angle + 10, 0)
+#   else:
+#     diff_angle = 0
+#   dist_term = 0
+#   if consts.BALL_CATCH_SIZE * 3 > size:
+#     dist_tern = (math.sqrt(consts.BALL_CATCH_SIZE * 3) - math.sqrt(size)) ** 2 * ESP
+#   dist_term = int(max(150, dist_term))
+#   base_L = 1500 + diff_angle + dist_term
+#   base_R = 1500 - diff_angle + dist_term
+#   logger.info(f"offset: {angle} size: {size}")
+#   logger.info(f"Motor speed L{base_L} R{base_R}")
+#   return clamp(int(base_L), MIN_SPEED,
+#                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
 # def retry_catch() -> bool:
@@ -909,6 +960,8 @@ def calculate_exit() -> tuple[int, int]:
 #       logger.info("Turn interrupted by button during approach")
 #       return False
 #   return True
+
+exit_cage_flag = False
 
 logger.debug("Objects Initialized")
 
@@ -927,6 +980,7 @@ if __name__ == "__main__":
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
+  exit_cage_flag = False
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
@@ -967,10 +1021,53 @@ if __name__ == "__main__":
           set_target()
       else:
         if robot.rescue_target == consts.TargetList.EXIT.value:
-          motorl, motorr = calculate_exit()
-          robot.set_speed(motorl, motorr)
-          robot.send_speed()
-          if robot.linetrace_slope is not None:
+          if not exit_cage_flag:
+            if robot.rescue_offset is None:
+              change_position()
+            else:
+              motorl, motorr = calculate_cage()
+              robot.set_speed(motorl, motorr)
+              robot.send_speed()
+              if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
+              robot.rescue_image.shape[0] * 1 / 2):
+                robot.set_speed(1700, 1700)
+                sleep_sec(1)
+                ultrasonic_info = robot.ultrasonic
+                while True:
+                  ultrasonic_info = robot.ultrasonic
+                  if ultrasonic_info[0] > 4:
+                    break
+                  robot.set_speed(1400, 1400)
+                  robot.send_speed()
+                  if robot.robot_stop:
+                    robot.set_speed(1500, 1500)
+                    robot.send_speed()
+                    logger.debug("Sleep interrupted by button")
+              robot.set_speed(1500, 1500)
+              robot.send_speed()
+              robot.set_speed(1250, 1750)
+              sleep_sec(consts.TURN_90_TIME)
+              exit_cage_flag = True
+          else:
+            if wall_follow_ccw():
+              robot.set_speed(1700, 1300)
+              sleep_sec(1)
+            while True:
+              robot.update_button_stat()
+              if robot.robot_stop:
+                robot.set_speed(1500, 1500)
+                robot.send_speed()
+                break
+
+              robot.set_speed(1650, 1650)
+              robot.send_speed()
+
+              if robot.linetrace_slope is not None:
+                logger.info("Line detected, exit rescue mode")
+                robot.set_speed(1500, 1500)
+                robot.send_speed()
+                robot.write_is_rescue_flag(False)
+                break
             robot.set_speed(1500, 1500)
             robot.send_speed()
             robot.write_is_rescue_flag(False)
