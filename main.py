@@ -558,13 +558,22 @@ def find_best_target() -> None:
       except Exception as e:
         logger.exception(f"Error processing detection box: {e}")
         continue
-      if robot.rescue_target == consts.TargetList.EXIT:
-        if cls == consts.TargetList.RED_CAGE:
+      if robot.rescue_target == consts.TargetList.EXIT.value:
+        if cls == consts.TargetList.RED_CAGE.value:
           x_center, y_center, w, h = map(float, box.xywh[0])
           dist = x_center - cx
           area = w * h
-          best_angle = dist
-          best_size = area
+
+          if abs(dist) < min_dist:
+            min_dist = abs(dist)
+            best_angle = dist
+            best_size = area
+            best_target_y = y_center
+            best_target_w = w
+
+          logger.info(
+              f"[EXIT] Detected RED_CAGE area={area:.1f}, offset={dist:.1f}, y={y_center:.1f}"
+          )
       elif cls == robot.rescue_target:
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
@@ -983,7 +992,7 @@ if __name__ == "__main__":
   robot.send_arm()
   robot.send_speed()
   robot.write_rescue_turning_angle(0)
-  robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
+  robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
