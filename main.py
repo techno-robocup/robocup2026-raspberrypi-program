@@ -886,12 +886,18 @@ def wall_follow_ccw() -> bool:
   TARGET_MAX = 150.0
   OPEN_THRESHOLD = 300.0
   BASE_SPEED = 1600
-  BASE_TURN = 30
+  BASE_TURN = 50
   ultrasonic = robot.ultrasonic
   front_dist = ultrasonic[0]
   side_dist = ultrasonic[1]
   logger.info(f"front {front_dist}, side {side_dist}")
   if front_dist is None:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return False
+  elif front_dist <= 30:
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
@@ -910,8 +916,6 @@ def wall_follow_ccw() -> bool:
     turn = BASE_TURN
   left_speed  = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
-  if front_dist <= 30:
-    right_speed += 60
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
   robot.send_speed()
