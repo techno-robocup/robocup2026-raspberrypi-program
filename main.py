@@ -274,7 +274,7 @@ def execute_green_mark_turn() -> bool:
   robot.send_speed()
   robot.set_speed(1330, 1330)
   robot.send_speed()
-  time.sleep(1.8)
+  time.sleep(2.3)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.write_last_slope_get_time(time.time())
