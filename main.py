@@ -559,7 +559,7 @@ def find_best_target() -> None:
         logger.exception(f"Error processing detection box: {e}")
         continue
       if robot.rescue_target == consts.TargetList.EXIT.value:
-        if cls == consts.TargetList.RED_CAGE.value:
+        if cls == consts.TargetList.GREEN_CAGE.value:
           x_center, y_center, w, h = map(float, box.xywh[0])
           dist = x_center - cx
           area = w * h
@@ -675,7 +675,7 @@ def catch_ball() -> int:
   sleep_sec(1.5)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1420, 0)
+  robot.set_arm(1300, 0)
   robot.send_arm()
   robot.set_speed(1650, 1650)
   sleep_sec(1.5)
