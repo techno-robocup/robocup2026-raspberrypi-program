@@ -884,7 +884,7 @@ def wall_follow_ccw() -> bool:
   """
   TARGET_MIN = 10.0
   TARGET_MAX = 30.0
-  OPEN_THRESHOLD = 100.0
+  OPEN_THRESHOLD = 70.0
   BASE_SPEED = 1680
   BASE_TURN = 100
   ultrasonic = robot.ultrasonic
@@ -1077,6 +1077,8 @@ if __name__ == "__main__":
 
                 if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
                   logger.info("Line detected, exit rescue mode")
+                  robot.set_speed(1600,1600)
+                  sleep_sec(1)
                   robot.set_speed(1500, 1500)
                   robot.send_speed()
                   robot.write_is_rescue_flag(False)
