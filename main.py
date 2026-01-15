@@ -1004,6 +1004,7 @@ if __name__ == "__main__":
   exit_cage_flag = False
   while True:
     robot.update_button_stat()
+    robot.update_gyro_stat()
     if robot.robot_stop:
       if robot.rescue_target == consts.TargetList.SILVER_BALL.value or robot.rescue_target == consts.TargetList.GREEN_CAGE.value:
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
