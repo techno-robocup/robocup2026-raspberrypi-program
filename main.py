@@ -509,11 +509,11 @@ def find_best_target() -> None:
     - robot.rescue_offset: Horizontal offset from image center (pixels).
     - robot.rescue_size: Area of the detected target (pixels^2).
     - robot.rescue_y: Vertical center (pixels) of the best target.
-    - robot.rescue_ball_flag: True if ball is close enough to catch.
+    - robot.ball_catch_flag: True if ball is close enough to catch.
     - robot.rescue_target: May switch to SILVER_BALL on override.
   """
   # Reset ball flag at start - will be set True only if catchable ball detected
-  robot.write_rescue_ball_flag(False)
+  robot.write_ball_catch_flag(False)
   # yolo_results = None
   with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
@@ -578,7 +578,7 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
-          robot.write_rescue_ball_flag(False)
+          robot.write_ball_catch_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
@@ -595,7 +595,7 @@ def find_best_target() -> None:
             else:
               includes_center = False
             if is_bottom_third and includes_center:
-              robot.write_rescue_ball_flag(True)
+              robot.write_ball_catch_flag(True)
         logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
@@ -609,7 +609,7 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
-          robot.write_rescue_ball_flag(False)
+          robot.write_ball_catch_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
@@ -623,7 +623,7 @@ def find_best_target() -> None:
           ball_right = best_angle + best_target_w / 2 + image_width / 2
           includes_center = ball_left <= image_width / 2 <= ball_right
           if is_bottom_third and includes_center:
-            robot.write_rescue_ball_flag(True)
+            robot.write_ball_catch_flag(True)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
@@ -1020,7 +1020,7 @@ if __name__ == "__main__":
       robot.write_linetrace_stop(False)
       robot.write_is_rescue_flag(False)
       robot.write_last_slope_get_time(time.time())
-      robot.write_rescue_ball_flag(False)
+      robot.write_ball_catch_flag(False)
       exit_cage_flag = False
     elif robot.is_rescue_flag:
       find_best_target()
@@ -1032,7 +1032,7 @@ if __name__ == "__main__":
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if not exit_cage_flag and ((robot.rescue_offset is None) or (robot.rescue_size is None)):
         change_position()
-        if not robot.rescue_ball_flag:
+        if not robot.ball_catch_flag:
           robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
         # Only call set_target() if searching for balls (rotation-based logic).
         # For cages/exit, keep searching the current target.
@@ -1097,7 +1097,7 @@ if __name__ == "__main__":
           motorl, motorr = calculate_ball()
           robot.set_speed(motorl, motorr)
           robot.send_speed()
-          if robot.rescue_ball_flag:
+          if robot.ball_catch_flag:
             is_not_took = catch_ball()
             if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
               robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
