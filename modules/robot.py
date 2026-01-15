@@ -256,8 +256,8 @@ class Robot:
     self.__green_marks_lock = threading.Lock()
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
-    self.__last_time_set: float | None = None
-    self.__last_slope_get_time: float = None
+    self.__last_time_set: Optional[float] = None
+    self.__last_slope_get_time: Optional[float] = None
     self.__gyro_lock = threading.Lock()
     self.__yaw: float = 0.0
     self.__roll: float = 0.0
