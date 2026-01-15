@@ -258,6 +258,13 @@ class Robot:
     self.__green_black_detected: List[np.ndarray] = []
     self.__last_time_set: float | None = None
     self.__last_slope_get_time: float = None
+    self.__gyro_lock = threading.Lock()
+    self.__yaw: float = 0.0
+    self.__roll: float = 0.0
+    self.__pitch: float = 0.0
+    self.__acc_x: float = 0.0
+    self.__acc_y: float = 0.0
+    self.__acc_z: float = 0.0
     # Set robot reference in camera module to avoid circular import
     modules.camera.set_robot(self)
 
@@ -460,6 +467,66 @@ class Robot:
         f"Button response: {response} (type: {type(response).__name__})")
     self.__robot_stop = response == "OFF"
     return None
+
+  def update_gyro_stat(self) -> None:
+    """Update gyro's angles from ESP32.
+
+    Returns:
+      None
+    """
+    response = self.__uart_device.send("GET bno")
+    if not response:
+      logger.get_logger().error("Failed to get gyro data from ESP32.")
+      return None
+    try:
+      angles = list(map(float, response.split()))
+    except ValueError:
+      logger.get_logger().error(
+          f"Failed to parse gyro data as floats: '{response}'")
+      return None
+    if len(angles) != 6:
+      logger.get_logger().error(
+          f"Unexpected gyro data format: '{response}'")
+      return None
+    with self.__gyro_lock:
+      self.__yaw, self.__roll, self.__pitch, self.__acc_x, self.__acc_y, self.__acc_z = angles
+    return None
+
+  @property
+  def yaw(self) -> float:
+    """Get current yaw angle from gyro."""
+    with self.__gyro_lock:
+      return self.__yaw
+
+  @property
+  def roll(self) -> float:
+    """Get current roll angle from gyro."""
+    with self.__gyro_lock:
+      return self.__roll
+
+  @property
+  def pitch(self) -> float:
+    """Get current pitch angle from gyro."""
+    with self.__gyro_lock:
+      return self.__pitch
+
+  @property
+  def acc_x(self) -> float:
+    """Get current X-axis acceleration from gyro."""
+    with self.__gyro_lock:
+      return self.__acc_x
+
+  @property
+  def acc_y(self) -> float:
+    """Get current Y-axis acceleration from gyro."""
+    with self.__gyro_lock:
+      return self.__acc_y
+
+  @property
+  def acc_z(self) -> float:
+    """Get current Z-axis acceleration from gyro."""
+    with self.__gyro_lock:
+      return self.__acc_z
 
   @property
   def rescue_offset(self) -> Optional[float]:
