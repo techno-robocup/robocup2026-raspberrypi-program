@@ -245,7 +245,8 @@ class Robot:
     self.__rescue_y: Optional[float] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0  # Total revolutions
-    self.__rescue_ball_flag = False  # catch ball flag
+    self.__ball_catch_flag = False  # catch ball flag
+    self.__is_rescue_sixth = False
     self.__slope = None
     self.__line_area: Optional[float] = None
     self.__line_center_x: Optional[int] = None
@@ -441,14 +442,14 @@ class Robot:
     with self.__rescue_lock:
       self.__rescue_turning_angle = angle
 
-  def write_rescue_ball_flag(self, flag: bool) -> None:
+  def write_ball_catch_flag(self, flag: bool) -> None:
     """Set ball catch ready flag (thread-safe).
 
     Args:
       flag: True if ball is close enough to catch.
     """
     with self.__rescue_lock:
-      self.__rescue_ball_flag = flag
+      self.__ball_catch_flag = flag
 
   def update_button_stat(self) -> None:
     """Poll button state from ESP32 and update robot_stop flag.
@@ -492,10 +493,10 @@ class Robot:
       return self.__rescue_turning_angle
 
   @property
-  def rescue_ball_flag(self) -> bool:
+  def ball_catch_flag(self) -> bool:
     """Check if ball is close enough to catch (thread-safe)."""
     with self.__rescue_lock:
-      return self.__rescue_ball_flag
+      return self.__ball_catch_flag
 
   def write_linetrace_stop(self, flag: bool) -> None:
     """Set linetrace stop flag (thread-safe).
