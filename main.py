@@ -568,7 +568,7 @@ def find_best_target() -> None:
     best_target_y = None
     # best_target_w = None
     # best_target_h = None
-    min_dist = float("inf")
+    max_area = float(0)
     cx = image_width / 2.0
     for box in boxes:
       try:
@@ -583,12 +583,11 @@ def find_best_target() -> None:
           dist = x_center - cx
           area = w * h
 
-          if abs(dist) < min_dist:
-            min_dist = abs(dist)
+          if area > max_area:
+            max_area = area
             best_angle = dist
             best_size = area
             best_target_y = y_center
-            best_target_w = w
 
           logger.info(
               f"[EXIT] Detected RED_CAGE area={area:.1f}, offset={dist:.1f}, y={y_center:.1f}"
@@ -597,8 +596,8 @@ def find_best_target() -> None:
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
         area = w * h
-        if abs(dist) < min_dist:
-          min_dist = abs(dist)
+        if area > max_area:
+          max_area = area
           best_angle = dist
           best_size = area
           update_ball_flags(dist, y_center, w, image_height, image_width)
@@ -606,12 +605,11 @@ def find_best_target() -> None:
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-        logger.info("Override")
         robot.write_rescue_turning_angle(0)
         x_center, y_center, w, h = map(float, box.xywh[0])
         best_angle = x_center - cx
         best_size = w * h
-        min_dist = abs(best_angle)
+        max_area = area
         update_ball_flags(best_angle, y_center, w, image_height, image_width)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
