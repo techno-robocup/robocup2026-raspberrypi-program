@@ -541,6 +541,38 @@ def update_ball_flags(dist: float, y_center: float, w: float, image_height: int,
   elif is_bottom_third and includes_center:
     robot.write_ball_catch_flag(True)
 
+def draw_ball_debug(
+    img,
+    dist: float,
+    y_center: float,
+    w: float,
+    image_height: int,
+    image_width: int,
+):
+    cx = image_width // 2
+
+    # center vertical line
+    cv2.line(img, (cx, 0), (cx, image_height), (255, 255, 0), 1)
+
+    # bottom third & sixth
+    y_third = int(image_height * 2 / 3)
+    y_sixth = int(image_height * 5 / 6)
+    cv2.line(img, (0, y_third), (image_width, y_third), (0, 255, 255), 1)
+    cv2.line(img, (0, y_sixth), (image_width, y_sixth), (0, 0, 255), 1)
+
+    if dist is None:
+        return
+
+    # ball left / right
+    ball_left = int(dist - w / 2 + cx)
+    ball_right = int(dist + w / 2 + cx)
+
+    cv2.line(img, (ball_left, 0), (ball_left, image_height), (255, 0, 0), 1)
+    cv2.line(img, (ball_right, 0), (ball_right, image_height), (255, 0, 0), 1)
+
+    # y center
+    cv2.circle(img, (cx + int(dist), int(y_center)), 5, (0, 255, 0), -1)
+
 
 def find_best_target() -> None:
   """Detect and track the best rescue target using YOLO object detection.
@@ -565,6 +597,14 @@ def find_best_target() -> None:
     robot.write_last_yolo_time(time.time())
   current_time = time.time()
   result_image = robot.rescue_image
+  draw_ball_debug(
+        result_image,
+        dist,
+        y_center,
+        w,
+        image_height,
+        image_width,
+    )
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
       result_image = yolo_results[0].plot()
