@@ -147,6 +147,14 @@ def execute_green_mark_turn() -> bool:
   - True if turn completed successfully
   - False if interrupted by button
   """
+  gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
+  gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
+  gyro_calculated = (
+      math.degrees(math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch)))
+      if gyro_roll is not None and gyro_pitch is not None
+      else None
+  )
+  gyro_calculated = math.degrees(gyro_calculated)
   green_black_detected = robot.green_black_detected
 
   # Determine which directions have black lines
@@ -184,6 +192,9 @@ def execute_green_mark_turn() -> bool:
     logger.warning("Gyro yaw unavailable, cannot execute gyro-based turn")
     return False
 
+  turning_base_speed = TURNING_BASE_SPEED
+  if gyro_calculated > 15:
+    turning_base_speed = 1500 + (TURNING_BASE_SPEED-1500) * 0.5
   # Execute turn based on detected directions
   if has_left and has_right:
     target_rotation = 180.0
@@ -207,7 +218,7 @@ def execute_green_mark_turn() -> bool:
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
       
-      robot.set_speed(3000 - TURNING_BASE_SPEED, TURNING_BASE_SPEED)  # Turn left
+      robot.set_speed(3000 - turning_base_speed, turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
@@ -236,7 +247,7 @@ def execute_green_mark_turn() -> bool:
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
       
-      robot.set_speed(3000 - TURNING_BASE_SPEED, TURNING_BASE_SPEED)  # Turn left
+      robot.set_speed(3000 - turning_base_speed, turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
@@ -265,7 +276,7 @@ def execute_green_mark_turn() -> bool:
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
       
-      robot.set_speed(TURNING_BASE_SPEED, 3000 - TURNING_BASE_SPEED)  # Turn right
+      robot.set_speed(turning_base_speed, 3000 - turning_base_speed)  # Turn right
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
