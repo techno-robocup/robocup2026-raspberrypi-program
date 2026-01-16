@@ -393,6 +393,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   Uses arctan to convert slope to angle, then calculates the difference
   from π/2 (vertical). This gives a normalized angular error for steering.
   Also reduces speed when the black line gets smaller for better control.
+  Reduces speed when gyro angle error is large for stability.
 
   Args:
     slope: Line slope value. If None, reads from robot.read_linetrace_slope().
@@ -443,17 +444,28 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
           f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
       )
 
+
+  # Get gyro roll angle and reduce speed when tilted significantly
+  gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
+  gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
+  gyro_calculated = (
+      math.degrees(math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch)))
+      if gyro_roll is not None and gyro_pitch is not None
+      else None
+  )
+  gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 0.5
+
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
-  adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier)
+  adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier * gyro_multiplier)
 
   # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000)}")
   motor_l = clamp(
       clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
-      steering, MIN_SPEED, MAX_SPEED)
+      steering * gyro_multiplier, MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
       clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
-      steering, MIN_SPEED, MAX_SPEED)
+      steering * gyro_multiplier, MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
