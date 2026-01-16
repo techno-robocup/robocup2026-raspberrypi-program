@@ -730,6 +730,16 @@ class Robot:
     """
     return self.__robot_stop
 
+  @property
+  def sum_accel(self) -> float:
+    """Calculate total acceleration magnitude from gyro data.
+
+    Returns:
+      Magnitude of acceleration vector.
+    """
+    with self.__gyro_lock:
+      return (self.__acc_x**2 + self.__acc_y**2)**0.5
+
 
 robot = Robot()
 
