@@ -465,7 +465,7 @@ class Robot:
     with self.__rescue_lock:
       self.__ball_catch_flag = flag
 
-  def write_ball_near_flag(self, flag:bool) -> None:
+  def write_ball_near_flag(self, flag: bool) -> None:
     with self.__rescue_lock:
       self.__ball_near_flag = flag
 
@@ -497,8 +497,7 @@ class Robot:
           f"Failed to parse gyro data as floats: '{response}'")
       return None
     if len(angles) != 6:
-      logger.get_logger().error(
-          f"Unexpected gyro data format: '{response}'")
+      logger.get_logger().error(f"Unexpected gyro data format: '{response}'")
       return None
     with self.__gyro_lock:
       self.__yaw, self.__roll, self.__pitch, self.__acc_x, self.__acc_y, self.__acc_z = angles

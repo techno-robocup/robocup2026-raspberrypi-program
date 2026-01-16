@@ -298,31 +298,34 @@ def should_execute_line_recovery(line_area: Optional[float],
     True if recovery should be executed
   """
   global last_gap_recovery_time
-  
+
   if line_area is None or not is_valid_number(line_area):
     return False
-  
+
   # Check cooldown to prevent rapid re-triggering during recovery
   if time.time() - last_gap_recovery_time < GAP_RECOVERY_COOLDOWN:
     return False
-  
+
   # Get line center x-coordinate and check offset from image center
   line_center_x = robot.line_center_x
   image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
-  x_offset = abs(line_center_x - image_center_x) if line_center_x is not None else 0
-  
+  x_offset = abs(line_center_x -
+                 image_center_x) if line_center_x is not None else 0
+
   # Check if x-offset is significant
   x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.1
 
   area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   x_offset_condition = x_offset_significant
-  
+
   # Only trigger when area is small AND x-offset is significant
   should_recover = area_condition and x_offset_condition
-  
+
   if should_recover:
-    logger.info(f"Line recovery triggered: Low area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})")
-  
+    logger.info(
+        f"Line recovery triggered: Low area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})"
+    )
+
   return should_recover
 
 
@@ -338,7 +341,7 @@ def execute_line_recovery() -> bool:
     False if interrupted by button
   """
   global last_gap_recovery_time
-  
+
   logger.info("Executing line recovery - backing up")
   last_gap_recovery_time = time.time()  # Set cooldown start
 
@@ -432,7 +435,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       # Normalized to 0-1 range, then apply pow(x,2) for aggressive acceleration
       normalized = (line_area - consts.MIN_BLACK_LINE_AREA) / (
           3000 - consts.MIN_BLACK_LINE_AREA)
-      power_curve = normalized ** 2  # Quadratic gives aggressive ramp
+      power_curve = normalized**2  # Quadratic gives aggressive ramp
       # Scale to 0.3-1.0 range
       speed_multiplier = 0.3 + power_curve * 0.7
       speed_multiplier = max(0.3, min(1.0, speed_multiplier))
@@ -496,15 +499,15 @@ def sleep_sec(sec: float, function=None) -> int:
     robot.send_speed()
   return 0
 
-def update_ball_flags(dist: float, y_center: float, w: float, image_height: int, image_width:int) -> None:
+
+def update_ball_flags(dist: float, y_center: float, w: float, image_height: int,
+                      image_width: int) -> None:
   robot.write_ball_catch_flag(False)
   robot.write_ball_near_flag(False)
   best_target_y = y_center
   best_target_w = w
-  is_bottom_third = best_target_y and best_target_y > (image_height *
-                                                        2 / 3)
-  is_bottom_sixth = best_target_y and best_target_y > (image_height *
-                                                        5 / 6)
+  is_bottom_third = best_target_y and best_target_y > (image_height * 2 / 3)
+  is_bottom_sixth = best_target_y and best_target_y > (image_height * 5 / 6)
   if dist is not None:
     ball_left = dist - best_target_w / 2 + image_width / 2
     ball_right = dist + best_target_w / 2 + image_width / 2
@@ -629,16 +632,18 @@ def find_best_target() -> None:
     else:
       robot.write_rescue_y(float(best_target_y))
 
+
 def fix_offset() -> bool:
   if abs(robot.rescue_offset) > 400:
     if robot.rescue_offset > 0:
-      robot.set_speed(1600,1300)
+      robot.set_speed(1600, 1300)
     else:
       robot.set_speed(1300, 1600)
     sleep_sec(0.05)
     return True
   else:
     return True
+
 
 def catch_ball() -> int:
   """Execute the ball catching sequence using the robot arm.
@@ -739,14 +744,16 @@ def release_ball() -> bool:
   robot.send_arm()
   return True
 
+
 def drop_ball() -> bool:
   logger.debug("Drop ball")
-  robot.set_speed(1500,1500)
-  robot.set_arm(1536,0)
+  robot.set_speed(1500, 1500)
+  robot.set_arm(1536, 0)
   sleep_sec(0.4)
   robot.set_arm(3072, 0)
   robot.send_arm()
   return 0
+
 
 def change_position() -> bool:
   """Rotate approximately 30 degrees to search for targets.
@@ -785,7 +792,7 @@ def set_target() -> bool:
     return False
   if robot.rescue_turning_angle >= 720:
     robot.write_rescue_target(consts.TargetList.EXIT.value)
-      # robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
+    # robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
     # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   elif robot.rescue_turning_angle >= 360:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
@@ -793,19 +800,21 @@ def set_target() -> bool:
     robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   return True
 
+
 def clamp_turning_angle() -> bool:
-    angle = robot.rescue_turning_angle
-    if angle is None:
-        robot.write_rescue_turning_angle(0)
-        return False
-    if angle >= 720:
-        angle = 720
-    elif angle >= 360:
-        angle = 360
-    else:
-        angle = 0
-    robot.write_rescue_turning_angle(angle)
-    return True
+  angle = robot.rescue_turning_angle
+  if angle is None:
+    robot.write_rescue_turning_angle(0)
+    return False
+  if angle >= 720:
+    angle = 720
+  elif angle >= 360:
+    angle = 360
+  else:
+    angle = 0
+  robot.write_rescue_turning_angle(angle)
+  return True
+
 
 def calculate_ball() -> tuple[int, int]:
   """Calculate motor speeds to approach a ball target.
@@ -863,7 +872,8 @@ def calculate_cage() -> tuple[int, int]:
   diff_angle = angle * COP
   diff_min_max = 100
   diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
-  dist_term = (math.sqrt(consts.IMAGE_SZ * 0.5) - math.sqrt(robot.rescue_size)) * CSP
+  dist_term = (math.sqrt(consts.IMAGE_SZ * 0.5) -
+               math.sqrt(robot.rescue_size)) * CSP
   dist_term = int(max(150, min(dist_term, 200)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
@@ -871,6 +881,7 @@ def calculate_cage() -> tuple[int, int]:
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+
 
 def wall_follow_ccw() -> bool:
   """
@@ -910,7 +921,7 @@ def wall_follow_ccw() -> bool:
     turn = BASE_TURN * -1
   if side_dist < TARGET_MIN:
     turn = BASE_TURN
-  left_speed  = BASE_SPEED - turn
+  left_speed = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
   logger.info(f"motor speed L{left_speed} R{right_speed}")
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
@@ -952,7 +963,6 @@ def wall_follow_ccw() -> bool:
 #   logger.info(f"Motor speed L{base_L} R{base_R}")
 #   return clamp(int(base_L), MIN_SPEED,
 #                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
-
 
 # def retry_catch() -> bool:
 #   global catch_failed_cnt
@@ -1018,7 +1028,8 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if not exit_cage_flag and ((robot.rescue_offset is None) or (robot.rescue_size is None)):
+      if not exit_cage_flag and ((robot.rescue_offset is None) or
+                                 (robot.rescue_size is None)):
         change_position()
         if not robot.ball_catch_flag:
           robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
@@ -1041,7 +1052,7 @@ if __name__ == "__main__":
               robot.set_speed(motorl, motorr)
               robot.send_speed()
               if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
-              robot.rescue_image.shape[0] * 1 / 2):
+                  robot.rescue_image.shape[0] * 1 / 2):
                 robot.set_speed(1700, 1700)
                 sleep_sec(1)
                 robot.set_speed(1300, 1300)
@@ -1075,7 +1086,7 @@ if __name__ == "__main__":
 
                 if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
                   logger.info("Line detected, exit rescue mode")
-                  robot.set_speed(1600,1600)
+                  robot.set_speed(1600, 1600)
                   sleep_sec(1.0)
                   robot.set_speed(1500, 1500)
                   robot.send_speed()
@@ -1126,7 +1137,8 @@ if __name__ == "__main__":
           sleep_sec(1, robot.send_speed)
           object_avoidance_start = time.time()
           while robot.linetrace_slope is None:
-            if time.time() - object_avoidance_start >= 2 and robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+            if time.time(
+            ) - object_avoidance_start >= 2 and robot.line_area <= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
               break
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
