@@ -496,6 +496,26 @@ def sleep_sec(sec: float, function=None) -> int:
     robot.send_speed()
   return 0
 
+def update_ball_flags(dist: float, y_center: float, w: float, image_height: int, image_width:int) -> None:
+  robot.write_ball_catch_flag(False)
+  robot.write_ball_near_flag(False)
+  best_target_y = y_center
+  best_target_w = w
+  is_bottom_third = best_target_y and best_target_y > (image_height *
+                                                        2 / 3)
+  is_bottom_sixth = best_target_y and best_target_y > (image_height *
+                                                        5 / 6)
+  if dist is not None:
+    ball_left = dist - best_target_w / 2 + image_width / 2
+    ball_right = dist + best_target_w / 2 + image_width / 2
+    includes_center = ball_left <= image_width / 2 <= ball_right
+  else:
+    includes_center = False
+  if is_bottom_sixth:
+    robot.write_ball_near_flag(True)
+  elif is_bottom_third and includes_center:
+    robot.write_ball_catch_flag(True)
+
 
 def find_best_target() -> None:
   """Detect and track the best rescue target using YOLO object detection.
@@ -546,7 +566,7 @@ def find_best_target() -> None:
     best_angle = None
     best_size = None
     best_target_y = None
-    best_target_w = None
+    # best_target_w = None
     # best_target_h = None
     min_dist = float("inf")
     cx = image_width / 2.0
@@ -578,52 +598,23 @@ def find_best_target() -> None:
         dist = x_center - cx
         area = w * h
         if abs(dist) < min_dist:
-          robot.write_ball_catch_flag(False)
           min_dist = abs(dist)
           best_angle = dist
           best_size = area
-          best_target_y = y_center
-          best_target_w = w
-          # best_target_h = h
-          if cls == consts.TargetList.BLACK_BALL.value or cls == consts.TargetList.SILVER_BALL.value:
-            is_bottom_third = best_target_y and best_target_y > (image_height *
-                                                                 2 / 3)
-            if best_angle is not None:
-              ball_left = best_angle - best_target_w / 2 + image_width / 2
-              ball_right = best_angle + best_target_w / 2 + image_width / 2
-              includes_center = ball_left <= image_width / 2 <= ball_right
-            else:
-              includes_center = False
-            if is_bottom_third and includes_center:
-              robot.write_ball_catch_flag(True)
+          update_ball_flags(dist, y_center, w, image_height, image_width)
         logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-      # elif consts.TargetList.SILVER_BALL.value != robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         logger.info("Override")
         robot.write_rescue_turning_angle(0)
-        # if robot.rescue_target in (consts.TargetList.RED_CAGE, consts.TargetList.GREEN_CAGE):
-        #   drop_ball()
         x_center, y_center, w, h = map(float, box.xywh[0])
         dist = x_center - cx
         area = w * h
-        if abs(dist) < min_dist:
-          robot.write_ball_catch_flag(False)
-          min_dist = abs(dist)
-          best_angle = dist
-          best_size = area
-          best_target_y = y_center
-          best_target_w = w
-          # best_target_h = h
-          # Check if ball is close enough to catch (same logic as primary target)
-          is_bottom_third = best_target_y and best_target_y > (image_height *
-                                                               2 / 3)
-          ball_left = best_angle - best_target_w / 2 + image_width / 2
-          ball_right = best_angle + best_target_w / 2 + image_width / 2
-          includes_center = ball_left <= image_width / 2 <= ball_right
-          if is_bottom_third and includes_center:
-            robot.write_ball_catch_flag(True)
+        min_dist = abs(dist)
+        best_angle = dist
+        best_size = area
+        update_ball_flags(dist, y_center, w, image_height, image_width)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
