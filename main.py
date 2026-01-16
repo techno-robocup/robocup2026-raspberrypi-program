@@ -1019,6 +1019,7 @@ if __name__ == "__main__":
       robot.write_is_rescue_flag(False)
       robot.write_last_slope_get_time(time.time())
       robot.write_ball_catch_flag(False)
+      robot.write_ball_near_flag(False)
       exit_cage_flag = False
     elif robot.is_rescue_flag:
       find_best_target()

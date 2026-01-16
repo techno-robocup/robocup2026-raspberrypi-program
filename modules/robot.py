@@ -356,13 +356,6 @@ class Robot:
     assert self.__uart_device is not None
     return self.__uart_device.send("GET button") == "ON"
 
-  @property
-  def bno(self) -> List[float]:
-    assert self.__uart_device is not None
-    return list(
-        map(float,
-            Message(self.__uart_device.send("GET bno")).Message.split))
-
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
     """Store rescue camera image for YOLO processing (thread-safe).
 
