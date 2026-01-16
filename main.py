@@ -609,12 +609,10 @@ def find_best_target() -> None:
         logger.info("Override")
         robot.write_rescue_turning_angle(0)
         x_center, y_center, w, h = map(float, box.xywh[0])
-        dist = x_center - cx
-        area = w * h
-        min_dist = abs(dist)
-        best_angle = dist
-        best_size = area
-        update_ball_flags(dist, y_center, w, image_height, image_width)
+        best_angle = x_center - cx
+        best_size = w * h
+        min_dist = abs(best_angle)
+        update_ball_flags(best_angle, y_center, w, image_height, image_width)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
             f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
