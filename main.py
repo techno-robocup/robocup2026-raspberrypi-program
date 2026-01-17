@@ -538,7 +538,7 @@ def update_ball_flags(dist: float, y_center: float, w: float, image_height: int,
     includes_center = False
   if is_bottom_sixth:
     robot.write_ball_near_flag(True)
-  elif is_bottom_third and includes_center:
+  if is_bottom_third and includes_center:
     robot.write_ball_catch_flag(True)
 
 def draw_ball_debug(
@@ -992,54 +992,98 @@ def wall_follow_ccw() -> bool:
 
   return False
 
+def handle_not_found() -> None:
+  change_position()
+  if not robot.ball_catch_flag:
+    robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
+  # Only call set_target() if searching for balls (rotation-based logic).
+  # For cages/exit, keep searching the current target.
+  if robot.rescue_target in [
+      consts.TargetList.SILVER_BALL.value,
+      consts.TargetList.BLACK_BALL.value
+  ]:
+    set_target()
 
-# def calculate_exit() -> tuple[int, int]:
-#   """Calculate motor speeds to approach the exit target.
+def handle_exit() -> None:
+  ultrasonic_info = robot.ultrasonic
+  if not exit_cage_flag:
+    logger.info("Finding Red Cage for exiting")
+    if robot.rescue_offset is None:
+      change_position()
+    else:
+      motorl, motorr = calculate_cage()
+      robot.set_speed(motorl, motorr)
+      robot.send_speed()
+      if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
+          robot.rescue_image.shape[0] * 1 / 2):
+        robot.set_speed(1700, 1700)
+        sleep_sec(1)
+        robot.set_speed(1300, 1300)
+        sleep_sec(0.5)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME * 1.5)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        exit_cage_flag = True
+  else:
+    logger.info("wall follow ccw")
+    result = wall_follow_ccw()
+    if result:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      robot.set_speed(1650, 1650)
+      sleep_sec(1.7)
+      robot.set_speed(1750, 1250)
+      sleep_sec(consts.TURN_90_TIME)
+      while True:
+        robot.update_button_stat()
+        if robot.robot_stop:
+          robot.set_speed(1500, 1500)
+          robot.send_speed()
+          break
 
-#   Uses the exit marker's horizontal offset for steering correction.
-#   Includes a deadband (±10) to reduce oscillation when nearly aligned.
+        robot.set_speed(1650, 1650)
+        robot.send_speed()
 
-#   Returns:
-#     Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
-#     Returns (1500, 1500) if target data is unavailable.
-#   """
-#   angle = robot.rescue_offset
-#   size = robot.rescue_size
-#   if angle is None or size is None:
-#     return 1500, 1500
-#   if abs(angle) > 30:
-#     diff_angle = angle * EOP
-#     if diff_angle > 0:
-#       diff_angle = max(diff_angle - 10, 0)
-#     else:
-#       diff_angle = max(diff_angle + 10, 0)
-#   else:
-#     diff_angle = 0
-#   dist_term = 0
-#   if consts.BALL_CATCH_SIZE * 3 > size:
-#     dist_tern = (math.sqrt(consts.BALL_CATCH_SIZE * 3) - math.sqrt(size)) ** 2 * ESP
-#   dist_term = int(max(150, dist_term))
-#   base_L = 1500 + diff_angle + dist_term
-#   base_R = 1500 - diff_angle + dist_term
-#   logger.info(f"offset: {angle} size: {size}")
-#   logger.info(f"Motor speed L{base_L} R{base_R}")
-#   return clamp(int(base_L), MIN_SPEED,
-#                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
+        if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+          logger.info("Line detected, exit rescue mode")
+          robot.set_speed(1600, 1600)
+          sleep_sec(1.0)
+          robot.set_speed(1500, 1500)
+          robot.send_speed()
+          robot.write_is_rescue_flag(False)
+          break
 
-# def retry_catch() -> bool:
-#   global catch_failed_cnt
-#   catch_failed_cnt += 1
-#   prev_time = time.time()
-#   robot.set_speed(1300, 1300)
-#   while time.time() - prev_time > 2:  #TODO(K10-K10): random walk
-#     robot.send_speed()
-#     robot.update_button_stat()
-#     if robot.robot_stop:
-#       robot.set_speed(1500, 1500)
-#       robot.send_speed()
-#       logger.info("Turn interrupted by button during approach")
-#       return False
-#   return True
+def handle_ball() -> None:
+  motorl, motorr = calculate_ball()
+  robot.set_speed(motorl, motorr)
+  robot.send_speed()
+  if robot.ball_catch_flag:
+    is_not_took = catch_ball()
+    if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+      robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
+    elif robot.rescue_target == consts.TargetList.BLACK_BALL.value:
+      robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
+    # After catching, clear cached target data and force an immediate
+    # YOLO evaluation so the robot can detect and move toward the cage.
+    robot.write_rescue_offset(None)
+    robot.write_rescue_size(None)
+    robot.write_rescue_y(None)
+    robot.write_last_yolo_time(0)
+    logger.info(
+        "Post-catch: reset rescue_offset/size/y and forced YOLO run")
+
+def handle_cage() -> None:
+  clamp_turning_angle()
+  motorl, motorr = calculate_cage()
+  robot.set_speed(motorl, motorr)
+  robot.send_speed()
+  if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
+      robot.rescue_image.shape[0] * 1 / 2):
+    release_ball()
+    set_target()
 
 exit_cage_flag = False
 
@@ -1093,95 +1137,13 @@ if __name__ == "__main__":
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if not exit_cage_flag and ((robot.rescue_offset is None) or
                                  (robot.rescue_size is None)):
-        change_position()
-        if not robot.ball_catch_flag:
-          robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
-        # Only call set_target() if searching for balls (rotation-based logic).
-        # For cages/exit, keep searching the current target.
-        if robot.rescue_target in [
-            consts.TargetList.SILVER_BALL.value,
-            consts.TargetList.BLACK_BALL.value
-        ]:
-          set_target()
+        handle_not_found()
+      elif robot.rescue_target == consts.TargetList.EXIT.value:
+        handle_exit()
+      elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+        handle_ball()
       else:
-        if robot.rescue_target == consts.TargetList.EXIT.value:
-          ultrasonic_info = robot.ultrasonic
-          if not exit_cage_flag:
-            logger.info("Finding Red Cage for exiting")
-            if robot.rescue_offset is None:
-              change_position()
-            else:
-              motorl, motorr = calculate_cage()
-              robot.set_speed(motorl, motorr)
-              robot.send_speed()
-              if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
-                  robot.rescue_image.shape[0] * 1 / 2):
-                robot.set_speed(1700, 1700)
-                sleep_sec(1)
-                robot.set_speed(1300, 1300)
-                sleep_sec(0.5)
-                robot.set_speed(1500, 1500)
-                robot.send_speed()
-                robot.set_speed(1250, 1750)
-                sleep_sec(consts.TURN_90_TIME * 1.5)
-                robot.set_speed(1500, 1500)
-                robot.send_speed()
-                exit_cage_flag = True
-          else:
-            logger.info("wall follow ccw")
-            result = wall_follow_ccw()
-            if result:
-              robot.set_speed(1500, 1500)
-              robot.send_speed()
-              robot.set_speed(1650, 1650)
-              sleep_sec(1.7)
-              robot.set_speed(1750, 1250)
-              sleep_sec(consts.TURN_90_TIME)
-              while True:
-                robot.update_button_stat()
-                if robot.robot_stop:
-                  robot.set_speed(1500, 1500)
-                  robot.send_speed()
-                  break
-
-                robot.set_speed(1650, 1650)
-                robot.send_speed()
-
-                if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
-                  logger.info("Line detected, exit rescue mode")
-                  robot.set_speed(1600, 1600)
-                  sleep_sec(1.0)
-                  robot.set_speed(1500, 1500)
-                  robot.send_speed()
-                  robot.write_is_rescue_flag(False)
-                  break
-        elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
-          motorl, motorr = calculate_ball()
-          robot.set_speed(motorl, motorr)
-          robot.send_speed()
-          if robot.ball_catch_flag:
-            is_not_took = catch_ball()
-            if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
-              robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
-            elif robot.rescue_target == consts.TargetList.BLACK_BALL.value:
-              robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
-            # After catching, clear cached target data and force an immediate
-            # YOLO evaluation so the robot can detect and move toward the cage.
-            robot.write_rescue_offset(None)
-            robot.write_rescue_size(None)
-            robot.write_rescue_y(None)
-            robot.write_last_yolo_time(0)
-            logger.info(
-                "Post-catch: reset rescue_offset/size/y and forced YOLO run")
-        else:
-          clamp_turning_angle()
-          motorl, motorr = calculate_cage()
-          robot.set_speed(motorl, motorr)
-          robot.send_speed()
-          if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
-              robot.rescue_image.shape[0] * 1 / 2):
-            release_ball()
-            set_target()
+        handle_cage()
     else:
       if not robot.linetrace_stop:
         ultrasonic_info = robot.ultrasonic
