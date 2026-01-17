@@ -247,6 +247,7 @@ class Robot:
     self.__rescue_turning_angle: int = 0  # Total revolutions
     self.__ball_catch_flag = False  # catch ball flag
     self.__ball_near_flag = False
+    self.__has_moved_to_cage = False
     self.__slope = None
     self.__line_area: Optional[float] = None
     self.__line_center_x: Optional[int] = None
@@ -462,6 +463,10 @@ class Robot:
     with self.__rescue_lock:
       self.__ball_near_flag = flag
 
+  def write_has_moved_to_cage(self, flag: bool) -> None:
+    with self.__rescue_lock:
+      self.__has_moved_to_cage = flag
+
   def update_button_stat(self) -> None:
     """Poll button state from ESP32 and update robot_stop flag.
 
@@ -572,6 +577,11 @@ class Robot:
   def ball_near_flag(self) -> bool:
     with self.__rescue_lock:
       return self.__ball_near_flag
+  
+  @property
+  def has_moved_to_cage(self) -> bool:
+    with self.__rescue_lock:
+      return self.__has_moved_to_cage
 
   def write_linetrace_stop(self, flag: bool) -> None:
     """Set linetrace stop flag (thread-safe).
