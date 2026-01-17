@@ -614,6 +614,7 @@ def find_best_target() -> None:
   """
   # Reset ball flag at start - will be set True only if catchable ball detected
   robot.write_ball_catch_flag(False)
+  robot.write_ball_near_flag(False)
   # yolo_results = None
   with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
@@ -740,10 +741,6 @@ def catch_ball() -> int:
   sleep_sec(0.3)
   robot.set_arm(3072, 1)
   robot.send_arm()
-  robot.set_speed(1450, 1450)
-  sleep_sec(1)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
   return 0
 
 
@@ -989,7 +986,7 @@ def handle_exit() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME * 1.5)
+        sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
