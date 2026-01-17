@@ -594,7 +594,6 @@ def find_best_target() -> None:
   # yolo_results = None
   with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
-    robot.write_last_yolo_time(time.time())
   current_time = time.time()
   result_image = robot.rescue_image
   draw_ball_debug(
@@ -1071,7 +1070,6 @@ def handle_ball() -> None:
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
     robot.write_rescue_y(None)
-    robot.write_last_yolo_time(0)
     logger.info(
         "Post-catch: reset rescue_offset/size/y and forced YOLO run")
 

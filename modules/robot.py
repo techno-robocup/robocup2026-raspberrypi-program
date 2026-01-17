@@ -239,7 +239,6 @@ class Robot:
     self.__Rescue_Camera.start_cam()
     self.__rescue_lock = threading.Lock()
     self.__is_rescue_flag = False
-    self.__last_yolo_time: float = 0
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
     self.__rescue_y: Optional[float] = None
@@ -390,20 +389,6 @@ class Robot:
   def is_rescue_flag(self) -> bool:
     """Check if robot is in rescue mode."""
     return self.__is_rescue_flag
-
-  def write_last_yolo_time(self, time: float) -> None:
-    """Update timestamp of last YOLO inference (thread-safe).
-
-    Args:
-      time: Unix timestamp from time.time().
-    """
-    with self.__rescue_lock:
-      self.__last_yolo_time = time
-
-  @property
-  def last_yolo_time(self) -> float:
-    """Get timestamp of last YOLO inference."""
-    return self.__last_yolo_time
 
   def write_rescue_offset(self, angle: Optional[float]) -> None:
     """Set horizontal offset to rescue target (thread-safe).
