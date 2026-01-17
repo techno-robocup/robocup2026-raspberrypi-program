@@ -689,10 +689,7 @@ def catch_ball() -> int:
   Returns:
     0 on successful completion (catch verification is not implemented).
   """
-  logger.debug("Executing catch_ball()")
   # Store which ball type we're catching
-  logger.info(
-      f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
@@ -735,7 +732,6 @@ def release_ball() -> bool:
   Returns:
     True on successful completion.
   """
-  logger.debug("Executing release_ball()")
   robot.set_speed(1700, 1700)
   sleep_sec(2)
   robot.set_speed(1500, 1500)
@@ -762,7 +758,6 @@ def release_ball() -> bool:
 
 
 def drop_ball() -> bool:
-  logger.debug("Drop ball")
   robot.set_speed(1500, 1500)
   robot.set_arm(1536, 0)
   sleep_sec(0.4)
@@ -780,7 +775,6 @@ def change_position() -> bool:
   Returns:
     True on successful completion.
   """
-  logger.debug("Change position")
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
@@ -858,9 +852,9 @@ def calculate_ball() -> tuple[int, int]:
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
   base_R = int(base_R)
-  logger.info(f"offset: {angle} size:{size}")
-  logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
-  logger.info(f"Motor speed L{base_L} R{base_R}")
+  # logger.info(f"offset: {angle} size:{size}")
+  # logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
+  # logger.info(f"Motor speed L{base_L} R{base_R}")
   base_L, base_R = clamp(base_L), clamp(base_R)
   logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
   return base_L, base_R
@@ -888,7 +882,7 @@ def calculate_cage() -> tuple[int, int]:
   dist_term = int(max(150, min(dist_term, 200)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
-  logger.info(f"offset: {angle} size:{size}")
+  # logger.info(f"offset: {angle} size:{size}")
   logger.info(f"Motor speed L{base_L} R{base_R}")
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
@@ -934,7 +928,7 @@ def wall_follow_ccw() -> bool:
     turn = BASE_TURN
   left_speed = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
-  logger.info(f"motor speed L{left_speed} R{right_speed}")
+  # logger.info(f"motor speed L{left_speed} R{right_speed}")
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
   robot.send_speed()
@@ -955,7 +949,7 @@ def handle_not_found() -> None:
 
 def handle_exit() -> None:
   if not robot.has_moved_to_cage:
-    logger.info("Finding Red Cage for exiting")
+    # logger.info("Finding Red Cage for exiting")
     if robot.rescue_offset is None:
       return
     else:
@@ -976,7 +970,7 @@ def handle_exit() -> None:
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
   else:
-    logger.info("wall follow ccw")
+    # logger.info("wall follow ccw")
     result = wall_follow_ccw()
     if result:
       robot.set_speed(1500, 1500)
@@ -1019,8 +1013,8 @@ def handle_ball() -> None:
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
     robot.write_rescue_y(None)
-    logger.info(
-        "Post-catch: reset rescue_offset/size/y and forced YOLO run")
+    # logger.info(
+    #     "Post-catch: reset rescue_offset/size/y and forced YOLO run")
 
 def handle_cage() -> None:
   clamp_turning_angle()
