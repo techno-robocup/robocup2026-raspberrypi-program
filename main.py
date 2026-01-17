@@ -532,8 +532,9 @@ def sleep_sec(sec: float, function=None) -> int:
 def update_ball_flags(dist: float, y_center: float, w: float) -> None:
   best_target_y = y_center
   best_target_w = w
-  is_bottom_third = best_target_y and best_target_y > BALL_Y_2_3
-  is_bottom_sixth = best_target_y and best_target_y > BALL_Y_5_6
+  is_bottom_third = best_target_y > BALL_Y_2_3
+  is_bottom_sixth = best_target_y > BALL_Y_5_6
+
   if dist is not None:
     ball_left = dist - best_target_w / 2 + RESCUE_CX
     ball_right = dist + best_target_w / 2 + RESCUE_CX
@@ -585,13 +586,13 @@ def draw_ball_debug(
       - Vertical thresholds (2/3, 5/6 of image height)
       - Horizontal catch tolerance band (ball width)
     """
-    VLINE_COLOR = (0, 255, 0)
+    HLINE_COLOR = (0, 255, 0)
     CENTER_COLOR = (0, 0, 255)
     cx = int(RESCUE_CX)
     y_2_3 = int(BALL_Y_2_3)
     y_5_6 = int(BALL_Y_5_6)
-    cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), VLINE_COLOR, 2)
-    cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), VLINE_COLOR, 2)
+    cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), HLINE_COLOR, 2)
+    cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), HLINE_COLOR, 2)
     cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), CENTER_COLOR, 1)
 
 
