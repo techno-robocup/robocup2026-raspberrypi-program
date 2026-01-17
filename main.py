@@ -542,36 +542,24 @@ def update_ball_flags(dist: float, y_center: float, w: float, image_height: int,
     robot.write_ball_catch_flag(True)
 
 def draw_ball_debug(
-    img,
-    dist: float,
-    y_center: float,
-    w: float,
+    image,
     image_height: int,
     image_width: int,
-):
-    cx = image_width // 2
+) -> None:
+    """
+    Draw debug lines used in update_ball_flags():
+      - Vertical thresholds (2/3, 5/6 of image height)
+      - Horizontal catch tolerance band (ball width)
+    """
+    VLINE_COLOR = (0, 255, 0)
+    CENTER_COLOR = (0, 0, 255)
+    cx = int(image_width / 2)
+    y_2_3 = int(image_height * 2 / 3)
+    y_5_6 = int(image_height * 5 / 6)
+    cv2.line(image, (0, y_2_3), (image_width, y_2_3), VLINE_COLOR, 2)
+    cv2.line(image, (0, y_5_6), (image_width, y_5_6), VLINE_COLOR, 2)
+    cv2.line(image, (cx, 0), (cx, image_height), CENTER_COLOR, 1)
 
-    # center vertical line
-    cv2.line(img, (cx, 0), (cx, image_height), (255, 255, 0), 1)
-
-    # bottom third & sixth
-    y_third = int(image_height * 2 / 3)
-    y_sixth = int(image_height * 5 / 6)
-    cv2.line(img, (0, y_third), (image_width, y_third), (0, 255, 255), 1)
-    cv2.line(img, (0, y_sixth), (image_width, y_sixth), (0, 0, 255), 1)
-
-    if dist is None:
-        return
-
-    # ball left / right
-    ball_left = int(dist - w / 2 + cx)
-    ball_right = int(dist + w / 2 + cx)
-
-    cv2.line(img, (ball_left, 0), (ball_left, image_height), (255, 0, 0), 1)
-    cv2.line(img, (ball_right, 0), (ball_right, image_height), (255, 0, 0), 1)
-
-    # y center
-    cv2.circle(img, (cx + int(dist), int(y_center)), 5, (0, 255, 0), -1)
 
 
 def find_best_target() -> None:
@@ -596,20 +584,11 @@ def find_best_target() -> None:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
   current_time = time.time()
   result_image = robot.rescue_image
-  draw_ball_debug(
-        result_image,
-        dist,
-        y_center,
-        w,
-        image_height,
-        image_width,
-    )
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
       result_image = yolo_results[0].plot()
     except TypeError as e:
       logger.error(f"Error plotting YOLO result: {e}.")
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
@@ -644,6 +623,7 @@ def find_best_target() -> None:
       if robot.rescue_target == consts.TargetList.EXIT.value:
         if cls == consts.TargetList.GREEN_CAGE.value:
           x_center, y_center, w, h = map(float, box.xywh[0])
+          cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
           dist = x_center - cx
           area = w * h
 
@@ -658,6 +638,7 @@ def find_best_target() -> None:
           )
       elif cls == robot.rescue_target:
         x_center, y_center, w, h = map(float, box.xywh[0])
+        cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
         dist = x_center - cx
         area = w * h
         if area > max_area:
@@ -673,13 +654,14 @@ def find_best_target() -> None:
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
         x_center, y_center, w, h = map(float, box.xywh[0])
+        cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
         best_angle = x_center - cx
         best_size = w * h
-        max_area = area
+        max_area = best_size
         update_ball_flags(best_angle, y_center, w, image_height, image_width)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
-            f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
+            f"Override Detected cls={consts.TargetList(cls).name}, area={best_size:.1f}, offset={best_angle:.1f}"
         )
     if best_angle is None:
       robot.write_rescue_offset(None)
@@ -694,6 +676,8 @@ def find_best_target() -> None:
       robot.write_rescue_y(None)
     else:
       robot.write_rescue_y(float(best_target_y))
+  draw_ball_debug(result_image, image_height, image_width)
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
 
 def catch_ball() -> int:
   """Execute the ball catching sequence using the robot arm.
@@ -801,7 +785,6 @@ def change_position() -> bool:
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
   sleep_sec(0.1)
-  find_best_target()
   # robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
   return True  # Completed successfully
@@ -971,11 +954,10 @@ def handle_not_found() -> None:
     set_target()
 
 def handle_exit() -> None:
-  ultrasonic_info = robot.ultrasonic
   if not robot.has_moved_to_cage:
     logger.info("Finding Red Cage for exiting")
     if robot.rescue_offset is None:
-      change_position()
+      return
     else:
       motorl, motorr = calculate_cage()
       robot.set_speed(motorl, motorr)
