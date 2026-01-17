@@ -664,7 +664,9 @@ def find_best_target() -> None:
           max_area = area
           best_angle = dist
           best_size = area
-          update_ball_flags(dist, y_center, w, image_height, image_width)
+          best_target_y = y_center
+          if cls in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
+            update_ball_flags(dist, y_center, w, image_height, image_width)
         logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
@@ -721,10 +723,8 @@ def catch_ball() -> int:
   robot.send_speed()
   robot.set_arm(1000, 0)
   robot.send_arm()
-  robot.set_speed(1600, 1600)
-  sleep_sec(1)
   robot.set_speed(1400, 1400)
-  sleep_sec(1)
+  sleep_sec(0.6)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1000, 1)
@@ -769,13 +769,11 @@ def release_ball() -> bool:
   sleep_sec(0.5)
   robot.write_rescue_turning_angle(0)
   robot.set_speed(1300, 1300)
-  sleep_sec(2.5)
+  sleep_sec(2)
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(3072, 0)
-  robot.send_arm()
   return True
 
 
@@ -868,11 +866,7 @@ def calculate_ball() -> tuple[int, int]:
         f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}"
     )
     return 1500, 1500
-  diff_angle = 0
-  if abs(angle) > 30:
-    diff_angle = angle * BOP
-  else:
-    diff_angle = 0
+  diff_angle = angle * BOP
   dist_term = 0
   if consts.BALL_CATCH_SIZE > size:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
