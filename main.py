@@ -693,19 +693,6 @@ def find_best_target() -> None:
     else:
       robot.write_rescue_y(float(best_target_y))
 
-
-def fix_offset() -> bool:
-  if abs(robot.rescue_offset) > 400:
-    if robot.rescue_offset > 0:
-      robot.set_speed(1600, 1300)
-    else:
-      robot.set_speed(1300, 1600)
-    sleep_sec(0.05)
-    return True
-  else:
-    return True
-
-
 def catch_ball() -> int:
   """Execute the ball catching sequence using the robot arm.
 
@@ -720,7 +707,6 @@ def catch_ball() -> int:
   # Store which ball type we're catching
   logger.info(
       f"Caught ball type: {consts.TargetList(robot.rescue_target).name}")
-  fix_offset()
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
@@ -754,19 +740,6 @@ def catch_ball() -> int:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   return 0
-  # prev_time = time.time()
-  # while time.time() - prev_time < 0.2:
-  #   robot.send_speed()
-  # find_best_target()
-  # if robot.rescue_offset is None:
-  #   logger.info("Catch successful")
-  #   robot.write_rescue_target(
-  #       consts.TargetList.GREEN_CAGE.value if robot.rescue_target == consts.
-  #       TargetList.SILVER_BALL.value else consts.TargetList.RED_CAGE.value)
-  #   return 0
-  # else:
-  #   logger.info("Catch failed")
-  #   return 1
 
 
 def release_ball() -> bool:
