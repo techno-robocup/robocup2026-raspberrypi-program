@@ -59,6 +59,13 @@ catch_failed_cnt = 0
 last_gap_recovery_time: float = 0.0
 GAP_RECOVERY_COOLDOWN = 0.5  # Seconds to wait after recovery before allowing another
 
+RESCUE_IMAGE_WIDTH  = 4608
+RESCUE_IMAGE_HEIGHT = 2592
+RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
+
+BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3
+BALL_Y_5_6 = RESCUE_IMAGE_HEIGHT * 5 / 6
+
 
 def is_valid_number(value) -> bool:
   """Check if value is a valid finite number (int or float, not bool).
@@ -522,29 +529,56 @@ def sleep_sec(sec: float, function=None) -> int:
   return 0
 
 
-def update_ball_flags(dist: float, y_center: float, w: float, image_height: int,
-                      image_width: int) -> None:
-  robot.write_ball_catch_flag(False)
-  robot.write_ball_near_flag(False)
+def update_ball_flags(dist: float, y_center: float, w: float) -> None:
   best_target_y = y_center
   best_target_w = w
-  is_bottom_third = best_target_y and best_target_y > (image_height * 2 / 3)
-  is_bottom_sixth = best_target_y and best_target_y > (image_height * 5 / 6)
+  is_bottom_third = best_target_y and best_target_y > BALL_Y_2_3
+  is_bottom_sixth = best_target_y and best_target_y > BALL_Y_5_6
   if dist is not None:
-    ball_left = dist - best_target_w / 2 + image_width / 2
-    ball_right = dist + best_target_w / 2 + image_width / 2
-    includes_center = ball_left <= image_width / 2 <= ball_right
+    ball_left = dist - best_target_w / 2 + RESCUE_CX
+    ball_right = dist + best_target_w / 2 + RESCUE_CX
+    includes_center = ball_left <= RESCUE_CX <= ball_right
   else:
     includes_center = False
   if is_bottom_sixth:
     robot.write_ball_near_flag(True)
+  else:
+    robot.write_ball_near_flag(False)
   if is_bottom_third and includes_center:
     robot.write_ball_catch_flag(True)
+  else:
+    robot.write_ball_catch_flag(False)
+
+def update_best_box(
+    xywh,
+    max_area: float,
+) -> tuple[bool, float, float, float, float, float]:
+  """
+  Update best target info using YOLO xywh.
+
+  Args:
+    xywh: box.xywh[0]
+    max_area: current max area
+
+  Returns:
+    (updated,
+      new_max_area,
+      dist,
+      area,
+      y_center,
+      w)
+  """
+  x_center, y_center, w, h = map(float, xywh)
+  area = w * h
+  dist = x_center - RESCUE_CX
+  if area <= max_area:
+      return False, max_area, None, None, None, None
+
+  return True, area, dist, area, y_center, w
+
 
 def draw_ball_debug(
-    image,
-    image_height: int,
-    image_width: int,
+    image
 ) -> None:
     """
     Draw debug lines used in update_ball_flags():
@@ -553,12 +587,12 @@ def draw_ball_debug(
     """
     VLINE_COLOR = (0, 255, 0)
     CENTER_COLOR = (0, 0, 255)
-    cx = int(image_width / 2)
-    y_2_3 = int(image_height * 2 / 3)
-    y_5_6 = int(image_height * 5 / 6)
-    cv2.line(image, (0, y_2_3), (image_width, y_2_3), VLINE_COLOR, 2)
-    cv2.line(image, (0, y_5_6), (image_width, y_5_6), VLINE_COLOR, 2)
-    cv2.line(image, (cx, 0), (cx, image_height), CENTER_COLOR, 1)
+    cx = int(RESCUE_CX)
+    y_2_3 = int(BALL_Y_2_3)
+    y_5_6 = int(BALL_Y_5_6)
+    cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), VLINE_COLOR, 2)
+    cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), VLINE_COLOR, 2)
+    cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), CENTER_COLOR, 1)
 
 
 
@@ -603,16 +637,11 @@ def find_best_target() -> None:
     robot.write_rescue_y(None)
     return
   else:
-    image_height = yolo_results[0].orig_shape[0]
-    image_width = yolo_results[0].orig_shape[1]
     detected_classes = []
     best_angle = None
     best_size = None
     best_target_y = None
-    # best_target_w = None
-    # best_target_h = None
     max_area = float(0)
-    cx = image_width / 2.0
     for box in boxes:
       try:
         cls = int(box.cls[0])
@@ -622,46 +651,43 @@ def find_best_target() -> None:
         continue
       if robot.rescue_target == consts.TargetList.EXIT.value:
         if cls == consts.TargetList.GREEN_CAGE.value:
-          x_center, y_center, w, h = map(float, box.xywh[0])
-          cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
-          dist = x_center - cx
-          area = w * h
-
-          if area > max_area:
+          updated, max_area, dist, area, best_y, best_w = \
+            update_best_box(box.xywh[0], max_area)
+          if updated:
             max_area = area
             best_angle = dist
             best_size = area
-            best_target_y = y_center
-
+            best_target_y = best_y
           logger.info(
-              f"[EXIT] Detected RED_CAGE area={area:.1f}, offset={dist:.1f}, y={y_center:.1f}"
+              f"[EXIT] Detected RED_CAGE area={area:.1f}, offset={dist:.1f}, y={best_y:.1f}"
           )
       elif cls == robot.rescue_target:
-        x_center, y_center, w, h = map(float, box.xywh[0])
-        cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
-        dist = x_center - cx
-        area = w * h
-        if area > max_area:
+        updated, max_area, dist, area, best_y, best_w = \
+          update_best_box(box.xywh[0], max_area)
+        if updated:
           max_area = area
           best_angle = dist
           best_size = area
-          best_target_y = y_center
+          best_target_y = best_y
           if cls in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
-            update_ball_flags(dist, y_center, w, image_height, image_width)
+            update_ball_flags(dist, best_y, best_w)
         logger.info(
             f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
-        x_center, y_center, w, h = map(float, box.xywh[0])
-        cv2.circle(result_image, (int(x_center), int(y_center)), 6, (0, 0, 255), -1)
-        best_angle = x_center - cx
-        best_size = w * h
-        max_area = best_size
-        update_ball_flags(best_angle, y_center, w, image_height, image_width)
+        max_area = 0
+        updated, max_area, dist, area, best_y, best_w = \
+          update_best_box(box.xywh[0], max_area)
+        if updated:
+          max_area = area
+          best_angle = dist
+          best_size = area
+          best_target_y = best_y
+          update_ball_flags(dist, best_y, best_w)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         logger.info(
-            f"Override Detected cls={consts.TargetList(cls).name}, area={best_size:.1f}, offset={best_angle:.1f}"
+            f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
         )
     if best_angle is None:
       robot.write_rescue_offset(None)
@@ -676,7 +702,7 @@ def find_best_target() -> None:
       robot.write_rescue_y(None)
     else:
       robot.write_rescue_y(float(best_target_y))
-  draw_ball_debug(result_image, image_height, image_width)
+  draw_ball_debug(result_image)
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
 
 def catch_ball() -> int:
