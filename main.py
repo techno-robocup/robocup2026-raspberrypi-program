@@ -966,14 +966,14 @@ def wall_follow_ccw() -> bool:
 
 def handle_not_found() -> None:
   change_position()
-  if not robot.ball_catch_flag:
-    robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
   # Only call set_target() if searching for balls (rotation-based logic).
   # For cages/exit, keep searching the current target.
   if robot.rescue_target in [
       consts.TargetList.SILVER_BALL.value,
       consts.TargetList.BLACK_BALL.value
   ]:
+    if not robot.ball_catch_flag:
+      robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
     set_target()
 
 def handle_exit() -> None:
