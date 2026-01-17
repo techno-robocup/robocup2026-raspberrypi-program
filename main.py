@@ -1006,7 +1006,7 @@ def handle_not_found() -> None:
 
 def handle_exit() -> None:
   ultrasonic_info = robot.ultrasonic
-  if not exit_cage_flag:
+  if not robot.has_moved_to_cage:
     logger.info("Finding Red Cage for exiting")
     if robot.rescue_offset is None:
       change_position()
@@ -1026,7 +1026,7 @@ def handle_exit() -> None:
         sleep_sec(consts.TURN_90_TIME * 1.5)
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        exit_cage_flag = True
+        robot.write_has_moved_to_cage(True)
   else:
     logger.info("wall follow ccw")
     result = wall_follow_ccw()
@@ -1085,8 +1085,6 @@ def handle_cage() -> None:
     release_ball()
     set_target()
 
-exit_cage_flag = False
-
 logger.debug("Objects Initialized")
 
 if __name__ == "__main__":
@@ -1104,7 +1102,6 @@ if __name__ == "__main__":
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
-  exit_cage_flag = False
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
@@ -1126,7 +1123,7 @@ if __name__ == "__main__":
       robot.write_last_slope_get_time(time.time())
       robot.write_ball_catch_flag(False)
       robot.write_ball_near_flag(False)
-      exit_cage_flag = False
+      robot.write_has_moved_to_cage(False)
     elif robot.is_rescue_flag:
       find_best_target()
       try:
@@ -1135,7 +1132,7 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if not exit_cage_flag and ((robot.rescue_offset is None) or
+      if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                  (robot.rescue_size is None)):
         handle_not_found()
       elif robot.rescue_target == consts.TargetList.EXIT.value:
