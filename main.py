@@ -658,9 +658,6 @@ def find_best_target() -> None:
             best_angle = dist
             best_size = area
             best_target_y = best_y
-          logger.info(
-              f"[EXIT] Detected RED_CAGE area={area:.1f}, offset={dist:.1f}, y={best_y:.1f}"
-          )
       elif cls == robot.rescue_target:
         updated, max_area, dist, area, best_y, best_w = \
           update_best_box(box.xywh[0], max_area)
@@ -671,9 +668,6 @@ def find_best_target() -> None:
           best_target_y = best_y
           if cls in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
             update_ball_flags(dist, best_y, best_w)
-        logger.info(
-            f"Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
-        )
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
         max_area = 0
@@ -686,9 +680,6 @@ def find_best_target() -> None:
           best_target_y = best_y
           update_ball_flags(dist, best_y, best_w)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-        logger.info(
-            f"Override Detected cls={consts.TargetList(cls).name}, area={area:.1f}, offset={dist:.1f}"
-        )
     if best_angle is None:
       robot.write_rescue_offset(None)
     else:
@@ -702,6 +693,12 @@ def find_best_target() -> None:
       robot.write_rescue_y(None)
     else:
       robot.write_rescue_y(float(best_target_y))
+  if robot.rescue_offset is not None and robot.rescue_size is not None and robot.rescue_y is not None:
+    logger.info(
+        f"Best target found - Offset: {robot.rescue_offset:.1f}px, Size: {robot.rescue_size}px², Y: {robot.rescue_y:.1f}px"
+    )
+  else:
+    logger.info("No valid target found after processing detections")
   draw_ball_debug(result_image)
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
 
