@@ -80,7 +80,7 @@ logger.critical("Critical message")
 Run the test script to verify the functionality:
 
 ```bash
-python test_logger.py
+python tests/test_logger.py
 ```
 
 ## Use Cases

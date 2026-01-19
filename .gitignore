@@ -11,5 +11,3 @@ __pycache__/
 
 # Log files
 *.log
-log.log
-test_log.log
