@@ -802,7 +802,6 @@ def change_position() -> bool:
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
   sleep_sec(0.1)
-  # robot.write_rescue_turning_angle(robot.rescue_turning_angle + 30)
   # logger.info(f"Turn degrees{robot.rescue_turning_angle}")
   return True  # Completed successfully
 
@@ -824,8 +823,6 @@ def set_target() -> bool:
     return False
   if robot.rescue_turning_angle >= 720:
     robot.write_rescue_target(consts.TargetList.EXIT.value)
-    # robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
-    # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   elif robot.rescue_turning_angle >= 360 and robot.detect_black_ball:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
   else:
@@ -1082,8 +1079,6 @@ if __name__ == "__main__":
   robot.set_arm(3072, 0)
   robot.send_arm()
   robot.send_speed()
-  robot.write_rescue_turning_angle(0)
-  robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
