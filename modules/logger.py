@@ -94,6 +94,10 @@ class ConditionalLogger:
   def hasHandlers(self):
     """Check if logger has handlers."""
     return self._logger.hasHandlers()
+  
+  def __getattr__(self, name):
+    """Proxy any undefined attributes to the wrapped logger for full compatibility."""
+    return getattr(self._logger, name)
 
 
 def get_logger(name="Logger", file="log.log"):
