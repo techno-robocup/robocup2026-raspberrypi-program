@@ -937,7 +937,7 @@ def wall_follow_ccw() -> bool:
     return True
   elif front_dist <= 4.0:
     robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(consts.TURN_90_TIME * 0.5)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
@@ -966,7 +966,7 @@ def handle_not_found() -> None:
   ]:
     if not robot.ball_catch_flag:
       robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
-    set_target()
+      set_target()
 
 def handle_exit() -> None:
   if not robot.has_moved_to_cage:
