@@ -8,3 +8,8 @@
 __pycache__/
 *.pyc
 *.pyo
+
+# Log files
+*.log
+log.log
+test_log.log
