@@ -682,6 +682,8 @@ def find_best_target() -> None:
           best_target_y = best_y
           update_ball_flags(dist, best_y, best_w)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+      if cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+        robot.write_detect_black_ball(True)
     if best_angle is None:
       robot.write_rescue_offset(None)
     else:
@@ -824,7 +826,7 @@ def set_target() -> bool:
     robot.write_rescue_target(consts.TargetList.EXIT.value)
     # robot.write_rescue_target(consts.TargetList.RED_CAGE.value)
     # robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-  elif robot.rescue_turning_angle >= 360:
+  elif robot.rescue_turning_angle >= 360 and robot.detect_black_ball:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
   else:
     robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
@@ -1066,6 +1068,7 @@ def is_stopping_by_button() -> None:
   robot.write_ball_catch_flag(False)
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
+  robot.write_detect_black_ball(False)
 
 logger.debug("Objects Initialized")
 
