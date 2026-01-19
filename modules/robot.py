@@ -247,6 +247,7 @@ class Robot:
     self.__ball_catch_flag = False  # catch ball flag
     self.__ball_near_flag = False
     self.__has_moved_to_cage = False
+    self.__detect_black_ball = False
     self.__slope = None
     self.__line_area: Optional[float] = None
     self.__line_center_x: Optional[int] = None
@@ -567,6 +568,15 @@ class Robot:
   def has_moved_to_cage(self) -> bool:
     with self.__rescue_lock:
       return self.__has_moved_to_cage
+  
+  @property
+  def detect_black_ball(self) -> bool:
+    with self.__rescue_lock:
+      return self.__detect_black_ball
+
+  def write_detect_black_ball(self, flag: bool) -> None:
+    with self.__rescue_lock:
+      self.__detect_black_ball = flag
 
   def write_linetrace_stop(self, flag: bool) -> None:
     """Set linetrace stop flag (thread-safe).
