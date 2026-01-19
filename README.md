@@ -35,6 +35,20 @@ include-system-site-packages = true
 uv run python main.py
 ```
 
+### Conditional Logging Control
+
+The logger supports conditional logging through a boolean flag. By default, all log levels are enabled. You can disable DEBUG, INFO, and WARNING logs by setting an environment variable:
+
+```bash
+# Run with conditional logging disabled (only ERROR and CRITICAL logs)
+ENABLE_CONDITIONAL_LOGS=false uv run python main.py
+
+# Run with all logs enabled (default)
+ENABLE_CONDITIONAL_LOGS=true uv run python main.py
+```
+
+See [CONDITIONAL_LOGGING.md](CONDITIONAL_LOGGING.md) for detailed documentation.
+
 ### Systemd service setup
 
 The robot runs as a systemd service with automatic restart capabilities.

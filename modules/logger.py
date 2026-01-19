@@ -1,4 +1,9 @@
 import logging
+import os
+
+# Global boolean flag to enable/disable conditional logging
+# Can be controlled via environment variable ENABLE_CONDITIONAL_LOGS
+ENABLE_CONDITIONAL_LOGS = os.environ.get('ENABLE_CONDITIONAL_LOGS', 'true').lower() in ('true', '1', 'yes')
 
 
 class UnixTimeFormatter(logging.Formatter):
@@ -35,7 +40,72 @@ class ColoredFormatter(UnixTimeFormatter):
     return result
 
 
+class ConditionalLogger:
+  """Wrapper for logging.Logger that adds conditional logging support.
+  
+  This class wraps the standard Python logger and adds a boolean flag check
+  before logging. When ENABLE_CONDITIONAL_LOGS is False, only ERROR and CRITICAL
+  messages are logged, while DEBUG, INFO, and WARNING are suppressed.
+  """
+  
+  def __init__(self, logger: logging.Logger):
+    self._logger = logger
+  
+  def _should_log(self, level: int) -> bool:
+    """Check if the message should be logged based on the conditional flag."""
+    global ENABLE_CONDITIONAL_LOGS
+    # Always log ERROR and CRITICAL regardless of flag
+    if level >= logging.ERROR:
+      return True
+    # For DEBUG, INFO, WARNING - check the flag
+    return ENABLE_CONDITIONAL_LOGS
+  
+  def debug(self, msg, *args, **kwargs):
+    """Log a debug message with conditional check."""
+    if self._should_log(logging.DEBUG):
+      self._logger.debug(msg, *args, **kwargs)
+  
+  def info(self, msg, *args, **kwargs):
+    """Log an info message with conditional check."""
+    if self._should_log(logging.INFO):
+      self._logger.info(msg, *args, **kwargs)
+  
+  def warning(self, msg, *args, **kwargs):
+    """Log a warning message with conditional check."""
+    if self._should_log(logging.WARNING):
+      self._logger.warning(msg, *args, **kwargs)
+  
+  def error(self, msg, *args, **kwargs):
+    """Log an error message (always logged)."""
+    self._logger.error(msg, *args, **kwargs)
+  
+  def critical(self, msg, *args, **kwargs):
+    """Log a critical message (always logged)."""
+    self._logger.critical(msg, *args, **kwargs)
+  
+  def exception(self, msg, *args, **kwargs):
+    """Log an exception message (always logged)."""
+    self._logger.exception(msg, *args, **kwargs)
+  
+  def setLevel(self, level):
+    """Set the logging level."""
+    self._logger.setLevel(level)
+  
+  def hasHandlers(self):
+    """Check if logger has handlers."""
+    return self._logger.hasHandlers()
+
+
 def get_logger(name="Logger", file="log.log"):
+  """Get a conditional logger instance.
+  
+  Args:
+    name: Logger name
+    file: Log file path
+    
+  Returns:
+    ConditionalLogger instance that wraps the standard Python logger
+  """
   logger = logging.getLogger(name)
 
   if not logger.hasHandlers():
@@ -55,7 +125,27 @@ def get_logger(name="Logger", file="log.log"):
     file_handler.setFormatter(colored_formatter)  # Now uses colored formatter!
     logger.addHandler(file_handler)
 
-  return logger
+  return ConditionalLogger(logger)
+
+
+def set_conditional_logs(enabled: bool):
+  """Set the global conditional logging flag.
+  
+  Args:
+    enabled: True to enable all log levels, False to only log ERROR and CRITICAL
+  """
+  global ENABLE_CONDITIONAL_LOGS
+  ENABLE_CONDITIONAL_LOGS = enabled
+
+
+def get_conditional_logs() -> bool:
+  """Get the current state of the conditional logging flag.
+  
+  Returns:
+    True if conditional logging is enabled, False otherwise
+  """
+  global ENABLE_CONDITIONAL_LOGS
+  return ENABLE_CONDITIONAL_LOGS
 
 
 if __name__ == "__main__":
