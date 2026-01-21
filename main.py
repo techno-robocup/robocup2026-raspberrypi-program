@@ -530,25 +530,26 @@ def sleep_sec(sec: float, function=None) -> int:
 
 
 def update_ball_flags(dist: float, y_center: float, w: float) -> None:
-  best_target_y = y_center
-  best_target_w = w
-  is_bottom_third = best_target_y > BALL_Y_2_3
-  is_bottom_sixth = best_target_y > BALL_Y_5_6
+    best_target_y = y_center
+    best_target_w = w
 
-  if dist is not None:
-    ball_left = dist - best_target_w / 2 + RESCUE_CX
-    ball_right = dist + best_target_w / 2 + RESCUE_CX
-    includes_center = ball_left <= RESCUE_CX <= ball_right
-  else:
-    includes_center = False
-  if is_bottom_sixth:
-    robot.write_ball_near_flag(True)
-  else:
-    robot.write_ball_near_flag(False)
-  if is_bottom_third and includes_center:
-    robot.write_ball_catch_flag(True)
-  else:
-    robot.write_ball_catch_flag(False)
+    is_bottom_third = best_target_y > BALL_Y_2_3
+    is_bottom_sixth = best_target_y > BALL_Y_5_6
+
+    if dist is not None:
+        half_w = best_target_w / 2
+        margin = best_target_w * 0.2
+
+        ball_left  = dist - half_w + RESCUE_CX + margin
+        ball_right = dist + half_w + RESCUE_CX - margin
+
+        includes_center = ball_left <= RESCUE_CX <= ball_right
+    else:
+        includes_center = False
+
+    robot.write_ball_near_flag(is_bottom_sixth)
+    robot.write_ball_catch_flag(is_bottom_third and includes_center)
+
 
 def update_best_box(
     xywh,
