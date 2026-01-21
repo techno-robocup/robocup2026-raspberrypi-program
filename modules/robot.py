@@ -244,7 +244,8 @@ class Robot:
     self.__rescue_y: Optional[float] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0  # Total revolutions
-    self.__ball_catch_flag = False  # catch ball flag
+    self.__ball_catch_dist_flag = False  # catch ball flag
+    self.__ball_catch_offset_flag = False
     self.__ball_near_flag = False
     self.__has_moved_to_cage = False
     self.__detect_black_ball = False
@@ -436,14 +437,18 @@ class Robot:
     with self.__rescue_lock:
       self.__rescue_turning_angle = angle
 
-  def write_ball_catch_flag(self, flag: bool) -> None:
+  def write_ball_catch_dist_flag(self, flag: bool) -> None:
     """Set ball catch ready flag (thread-safe).
 
     Args:
       flag: True if ball is close enough to catch.
     """
     with self.__rescue_lock:
-      self.__ball_catch_flag = flag
+      self.__ball_catch_dist_flag = flag
+
+  def write_ball_catch_offset_flag(self, flag:bool) -> None:
+    with self.__rescue_lock:
+      self.__ball_catch_offset_flag = flag
 
   def write_ball_near_flag(self, flag: bool) -> None:
     with self.__rescue_lock:
@@ -554,10 +559,15 @@ class Robot:
       return self.__rescue_turning_angle
 
   @property
-  def ball_catch_flag(self) -> bool:
+  def ball_catch_dist_flag(self) -> bool:
     """Check if ball is close enough to catch (thread-safe)."""
     with self.__rescue_lock:
-      return self.__ball_catch_flag
+      return self.__ball_catch_dist_flag
+
+  @property
+  def ball_catch_offset_flag(self) -> bool:
+    with self.__rescue_lock:
+      return self.__ball_catch_offset_flag
 
   @property
   def ball_near_flag(self) -> bool:
