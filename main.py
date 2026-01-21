@@ -548,7 +548,8 @@ def update_ball_flags(dist: float, y_center: float, w: float) -> None:
         includes_center = False
 
     robot.write_ball_near_flag(is_bottom_sixth)
-    robot.write_ball_catch_flag(is_bottom_third and includes_center)
+    robot.write_ball_catch_dist_flag(is_bottom_third)
+    robot.write_ball_catch_offset_flag(includes_center)
 
 
 def update_best_box(
@@ -610,11 +611,12 @@ def find_best_target() -> None:
     - robot.rescue_offset: Horizontal offset from image center (pixels).
     - robot.rescue_size: Area of the detected target (pixels^2).
     - robot.rescue_y: Vertical center (pixels) of the best target.
-    - robot.ball_catch_flag: True if ball is close enough to catch.
+    - robot.ball_catch_dist_flag: True if ball is close enough to catch.
     - robot.rescue_target: May switch to SILVER_BALL on override.
   """
   # Reset ball flag at start - will be set True only if catchable ball detected
-  robot.write_ball_catch_flag(False)
+  robot.write_ball_catch_dist_flag(False)
+  robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   # yolo_results = None
   with yolo_lock:
@@ -968,9 +970,8 @@ def handle_not_found() -> None:
       consts.TargetList.SILVER_BALL.value,
       consts.TargetList.BLACK_BALL.value
   ]:
-    if not robot.ball_catch_flag:
-      robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
-      set_target()
+    robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
+    set_target()
 
 def handle_exit() -> None:
   if not robot.has_moved_to_cage:
@@ -1027,7 +1028,7 @@ def handle_ball() -> None:
   motorl, motorr = calculate_ball()
   robot.set_speed(motorl, motorr)
   robot.send_speed()
-  if robot.ball_catch_flag:
+  if robot.ball_catch_dist_flag and robot.ball_catch_offset_flag:
     is_not_took = catch_ball()
     if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
       robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
@@ -1067,7 +1068,8 @@ def is_stopping_by_button() -> None:
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
-  robot.write_ball_catch_flag(False)
+  robot.write_ball_catch_dist_flag(False)
+  robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(False)
