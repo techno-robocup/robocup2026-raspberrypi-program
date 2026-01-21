@@ -1000,7 +1000,7 @@ def handle_exit() -> None:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       robot.set_speed(1650, 1650)
-      sleep_sec(1.7)
+      sleep_sec(2.4)
       robot.set_speed(1750, 1250)
       sleep_sec(consts.TURN_90_TIME)
       while True:
