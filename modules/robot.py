@@ -446,7 +446,7 @@ class Robot:
     with self.__rescue_lock:
       self.__ball_catch_dist_flag = flag
 
-  def write_ball_catch_offset_flag(self, flag:bool) -> None:
+  def write_ball_catch_offset_flag(self, flag: bool) -> None:
     with self.__rescue_lock:
       self.__ball_catch_offset_flag = flag
 
@@ -573,12 +573,12 @@ class Robot:
   def ball_near_flag(self) -> bool:
     with self.__rescue_lock:
       return self.__ball_near_flag
-  
+
   @property
   def has_moved_to_cage(self) -> bool:
     with self.__rescue_lock:
       return self.__has_moved_to_cage
-  
+
   @property
   def detect_black_ball(self) -> bool:
     with self.__rescue_lock:

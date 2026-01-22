@@ -59,7 +59,7 @@ catch_failed_cnt = 0
 last_gap_recovery_time: float = 0.0
 GAP_RECOVERY_COOLDOWN = 0.5  # Seconds to wait after recovery before allowing another
 
-RESCUE_IMAGE_WIDTH  = 4608
+RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
@@ -156,11 +156,9 @@ def execute_green_mark_turn() -> bool:
   """
   gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
   gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
-  gyro_calculated = (
-      math.degrees(math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch)))
-      if gyro_roll is not None and gyro_pitch is not None
-      else None
-  )
+  gyro_calculated = (math.degrees(
+      math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
+                     gyro_roll is not None and gyro_pitch is not None else None)
   gyro_calculated = math.degrees(gyro_calculated)
   green_black_detected = robot.green_black_detected
 
@@ -201,7 +199,7 @@ def execute_green_mark_turn() -> bool:
 
   turning_base_speed = TURNING_BASE_SPEED
   if gyro_calculated > 15:
-    turning_base_speed = 1500 + (TURNING_BASE_SPEED-1500) * 0.5
+    turning_base_speed = 1500 + (TURNING_BASE_SPEED - 1500) * 0.5
   # Execute turn based on detected directions
   if has_left and has_right:
     target_rotation = 180.0
@@ -224,12 +222,14 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
-      
-      robot.set_speed(3000 - turning_base_speed, turning_base_speed)  # Turn left
+
+      robot.set_speed(3000 - turning_base_speed,
+                      turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
-        logger.info(f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
+        logger.info(
+            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
 
   elif has_left:
@@ -253,12 +253,14 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
-      
-      robot.set_speed(3000 - turning_base_speed, turning_base_speed)  # Turn left
+
+      robot.set_speed(3000 - turning_base_speed,
+                      turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
-        logger.info(f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
+        logger.info(
+            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
 
   elif has_right:
@@ -282,12 +284,14 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
-      
-      robot.set_speed(turning_base_speed, 3000 - turning_base_speed)  # Turn right
+
+      robot.set_speed(turning_base_speed,
+                      3000 - turning_base_speed)  # Turn right
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
-        logger.info(f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
+        logger.info(
+            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
 
   # Stop after turn
@@ -461,20 +465,18 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
           f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
       )
 
-
   # Get gyro roll angle and reduce speed when tilted significantly
   gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
   gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
-  gyro_calculated = (
-      math.degrees(math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch)))
-      if gyro_roll is not None and gyro_pitch is not None
-      else None
-  )
+  gyro_calculated = (math.degrees(
+      math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
+                     gyro_roll is not None and gyro_pitch is not None else None)
   gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 0.5
 
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
-  adjusted_base_speed = 1500 + int((BASE_SPEED - 1500) * speed_multiplier * gyro_multiplier)
+  adjusted_base_speed = 1500 + int(
+      (BASE_SPEED - 1500) * speed_multiplier * gyro_multiplier)
 
   # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000)}")
   motor_l = clamp(
@@ -530,26 +532,26 @@ def sleep_sec(sec: float, function=None) -> int:
 
 
 def update_ball_flags(dist: float, y_center: float, w: float) -> None:
-    best_target_y = y_center
-    best_target_w = w
+  best_target_y = y_center
+  best_target_w = w
 
-    is_bottom_third = best_target_y > BALL_Y_2_3
-    is_bottom_sixth = best_target_y > BALL_Y_5_6
+  is_bottom_third = best_target_y > BALL_Y_2_3
+  is_bottom_sixth = best_target_y > BALL_Y_5_6
 
-    if dist is not None:
-        half_w = best_target_w / 2
-        margin = best_target_w * 0.2
+  if dist is not None:
+    half_w = best_target_w / 2
+    margin = best_target_w * 0.2
 
-        ball_left  = dist - half_w + RESCUE_CX + margin
-        ball_right = dist + half_w + RESCUE_CX - margin
+    ball_left = dist - half_w + RESCUE_CX + margin
+    ball_right = dist + half_w + RESCUE_CX - margin
 
-        includes_center = ball_left <= RESCUE_CX <= ball_right
-    else:
-        includes_center = False
+    includes_center = ball_left <= RESCUE_CX <= ball_right
+  else:
+    includes_center = False
 
-    robot.write_ball_near_flag(is_bottom_sixth)
-    robot.write_ball_catch_dist_flag(is_bottom_third)
-    robot.write_ball_catch_offset_flag(includes_center)
+  robot.write_ball_near_flag(is_bottom_sixth)
+  robot.write_ball_catch_dist_flag(is_bottom_third)
+  robot.write_ball_catch_offset_flag(includes_center)
 
 
 def update_best_box(
@@ -575,28 +577,25 @@ def update_best_box(
   area = w * h
   dist = x_center - RESCUE_CX
   if area <= max_area:
-      return False, max_area, None, None, None, None
+    return False, max_area, None, None, None, None
 
   return True, area, dist, area, y_center, w
 
 
-def draw_ball_debug(
-    image
-) -> None:
-    """
+def draw_ball_debug(image) -> None:
+  """
     Draw debug lines used in update_ball_flags():
       - Vertical thresholds (2/3, 5/6 of image height)
       - Horizontal catch tolerance band (ball width)
     """
-    HLINE_COLOR = (0, 255, 0)
-    CENTER_COLOR = (0, 0, 255)
-    cx = int(RESCUE_CX)
-    y_2_3 = int(BALL_Y_2_3)
-    y_5_6 = int(BALL_Y_5_6)
-    cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), HLINE_COLOR, 2)
-    cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), HLINE_COLOR, 2)
-    cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), CENTER_COLOR, 1)
-
+  HLINE_COLOR = (0, 255, 0)
+  CENTER_COLOR = (0, 0, 255)
+  cx = int(RESCUE_CX)
+  y_2_3 = int(BALL_Y_2_3)
+  y_5_6 = int(BALL_Y_5_6)
+  cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), HLINE_COLOR, 2)
+  cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), HLINE_COLOR, 2)
+  cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), CENTER_COLOR, 1)
 
 
 def find_best_target() -> None:
@@ -671,7 +670,10 @@ def find_best_target() -> None:
           best_angle = dist
           best_size = area
           best_target_y = best_y
-          if cls in [consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value]:
+          if cls in [
+              consts.TargetList.SILVER_BALL.value,
+              consts.TargetList.BLACK_BALL.value
+          ]:
             update_ball_flags(dist, best_y, best_w)
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
@@ -708,6 +710,7 @@ def find_best_target() -> None:
     logger.info("No valid target found after processing detections")
   draw_ball_debug(result_image)
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
+
 
 def catch_ball() -> int:
   """Execute the ball catching sequence using the robot arm.
@@ -962,16 +965,17 @@ def wall_follow_ccw() -> bool:
 
   return False
 
+
 def handle_not_found() -> None:
   change_position()
   # Only call set_target() if searching for balls (rotation-based logic).
   # For cages/exit, keep searching the current target.
   if robot.rescue_target in [
-      consts.TargetList.SILVER_BALL.value,
-      consts.TargetList.BLACK_BALL.value
+      consts.TargetList.SILVER_BALL.value, consts.TargetList.BLACK_BALL.value
   ]:
     robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
     set_target()
+
 
 def handle_exit() -> None:
   if not robot.has_moved_to_cage:
@@ -1024,6 +1028,7 @@ def handle_exit() -> None:
           robot.write_is_rescue_flag(False)
           break
 
+
 def handle_ball() -> None:
   motorl, motorr = calculate_ball()
   robot.set_speed(motorl, motorr)
@@ -1042,6 +1047,7 @@ def handle_ball() -> None:
     # logger.info(
     #     "Post-catch: reset rescue_offset/size/y and forced YOLO run")
 
+
 def handle_cage() -> None:
   clamp_turning_angle()
   motorl, motorr = calculate_cage()
@@ -1051,6 +1057,7 @@ def handle_cage() -> None:
       robot.rescue_image.shape[0] * 1 / 2):
     release_ball()
     set_target()
+
 
 def is_stopping_by_button() -> None:
   if robot.rescue_target == consts.TargetList.SILVER_BALL.value or robot.rescue_target == consts.TargetList.GREEN_CAGE.value:
@@ -1073,6 +1080,7 @@ def is_stopping_by_button() -> None:
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(False)
+
 
 logger.debug("Objects Initialized")
 
@@ -1103,7 +1111,7 @@ if __name__ == "__main__":
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
-                                 (robot.rescue_size is None)):
+                                          (robot.rescue_size is None)):
         handle_not_found()
       elif robot.rescue_target == consts.TargetList.EXIT.value:
         handle_exit()
