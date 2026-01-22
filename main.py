@@ -869,17 +869,18 @@ def calculate_ball() -> tuple[int, int]:
         f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}"
     )
     return 1500, 1500
-  diff_angle = angle * BOP
+  if not robot.ball_catch_offset_flag:
+    diff_angle = angle * BOP
+  else:
+    diff_angle = 0
   dist_term = 0
-  if consts.BALL_CATCH_SIZE > size and (not robot.ball_near_flag):
+  if consts.BALL_CATCH_SIZE > size and (not robot.ball_catch_dist_flag):
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-  dist_term = int(max(100, min(dist_term, 250)))
+    dist_term = int(max(100, min(dist_term, 250)))
+  if consts.BALL_CATCH_SIZE > size and (robot.ball_near_flag):
+    dist_term = -50
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
-  if robot.ball_near_flag:
-    diff_angle *= -0.7
-    base_L = 1430 + diff_angle
-    base_R = 1430 - diff_angle
   base_L = int(base_L)
   base_R = int(base_R)
   # logger.info(f"offset: {angle} size:{size}")
