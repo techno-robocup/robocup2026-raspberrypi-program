@@ -1,13 +1,15 @@
-import time
-import numpy as np
-import cv2
 import threading
-import modules.logger
-import modules.constants as consts
-from typing import Callable, Any, Dict, Tuple, List, Optional
-from picamera2 import Picamera2, CompletedRequest, MappedArray
-import modules.robot
+import time
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import cv2
+import numpy as np
 from numba import jit
+from picamera2 import CompletedRequest, MappedArray, Picamera2
+
+import modules.constants as consts
+import modules.logger
+import modules.robot
 
 # Robot reference - set by robot.py after initialization to avoid circular import
 robot = None
@@ -37,9 +39,10 @@ def get_depth_model():
     with _depth_model_lock:
       if _depth_model is None:  # Double-check locking
         try:
-          from depth_anything_v2.dpt import DepthAnythingV2
-          import torch
           import os
+
+          import torch
+          from depth_anything_v2.dpt import DepthAnythingV2
 
           logger.info("Loading Depth-Anything-V2 model...")
           model_configs = {
@@ -99,10 +102,10 @@ def get_depth_model():
 def _normalize_depth_array(depth: np.ndarray) -> np.ndarray:
   """
   JIT-optimized depth normalization.
-  
+
   Args:
     depth: Raw depth values
-    
+
   Returns:
     Normalized depth array (0-255)
   """
@@ -129,6 +132,7 @@ def predict_depth(image: np.ndarray) -> Optional[np.ndarray]:
 
   try:
     import torch
+
     # Use the model's infer_image method which handles all preprocessing
     with torch.no_grad():
       depth = model.infer_image(image)
@@ -202,7 +206,7 @@ def Rescue_Depth_precallback_func(request: CompletedRequest) -> None:
   Rescue camera pre-callback with depth estimation.
   This is called during LINETRACE mode to perform depth estimation.
   """
-  global robot
+  # global robot
   # modules.logger.get_logger().info("Rescue Camera pre-callback triggered")
   try:
     with MappedArray(request, "lores") as m:
@@ -225,7 +229,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
   - In linetrace mode: Performs depth estimation
   - In rescue mode: Simple image capture for YOLO (no depth processing)
   """
-  global robot
+  # global robot
 
   # Check if robot is initialized
   if robot is None:
@@ -268,7 +272,7 @@ red_contours: List[np.ndarray] = []
 def detect_green_marks(orig_image: np.ndarray,
                        blackline_image: np.ndarray) -> None:
   """Detect multiple X-shaped green marks and their relationship with black lines."""
-  global green_marks, green_black_detected, green_contours, robot
+  # global green_marks, green_black_detected, green_contours, robot
 
   # Convert to HSV (avoid copying if possible)
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
@@ -346,7 +350,7 @@ def detect_green_marks(orig_image: np.ndarray,
 
 def detect_red_marks(orig_image: np.ndarray) -> None:
   """Detect red marks and set stop_requested flag."""
-  global red_contours, robot
+  global red_contours  # , robot
 
   hsv = cv2.cvtColor(orig_image, cv2.COLOR_BGR2HSV)
 
@@ -396,11 +400,11 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
 def _count_black_pixels(roi: np.ndarray, threshold: int) -> tuple:
   """
   JIT-optimized black pixel counting.
-  
+
   Args:
     roi: Region of interest
     threshold: Black/white threshold value
-    
+
   Returns:
     Tuple of (black_pixel_count, total_pixels)
   """
@@ -436,7 +440,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   black_count, total = _count_black_pixels(roi_b, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
     black_detections[0] = 1
-    logger.info(f"    -> Black line detected (ratio: {black_count/total:.2f})")
+    logger.info(
+        f"    -> Black line detected (ratio: {black_count / total:.2f})")
 
   # Check top
   roi_t_y1 = max(center_y - h // 2 - roi_height, 0)
@@ -448,7 +453,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   black_count, total = _count_black_pixels(roi_t, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
     black_detections[1] = 1
-    logger.info(f"    -> Black line detected (ratio: {black_count/total:.2f})")
+    logger.info(
+        f"    -> Black line detected (ratio: {black_count / total:.2f})")
 
   # Check left
   roi_l_y1 = center_y - roi_height // 2
@@ -460,7 +466,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   black_count, total = _count_black_pixels(roi_l, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
     black_detections[2] = 1
-    logger.info(f"    -> Black line detected (ratio: {black_count/total:.2f})")
+    logger.info(
+        f"    -> Black line detected (ratio: {black_count / total:.2f})")
 
   # Check right
   roi_r_y1 = center_y - roi_height // 2
@@ -474,7 +481,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   black_count, total = _count_black_pixels(roi_r, consts.BLACK_WHITE_THRESHOLD)
   if total > 0 and black_count / total <= black_threshold_ratio:
     black_detections[3] = 1
-    logger.info(f"    -> Black line detected (ratio: {black_count/total:.2f})")
+    logger.info(
+        f"    -> Black line detected (ratio: {black_count / total:.2f})")
 
   return black_detections
 
@@ -609,11 +617,11 @@ def calculate_contour_center(contour: np.ndarray) -> Tuple[int, int]:
 def _compute_slope(cx: int, cy: int, base_x: int, base_y: int) -> float:
   """
   JIT-optimized slope calculation.
-  
+
   Args:
     cx, cy: Top point coordinates
     base_x, base_y: Base point coordinates
-    
+
   Returns:
     Calculated slope
   """
@@ -689,12 +697,12 @@ def _apply_contrast_reduction(v_channel: np.ndarray,
                               mean: float = 128.0) -> np.ndarray:
   """
   JIT-optimized contrast reduction on V channel.
-  
+
   Args:
     v_channel: V channel values (uint8)
     factor: Contrast factor (< 1 reduces, > 1 increases)
     mean: Center point for contrast adjustment
-    
+
   Returns:
     Adjusted V channel values
   """
@@ -717,10 +725,10 @@ def reduce_contrast_v(image, factor=0.5):
 def reduce_glare_clahe(image, clip_limit=2.0):
   """Use CLAHE on luminance to balance brightness and reduce glare."""
   lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-  l, a, b = cv2.split(lab)
+  luminance, a_channel, b_channel = cv2.split(lab)
   clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
-  l = clahe.apply(l)
-  lab = cv2.merge([l, a, b])
+  luminance = clahe.apply(luminance)
+  lab = cv2.merge([luminance, a_channel, b_channel])
   return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
 
 
@@ -736,11 +744,11 @@ def _check_region_is_black(region: np.ndarray,
                            threshold: float = 127.0) -> bool:
   """
   JIT-optimized check if region is predominantly black.
-  
+
   Args:
     region: Binary image region (white=255, black=0 in inverted binary)
     threshold: Mean value threshold
-    
+
   Returns:
     True if region is predominantly black (mean > threshold in inverted binary)
   """
@@ -750,7 +758,7 @@ def _check_region_is_black(region: np.ndarray,
 
 
 def Linetrace_Camera_Pre_callback(request):
-  global lastblackline, LASTBLACKLINE_LOCK
+  global lastblackline  # , LASTBLACKLINE_LOCK
   logger.debug("Linetrace Camera Pre call-back called")
   current_time = time.time()
   try:

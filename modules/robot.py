@@ -1,13 +1,15 @@
-import modules.constants as consts
-import modules.logger as logger
-from typing import Optional, List, Any
-import serial
-import serial.tools.list_ports
-import modules.camera
 import threading
+import time
+from typing import List, Optional
+
 import numpy as np
 import numpy.typing as npt
-import time
+import serial
+import serial.tools.list_ports
+
+import modules.camera
+import modules.constants as consts
+import modules.logger as logger
 
 
 class Message:

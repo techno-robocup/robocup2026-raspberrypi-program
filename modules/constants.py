@@ -1,6 +1,7 @@
+from enum import Enum
+
 import libcamera
 import numpy as np
-from enum import Enum
 from ultralytics import YOLO
 
 

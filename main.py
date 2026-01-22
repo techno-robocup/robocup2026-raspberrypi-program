@@ -1,13 +1,15 @@
+import math
+import signal
+import sys
+import threading
+import time
+from typing import Optional
+
+import cv2
+
 import modules.constants as consts
 import modules.logger
 import modules.robot
-import time
-import signal
-import sys
-import cv2
-import math
-import threading
-from typing import Optional
 
 logger = modules.logger.get_logger()
 
@@ -203,7 +205,7 @@ def execute_green_mark_turn() -> bool:
   # Execute turn based on detected directions
   if has_left and has_right:
     target_rotation = 180.0
-    direction = "left"
+    # direction = "left"
     turn_description = "180°"
 
     while True:
@@ -234,7 +236,7 @@ def execute_green_mark_turn() -> bool:
 
   elif has_left:
     target_rotation = 90.0
-    direction = "left"
+    # direction = "left"
     turn_description = "90° left"
 
     while True:
@@ -265,7 +267,7 @@ def execute_green_mark_turn() -> bool:
 
   elif has_right:
     target_rotation = 90.0
-    direction = "right"
+    # direction = "right"
     turn_description = "90° right"
 
     while True:
@@ -305,21 +307,19 @@ def should_execute_line_recovery(line_area: Optional[float],
                                  angle_error: Optional[float]) -> bool:
   """
   Check if line recovery should be executed.
-  
+
   Recovery triggers when:
   1. Line area is below threshold (robot losing sight of line / gap)
   2. Line center x is too far from image center (robot veering off)
   3. Always respects cooldown to prevent rapid repeated recoveries
-  
+
   Args:
     line_area: Current detected line area in pixels
     angle_error: Current angle error from vertical (radians), can be None
-  
+
   Returns:
     True if recovery should be executed
   """
-  global last_gap_recovery_time
-
   if line_area is None or not is_valid_number(line_area):
     return False
 
@@ -353,10 +353,10 @@ def should_execute_line_recovery(line_area: Optional[float],
 def execute_line_recovery() -> bool:
   """
   Execute line recovery by backing up to regain line visibility.
-  
+
   When the robot loses sight of the line (gap or veering off), this function
   backs up until the line is visible again.
-  
+
   Returns:
     True if recovery completed successfully
     False if interrupted by button
@@ -392,7 +392,7 @@ def execute_line_recovery() -> bool:
 def get_current_angle_error() -> Optional[float]:
   """
   Calculate the current angle error from robot's line slope.
-  
+
   Returns:
     Angle error in radians, or None if slope is unavailable
   """
@@ -655,16 +655,16 @@ def find_best_target() -> None:
         continue
       if robot.rescue_target == consts.TargetList.EXIT.value:
         if cls == consts.TargetList.GREEN_CAGE.value:
-          updated, max_area, dist, area, best_y, best_w = \
-            update_best_box(box.xywh[0], max_area)
+          updated, max_area, dist, area, best_y, best_w = update_best_box(
+              box.xywh[0], max_area)
           if updated:
             max_area = area
             best_angle = dist
             best_size = area
             best_target_y = best_y
       elif cls == robot.rescue_target:
-        updated, max_area, dist, area, best_y, best_w = \
-          update_best_box(box.xywh[0], max_area)
+        updated, max_area, dist, area, best_y, best_w = update_best_box(
+            box.xywh[0], max_area)
         if updated:
           max_area = area
           best_angle = dist
@@ -678,8 +678,8 @@ def find_best_target() -> None:
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
         max_area = 0
-        updated, max_area, dist, area, best_y, best_w = \
-          update_best_box(box.xywh[0], max_area)
+        updated, max_area, dist, area, best_y, best_w = update_best_box(
+            box.xywh[0], max_area)
         if updated:
           max_area = area
           best_angle = dist
@@ -1034,7 +1034,7 @@ def handle_ball() -> None:
   robot.set_speed(motorl, motorr)
   robot.send_speed()
   if robot.ball_catch_dist_flag and robot.ball_catch_offset_flag:
-    is_not_took = catch_ball()
+    catch_ball()
     if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
       robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
     elif robot.rescue_target == consts.TargetList.BLACK_BALL.value:

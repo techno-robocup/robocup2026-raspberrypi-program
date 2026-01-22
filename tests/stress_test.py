@@ -6,8 +6,9 @@ Default: 60 seconds, all CPU cores, 512x512 matrices
 """
 
 import multiprocessing
-import time
 import sys
+import time
+
 import numpy as np
 
 
