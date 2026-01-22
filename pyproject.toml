@@ -18,3 +18,11 @@ dependencies = [
     "torchvision>=0.22.1",
     "ultralytics>=8.3.240",
 ]
+
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+    "flake8>=7.0.0",
+    "isort>=5.13.0",
+    "pylint>=3.0.0",
+]
