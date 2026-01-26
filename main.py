@@ -199,7 +199,7 @@ def execute_green_mark_turn() -> bool:
     return False
 
   turning_base_speed = TURNING_BASE_SPEED
-  if gyro_calculated > 15:
+  if gyro_calculated is not None and gyro_calculated > 15:
     turning_base_speed = 1500 + (TURNING_BASE_SPEED - 1500) * 0.5
   # Execute turn based on detected directions
   if has_left and has_right:
@@ -271,7 +271,7 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 90° left turn")
+        logger.debug(f"Turn interrupted by button during {turn_description}")
         return False
 
       robot.update_gyro_stat()
