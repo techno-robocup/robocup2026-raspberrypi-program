@@ -211,7 +211,7 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 180° turn")
+        logger.debug(f"Turn interrupted by button during {turn_description}")
         return False
 
       robot.update_gyro_stat()
@@ -241,7 +241,7 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 90° right turn")
+        logger.debug(f"Turn interrupted by button during {turn_description}")
         return False
 
       robot.update_gyro_stat()
