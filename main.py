@@ -149,8 +149,8 @@ def execute_green_mark_turn() -> bool:
 
   Turn logic (gyro-based):
   - Both left and right: 180° turn (measure gyro rotation)
-  - Only left: 90° left turn (measure gyro rotation)
-  - Only right: 90° right turn (measure gyro rotation)
+  - Only left detected: Turn RIGHT 90° (opposite direction)
+  - Only right detected: Turn LEFT 90° (opposite direction)
 
   Returns:
   - True if turn completed successfully
@@ -205,8 +205,7 @@ def execute_green_mark_turn() -> bool:
   # Execute turn based on detected directions
   if has_left and has_right:
     target_rotation = 180.0
-    # direction = "left"
-    turn_description = "180°"
+    turn_description = "180° left"
 
     while True:
       robot.update_button_stat()
@@ -222,8 +221,8 @@ def execute_green_mark_turn() -> bool:
         logger.warning("Gyro yaw lost during turn")
         break
 
-      # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (current_yaw - initial_yaw + 360) % 360
+      # Calculate rotation magnitude for left turn (counterclockwise, yaw decreases)
+      yaw_diff = (initial_yaw - current_yaw + 360) % 360
 
       robot.set_speed(3000 - turning_base_speed,
                       turning_base_speed)  # Turn left
@@ -236,39 +235,7 @@ def execute_green_mark_turn() -> bool:
 
   elif has_left:
     target_rotation = 90.0
-    # direction = "left"
-    turn_description = "90° left"
-
-    while True:
-      robot.update_button_stat()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        logger.debug("Turn interrupted by button during 90° left turn")
-        return False
-
-      robot.update_gyro_stat()
-      current_yaw = robot.yaw
-      if current_yaw is None:
-        logger.warning("Gyro yaw lost during turn")
-        break
-
-      # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (current_yaw - initial_yaw + 360) % 360
-
-      robot.set_speed(3000 - turning_base_speed,
-                      turning_base_speed)  # Turn left
-      robot.send_speed()
-
-      if yaw_diff >= target_rotation:
-        logger.info(
-            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
-        break
-
-  elif has_right:
-    target_rotation = 90.0
-    # direction = "right"
-    turn_description = "90° right"
+    turn_description = "90° right (left mark detected)"
 
     while True:
       robot.update_button_stat()
@@ -284,11 +251,41 @@ def execute_green_mark_turn() -> bool:
         logger.warning("Gyro yaw lost during turn")
         break
 
-      # Calculate rotation magnitude (handling wraparound)
+      # Calculate rotation magnitude for right turn (clockwise, yaw increases)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
 
       robot.set_speed(turning_base_speed,
                       3000 - turning_base_speed)  # Turn right
+      robot.send_speed()
+
+      if yaw_diff >= target_rotation:
+        logger.info(
+            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
+        break
+
+  elif has_right:
+    target_rotation = 90.0
+    turn_description = "90° left (right mark detected)"
+
+    while True:
+      robot.update_button_stat()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.debug("Turn interrupted by button during 90° left turn")
+        return False
+
+      robot.update_gyro_stat()
+      current_yaw = robot.yaw
+      if current_yaw is None:
+        logger.warning("Gyro yaw lost during turn")
+        break
+
+      # Calculate rotation magnitude for left turn (counterclockwise, yaw decreases)
+      yaw_diff = (initial_yaw - current_yaw + 360) % 360
+
+      robot.set_speed(3000 - turning_base_speed,
+                      turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
