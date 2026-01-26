@@ -161,7 +161,6 @@ def execute_green_mark_turn() -> bool:
   gyro_calculated = (math.degrees(
       math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
                      gyro_roll is not None and gyro_pitch is not None else None)
-  gyro_calculated = math.degrees(gyro_calculated)
   green_black_detected = robot.green_black_detected
 
   # Determine which directions have black lines
