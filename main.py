@@ -253,8 +253,8 @@ def execute_green_mark_turn() -> bool:
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
 
-      robot.set_speed(3000 - turning_base_speed,
-                      turning_base_speed)  # Turn left
+      robot.set_speed(turning_base_speed,
+                      3000 - turning_base_speed)  # Turn left
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
@@ -283,8 +283,8 @@ def execute_green_mark_turn() -> bool:
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
 
-      robot.set_speed(turning_base_speed,
-                      3000 - turning_base_speed)  # Turn right
+      robot.set_speed(3000 - turning_base_speed,
+                      turning_base_speed)  # Turn right
       robot.send_speed()
 
       if yaw_diff >= target_rotation:
