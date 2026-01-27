@@ -292,10 +292,10 @@ class Robot:
     Returns:
         None: Always returns None
     """
-    self.__MOTOR_L = min(max(consts.MOTOR_MIN_SPEED, motor_l),
-                         consts.MOTOR_MAX_SPEED)
-    self.__MOTOR_R = min(max(consts.MOTOR_MIN_SPEED, motor_r),
-                         consts.MOTOR_MAX_SPEED)
+    self.__MOTOR_L = int(min(max(consts.MOTOR_MIN_SPEED, motor_l),
+                         consts.MOTOR_MAX_SPEED))
+    self.__MOTOR_R = int(min(max(consts.MOTOR_MIN_SPEED, motor_r),
+                         consts.MOTOR_MAX_SPEED))
     self.__last_time_set = time.time()
     return None
 
@@ -307,8 +307,12 @@ class Robot:
         string: The reply from ESP32
     """
     assert self.__uart_device is not None
-    assert isinstance(self.__MOTOR_L, int)
-    assert isinstance(self.__MOTOR_R, int)
+    if self.__MOTOR_L is None or self.__MOTOR_R is None:
+      logger.get_logger().error(
+          "Motor speeds not set before sending to ESP32.")
+      return False
+    assert isinstance(self.__MOTOR_L, int), f"Type of self.__MOTOR_L is {type(self.__MOTOR_L)}"
+    assert isinstance(self.__MOTOR_R, int), f"Type of self.__MOTOR_R is {type(self.__MOTOR_R)}"
     # if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
     #   logger.get_logger().info(
     #       f"Stopping due to last time set too long {self.__last_time_set}")
