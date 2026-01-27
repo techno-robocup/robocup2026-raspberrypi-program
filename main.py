@@ -877,11 +877,18 @@ def calculate_ball() -> tuple[int, int]:
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
     dist_term = int(max(100, min(dist_term, 250)))
-  if robot.ball_near_flag:
-    dist_term = -50
-  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag):
+  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
+    diff_angle = 0
+    dist_term = -80
+  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and robot.ball_near_flag:
+    diff_angle *= -0.5
+    dist_term = -80
+  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag): # offset
     diff_angle *= 1.5
     dist_term = 0
+  if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (not robot.ball_near_flag):
+    diff_angle *= 0.8
+    dist_term *= 1.5
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
