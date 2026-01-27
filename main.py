@@ -229,7 +229,7 @@ def execute_green_mark_turn() -> bool:
                       turning_base_speed)  # Turn left
       robot.send_speed()
 
-      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
+      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
@@ -260,7 +260,7 @@ def execute_green_mark_turn() -> bool:
                       3000 - turning_base_speed)  # Turn left
       robot.send_speed()
 
-      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
+      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
@@ -291,7 +291,7 @@ def execute_green_mark_turn() -> bool:
                       turning_base_speed)  # Turn right
       robot.send_speed()
 
-      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
+      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
