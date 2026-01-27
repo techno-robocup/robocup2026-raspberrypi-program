@@ -620,6 +620,7 @@ def find_best_target() -> None:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
   current_time = time.time()
   result_image = robot.rescue_image
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", result_image)
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
       result_image = yolo_results[0].plot()
