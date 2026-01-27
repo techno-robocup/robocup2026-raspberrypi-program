@@ -1033,10 +1033,13 @@ def handle_exit() -> None:
 
 
 def handle_ball() -> None:
+  last_offset_flag = robot.ball_catch_offset_flag
+  last_dist_flag = robot.ball_catch_dist_flag
+  last_near_flag = robot.ball_near_flag
   motorl, motorr = calculate_ball()
   robot.set_speed(motorl, motorr)
   robot.send_speed()
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag):  # Catch
+  if last_offset_flag and last_dist_flag and (not last_near_flag):  # Catch
     catch_ball()
     if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
       robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
