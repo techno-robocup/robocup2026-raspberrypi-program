@@ -13,7 +13,7 @@ import modules.robot
 
 logger = modules.logger.get_logger()
 
-logger.debug("Logger initialized")
+logger.info("Logger initialized")
 
 # Mutex lock for thread-safe YOLO evaluation
 yolo_lock = threading.Lock()
@@ -187,7 +187,6 @@ def execute_green_mark_turn() -> bool:
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
-      logger.debug("Turn interrupted by button during approach")
       return False
     robot.set_speed(BASE_SPEED, BASE_SPEED)
     robot.send_speed()
@@ -213,7 +212,6 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 180° turn")
         return False
 
       robot.update_gyro_stat()
@@ -244,7 +242,6 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 90° left turn")
         return False
 
       robot.update_gyro_stat()
@@ -275,7 +272,6 @@ def execute_green_mark_turn() -> bool:
       if robot.robot_stop:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        logger.debug("Turn interrupted by button during 90° right turn")
         return False
 
       robot.update_gyro_stat()
@@ -372,7 +368,6 @@ def execute_line_recovery() -> bool:
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
-      logger.debug("Line recovery interrupted by button")
       return False
 
     # Back up with both motors at the same speed
@@ -523,7 +518,7 @@ def sleep_sec(sec: float, function=None) -> int:
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
-      logger.debug("Sleep interrupted by button")
+      logger.info("Sleep interrupted by button")
       return 1
     elif function is not None:
       function()
@@ -1072,7 +1067,7 @@ def is_stopping_by_button() -> None:
   robot.send_speed()
   robot.send_arm()
   robot.write_rescue_turning_angle(0)
-  logger.debug("robot stop true, stopping..")
+  logger.info("robot stop true, stopping..")
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
@@ -1083,7 +1078,7 @@ def is_stopping_by_button() -> None:
   robot.write_detect_black_ball(False)
 
 
-logger.debug("Objects Initialized")
+logger.info("Objects Initialized")
 
 if __name__ == "__main__":
   assert isinstance(robot, modules.robot.Robot)
@@ -1176,4 +1171,4 @@ if __name__ == "__main__":
         logger.info("Red stop")
         robot.set_speed(1500, 1500)
     robot.send_speed()
-logger.debug("Program Stop")
+logger.info("Program Stop")

@@ -243,7 +243,6 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
     Rescue_Depth_precallback_func(request)
   else:
     # In rescue mode - just capture image for YOLO detection
-    logger.debug("Rescue Camera pre-callback triggered (rescue mode)")
     # In rescue mode we only capture the lores image for YOLO.
     # Depth prediction is expensive and should not run in this hot
     # callback path (it was causing the callback to be called very
@@ -309,7 +308,6 @@ def detect_green_marks(orig_image: np.ndarray,
     if cv2.contourArea(contour) > consts.MIN_GREEN_AREA:
       # Get bounding box
       x, y, w, h = cv2.boundingRect(contour)
-      # logger.debug(f"Green mark found at ({x}, {y}) with size ({w}, {h})")
 
       # Calculate center point
       center_x = x + w // 2
@@ -759,7 +757,6 @@ def _check_region_is_black(region: np.ndarray,
 
 def Linetrace_Camera_Pre_callback(request):
   global lastblackline  # , LASTBLACKLINE_LOCK
-  logger.debug("Linetrace Camera Pre call-back called")
   current_time = time.time()
   try:
     with MappedArray(request, "lores") as m:

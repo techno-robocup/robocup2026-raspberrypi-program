@@ -153,25 +153,15 @@ class uart_io:
     if self.isConnected():
       assert self.__Serial_port is not None
       self.__Serial_port.write(str(message).encode("ascii"))
-      logger.get_logger().debug(f"Sent message: {str(message)}")
-      logger.get_logger().debug(
-          f"Waiting for reply (timeout: {self.__timeout}s)...")
       while True:
         message_str = self.__Serial_port.read_until(b'\n').decode(
             'ascii').strip()
         if message_str:
-          logger.get_logger().debug(f"Raw received from UART: '{message_str}'")
           try:
             retMessage = Message(message_str)
-            logger.get_logger().debug(f"Parsed message: {str(retMessage)}")
             if retMessage.Id == message.Id:
-              logger.get_logger().debug(
-                  f"✓ Reply received: '{retMessage.Message}'")
               return retMessage.Message
             elif retMessage.Id < message.Id:
-              logger.get_logger().debug(
-                  f"Ignoring old message (ID {retMessage.Id}, expected {message.Id})"
-              )
               continue
             else:
               logger.get_logger().warning(
@@ -470,8 +460,6 @@ class Robot:
     Sets robot_stop to True when button is OFF (not pressed).
     """
     response = self.__uart_device.send("GET button")
-    logger.get_logger().debug(
-        f"Button response: {response} (type: {type(response).__name__})")
     self.__robot_stop = response == "OFF"
     return None
 
