@@ -873,10 +873,10 @@ def calculate_ball() -> tuple[int, int]:
   else:
     diff_angle = 0
   dist_term = 0
-  if consts.BALL_CATCH_SIZE > size and (not robot.ball_catch_dist_flag):
+  if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
     dist_term = int(max(100, min(dist_term, 250)))
-  if consts.BALL_CATCH_SIZE > size and (robot.ball_near_flag):
+  if robot.ball_near_flag:
     dist_term = -50
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
