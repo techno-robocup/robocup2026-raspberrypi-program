@@ -422,10 +422,6 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_height = int(h * 0.5)
   black_threshold_ratio = 0.75  # 75% of pixels must be black
 
-  logger.info(
-      f"Checking black lines around green mark at center ({center_x}, {center_y}), size ({w}x{h})"
-  )
-
   # Check bottom
   roi_b_y1 = center_y + h // 2
   roi_b_y2 = min(center_y + h // 2 + roi_height,
