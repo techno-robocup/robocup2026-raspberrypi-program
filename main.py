@@ -156,6 +156,7 @@ def execute_green_mark_turn() -> bool:
   - True if turn completed successfully
   - False if interrupted by button
   """
+  logger.info("Executing green mark turn using gyro measurement")
   gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
   gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
   gyro_calculated = (math.degrees(
