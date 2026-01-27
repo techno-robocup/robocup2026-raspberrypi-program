@@ -1098,6 +1098,7 @@ if __name__ == "__main__":
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
+  robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
