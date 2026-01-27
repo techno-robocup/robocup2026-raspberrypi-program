@@ -114,5 +114,7 @@ upper_red1 = np.array([179, 255, 255])
 lower_red2 = np.array([0, 130, 100])
 upper_red2 = np.array([20, 255, 255])
 
+GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
+
 if __name__ == "__main__":
   pass
