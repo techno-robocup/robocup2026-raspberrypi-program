@@ -235,7 +235,7 @@ def execute_green_mark_turn() -> bool:
   elif has_left:
     target_rotation = 90.0
     # direction = "left"
-    turn_description = "90° left"
+    turn_description = "90° right"
 
     while True:
       robot.update_button_stat()
@@ -265,7 +265,7 @@ def execute_green_mark_turn() -> bool:
   elif has_right:
     target_rotation = 90.0
     # direction = "right"
-    turn_description = "90° right"
+    turn_description = "90° left"
 
     while True:
       robot.update_button_stat()
