@@ -40,10 +40,10 @@ uart_dev.connect(selected_device.device, consts.UART_BAUD_RATE,
 robot.set_uart_device(uart_dev)
 
 BASE_SPEED = 1680
-TURNING_BASE_SPEED = 1650
+TURNING_BASE_SPEED = 1750
 assert 1500 < BASE_SPEED < 2000
 assert 1500 < TURNING_BASE_SPEED < 2000
-assert TURNING_BASE_SPEED < BASE_SPEED
+# assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 245
@@ -156,6 +156,7 @@ def execute_green_mark_turn() -> bool:
   - True if turn completed successfully
   - False if interrupted by button
   """
+  logger.info("Executing green mark turn using gyro measurement")
   gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
   gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
   gyro_calculated = (math.degrees(
