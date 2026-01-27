@@ -1114,12 +1114,16 @@ if __name__ == "__main__":
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                           (robot.rescue_size is None)):
+        logger.debug("not fund")
         handle_not_found()
       elif robot.rescue_target == consts.TargetList.EXIT.value:
+        logger.debug("exit")
         handle_exit()
       elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+        logger.debug("ball")
         handle_ball()
       else:
+        logger.debug("cage")
         handle_cage()
     else:
       if not robot.linetrace_stop:
