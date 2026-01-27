@@ -207,6 +207,7 @@ def execute_green_mark_turn() -> bool:
     # direction = "left"
     turn_description = "180°"
 
+    started_turning = time.time()
     while True:
       robot.update_button_stat()
       if robot.robot_stop:
@@ -227,7 +228,7 @@ def execute_green_mark_turn() -> bool:
                       turning_base_speed)  # Turn left
       robot.send_speed()
 
-      if yaw_diff >= target_rotation:
+      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
@@ -237,6 +238,7 @@ def execute_green_mark_turn() -> bool:
     # direction = "left"
     turn_description = "90° right"
 
+    started_turning = time.time()
     while True:
       robot.update_button_stat()
       if robot.robot_stop:
@@ -257,7 +259,7 @@ def execute_green_mark_turn() -> bool:
                       3000 - turning_base_speed)  # Turn left
       robot.send_speed()
 
-      if yaw_diff >= target_rotation:
+      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
@@ -267,6 +269,7 @@ def execute_green_mark_turn() -> bool:
     # direction = "right"
     turn_description = "90° left"
 
+    started_turning = time.time()
     while True:
       robot.update_button_stat()
       if robot.robot_stop:
@@ -281,13 +284,13 @@ def execute_green_mark_turn() -> bool:
         break
 
       # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (current_yaw - initial_yaw + 360) % 360
+      yaw_diff = (initial_yaw - current_yaw + 360) % 360
 
       robot.set_speed(3000 - turning_base_speed,
                       turning_base_speed)  # Turn right
       robot.send_speed()
 
-      if yaw_diff >= target_rotation:
+      if time.time() - started_turning > 0.2 and yaw_diff >= target_rotation:
         logger.info(
             f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
         break
