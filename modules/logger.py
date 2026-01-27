@@ -40,7 +40,7 @@ def get_logger(name="Logger", file="log.log"):
 
   if not logger.hasHandlers():
     # Set to DEBUG to capture all log levels
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Console handler with COLORS
     colored_formatter = ColoredFormatter(
