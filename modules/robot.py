@@ -147,6 +147,9 @@ class uart_io:
       The response message content on success, False on timeout or error.
     """
     self.__message_id_increment += 1
+    logger.get_logger().debug(
+        f"→ Sending message ID {self.__message_id_increment}: '{message}'"
+    )
     return self.__send(Message(self.__message_id_increment, message))
 
   def __send(self, message: Message) -> bool | str:
@@ -160,6 +163,7 @@ class uart_io:
           try:
             retMessage = Message(message_str)
             if retMessage.Id == message.Id:
+              logger.get_logger().debug(f"← Received response for message ID {message.Id}: '{retMessage.Message}'")
               return retMessage.Message
             elif retMessage.Id < message.Id:
               continue
