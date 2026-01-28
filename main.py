@@ -151,7 +151,7 @@ def execute_green_mark_turn() -> bool:
   - Both left and right: 180° turn (measure gyro rotation)
   - Only left: 90° left turn (measure gyro rotation)
   - Only right: 90° right turn (measure gyro rotation)
-  
+
   Black detection integration:
   - When gyro reaches 80% of target angle, enable black check mode
   - In black check mode, monitor top checkpoint for black line detection
@@ -231,15 +231,15 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
-      
+
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
-      
+
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 80.0 and not black_check_enabled:
         black_check_enabled = True
         logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
-      
+
       # Check if we should stop based on black detection or exceeding target
       if black_check_enabled:
         if robot.top_checkpoint_black:
@@ -280,15 +280,15 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (current_yaw - initial_yaw + 360) % 360
-      
+
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
-      
+
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 80.0 and not black_check_enabled:
         black_check_enabled = True
         logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
-      
+
       # Check if we should stop based on black detection or exceeding target
       if black_check_enabled:
         if robot.top_checkpoint_black:
@@ -329,15 +329,16 @@ def execute_green_mark_turn() -> bool:
 
       # Calculate rotation magnitude (handling wraparound)
       yaw_diff = (initial_yaw - current_yaw + 360) % 360
-      
+
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
-      
+
+
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 80.0 and not black_check_enabled:
         black_check_enabled = True
         logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
-      
+
       # Check if we should stop based on black detection or exceeding target
       if black_check_enabled:
         if robot.top_checkpoint_black:
