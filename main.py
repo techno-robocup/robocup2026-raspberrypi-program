@@ -333,7 +333,6 @@ def execute_green_mark_turn() -> bool:
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
 
-
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 80.0 and not black_check_enabled:
         black_check_enabled = True
