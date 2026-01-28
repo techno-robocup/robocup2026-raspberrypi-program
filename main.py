@@ -244,10 +244,13 @@ def execute_green_mark_turn() -> bool:
   # Image center and target position for green mark
   image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
   target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)  # Bottom half of screen
+  # Target y position - keep mark near bottom of screen (e.g., 75% down from top)
+  target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.75)
 
   # Proportional gain for adjusting turn speed based on green mark position
   # Scaled relative to turning speed delta from neutral (1500)
   GREEN_MARK_KP = 0.4  # Proportional gain for horizontal offset correction
+  GREEN_MARK_KP_Y = 0.3  # Proportional gain for vertical offset correction (forward/backward)
 
   # Turning parameters
   turning_base_speed = TURNING_BASE_SPEED
@@ -343,6 +346,13 @@ def execute_green_mark_turn() -> bool:
         # Normalize offset (-1 to 1 range)
         x_offset_normalized = x_offset / (consts.LINETRACE_CAMERA_LORES_WIDTH / 2)
 
+        # Calculate vertical offset from target (bottom of screen)
+        # Positive offset = mark is below target (too close), need to slow down/back up
+        # Negative offset = mark is above target (too far), need to speed up/move forward
+        y_offset = mark_y - target_y
+        # Normalize offset (-1 to 1 range)
+        y_offset_normalized = y_offset / (consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
+
         # Base turning speed
         if turn_direction == "left":
           # Turn left: left motor slower, right motor faster
@@ -359,19 +369,24 @@ def execute_green_mark_turn() -> bool:
         # Scale adjustment relative to turning speed delta
         adjustment = int(x_offset_normalized * GREEN_MARK_KP * turning_speed_delta)
 
+        # Y-axis adjustment: add forward bias to both motors
+        # Negative y_offset_normalized = mark too high (far), add forward motion
+        # Positive y_offset_normalized = mark too low (close), reduce forward/add backward
+        y_adjustment = int(-y_offset_normalized * GREEN_MARK_KP_Y * turning_speed_delta)
+
         if turn_direction == "left":
           # For left turns, increase left-turn rate when mark is to the right
-          motor_left = clamp(base_left - adjustment)
-          motor_right = clamp(base_right + adjustment)
+          motor_left = clamp(base_left - adjustment + y_adjustment)
+          motor_right = clamp(base_right + adjustment + y_adjustment)
         else:
           # For right turns, increase right-turn rate when mark is to the right
-          motor_left = clamp(base_left + adjustment)
-          motor_right = clamp(base_right - adjustment)
+          motor_left = clamp(base_left + adjustment + y_adjustment)
+          motor_right = clamp(base_right - adjustment + y_adjustment)
 
         # Throttle debug logging to avoid excessive output
         current_time = time.time()
         if current_time - last_debug_log_time >= 0.2:  # Log at most every 200ms
-          logger.debug(f"Green mark at ({mark_x}, {mark_y}), offset={x_offset_normalized:.2f}, adj={adjustment}")
+          logger.debug(f"Green mark at ({mark_x}, {mark_y}), x_offset={x_offset_normalized:.2f}, y_offset={y_offset_normalized:.2f}, x_adj={adjustment}, y_adj={y_adjustment}")
           last_debug_log_time = current_time
     else:
       # No green mark visible, use fixed turning speed
