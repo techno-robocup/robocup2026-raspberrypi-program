@@ -227,14 +227,17 @@ def execute_green_mark_turn() -> bool:
   image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
   target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)  # Bottom half of screen
 
-  # PID-like gain for adjusting turn speed based on green mark position
-  green_mark_kp = 0.8  # Proportional gain for horizontal offset correction
+  # Proportional gain for adjusting turn speed based on green mark position
+  # Scaled relative to turning speed delta from neutral (1500)
+  GREEN_MARK_KP = 0.4  # Proportional gain for horizontal offset correction
 
   # Turning parameters
   turning_base_speed = TURNING_BASE_SPEED
+  turning_speed_delta = turning_base_speed - 1500  # How much above neutral the turning speed is
   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
   started_turning = time.time()
   black_check_enabled = False
+  last_debug_log_time = 0.0  # Throttle debug logging
 
   while True:
     robot.update_button_stat()
@@ -283,6 +286,11 @@ def execute_green_mark_turn() -> bool:
       if initial_yaw is not None and current_yaw is not None and rotation_percentage > 120.0:
         logger.info(f"Exceeded 120% of target rotation - stopping turn (gyro: {yaw_diff:.1f}°)")
         break
+    else:
+      # Safety check for significant over-rotation even before black check is enabled
+      if initial_yaw is not None and current_yaw is not None and rotation_percentage > 150.0:
+        logger.warning(f"Significant over-rotation ({rotation_percentage:.1f}%) before black check - stopping turn (gyro: {yaw_diff:.1f}°)")
+        break
 
     # Get current green mark positions for visual feedback
     current_green_marks = robot.green_marks
@@ -297,9 +305,11 @@ def execute_green_mark_turn() -> bool:
 
       for mark in current_green_marks:
         mark_x, mark_y, _, _ = mark
-        # Score based on distance from center horizontally and preference for bottom
+        # Score based on distance from center horizontally and proximity to bottom of screen
+        # Lower y value = top of screen, higher y value = bottom of screen
         x_error = abs(mark_x - image_center_x)
-        y_score = max(0, target_y_min - mark_y)  # Penalize marks above target region
+        # Penalize marks in top portion of screen (y < target_y_min)
+        y_score = max(0, target_y_min - mark_y)
         score = x_error + y_score * 2
         if score < best_score:
           best_score = score
@@ -323,14 +333,19 @@ def execute_green_mark_turn() -> bool:
           base_right = 3000 - turning_base_speed
 
         # Adjust speeds to keep green mark centered
-        # If mark is to the right of center (positive offset), need to turn more left
-        # If mark is to the left of center (negative offset), need to turn more right
-        adjustment = int(x_offset_normalized * green_mark_kp * 100)
+        # Positive offset = mark is to the right of center, need to turn more left
+        # Negative offset = mark is to the left of center, need to turn more right
+        # Scale adjustment relative to turning speed delta
+        adjustment = int(x_offset_normalized * GREEN_MARK_KP * turning_speed_delta)
 
         motor_left = clamp(base_left - adjustment)
         motor_right = clamp(base_right + adjustment)
 
-        logger.debug(f"Green mark at ({mark_x}, {mark_y}), offset={x_offset_normalized:.2f}, adj={adjustment}")
+        # Throttle debug logging to avoid excessive output
+        current_time = time.time()
+        if current_time - last_debug_log_time >= 0.2:  # Log at most every 200ms
+          logger.debug(f"Green mark at ({mark_x}, {mark_y}), offset={x_offset_normalized:.2f}, adj={adjustment}")
+          last_debug_log_time = current_time
     else:
       # No green mark visible, use fixed turning speed
       if turn_direction == "left":
