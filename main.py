@@ -49,7 +49,7 @@ MIN_SPEED = 1000
 KP = 245
 DP = 200
 BOP = 0.043  # Ball Offset P
-BSP = 1.5  # Ball Size P
+BSP = 2.5  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -653,7 +653,7 @@ def sleep_sec(sec: float, function=None) -> int:
 
 
 def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> None:
-  is_bottom_third = (y_center > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.3)
+  is_bottom_third = (size > consts.BALL_CATCH_SIZE and y_center > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.3)
   is_bottom_sixth = y_center > BALL_Y_5_6
 
   if dist is not None:
@@ -996,8 +996,8 @@ def calculate_ball() -> tuple[int, int]:
     diff_angle = 0
   dist_term = 0
   if not robot.ball_catch_dist_flag:
-    dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size))**2 * BSP
-    dist_term = int(max(100, min(dist_term, 250)))
+    dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
+    dist_term = int(max(80, min(dist_term, 250)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -80
