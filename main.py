@@ -263,6 +263,11 @@ def execute_green_mark_turn() -> bool:
       else:
         yaw_diff = (initial_yaw - current_yaw + 360) % 360
 
+      # Handle case where robot turned slightly in the opposite direction
+      # (e.g., 359.5° should be treated as -0.5° not a near-complete turn)
+      if yaw_diff > 180.0:
+        yaw_diff = yaw_diff - 360.0
+
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
 
@@ -376,6 +381,12 @@ def execute_green_mark_turn() -> bool:
       total_rotation = (final_yaw - initial_yaw + 360) % 360
     else:
       total_rotation = (initial_yaw - final_yaw + 360) % 360
+
+    # Handle case where robot turned slightly in the opposite direction
+    # (e.g., 359.5° should be treated as -0.5° not a near-complete turn)
+    if total_rotation > 180.0:
+      total_rotation = total_rotation - 360.0
+
     rotation_error = abs(total_rotation - target_rotation)
     logger.info(f"Gyro verification: rotated {total_rotation:.1f}° (target: {target_rotation:.1f}°, error: {rotation_error:.1f}°)")
   else:
