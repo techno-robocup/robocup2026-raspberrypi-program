@@ -145,30 +145,30 @@ def should_process_green_mark() -> bool:
 
 def execute_green_mark_turn() -> bool:
   """
-  Execute a turn based on detected green marks using gyro angle measurement with black detection.
+  Execute a turn based on detected green marks using visual feedback and gyro verification.
 
-  Turn logic (gyro + black detection based):
-  - Both left and right: 180° turn (measure gyro rotation)
-  - Only left: 90° left turn (measure gyro rotation)
-  - Only right: 90° right turn (measure gyro rotation)
+  Turn logic (visual feedback + gyro verification):
+  - Both left and right: 180° turn
+  - Only left: 90° right turn
+  - Only right: 90° left turn
 
-  Black detection integration:
-  - When gyro reaches 80% of target angle, enable black check mode
-  - In black check mode, monitor top checkpoint for black line detection
-  - Stop turning when black is detected OR when gyro exceeds 120% of target angle
-  - This allows precise line alignment while preventing over-rotation
+  Visual feedback based turning:
+  - While turning, keep the green mark around the middle horizontally and in the
+    bottom portion of the screen
+  - Adjust motor speeds based on green mark position to maintain visibility
+  - Use gyro to verify the turn was completed correctly
+
+  Gyro verification:
+  - Record initial yaw before turn
+  - After turn completes (black line detected), log the gyro rotation
+  - This allows verification that the correct angle was achieved
 
   Returns:
   - True if turn completed successfully
   - False if interrupted by button
   """
-  logger.info("Executing green mark turn using gyro measurement")
-  gyro_roll = math.radians(robot.roll) if robot.roll is not None else None
-  gyro_pitch = math.radians(robot.pitch) if robot.pitch is not None else None
-  gyro_calculated = (math.degrees(
-      math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
-                     gyro_roll is not None and gyro_pitch is not None else None)
-  gyro_calculated = math.degrees(gyro_calculated)
+  logger.info("Executing green mark turn using visual feedback with gyro verification")
+
   green_black_detected = robot.green_black_detected
 
   # Determine which directions have black lines
@@ -187,6 +187,25 @@ def execute_green_mark_turn() -> bool:
     if detection[3] == 1:  # Right black line
       has_right = True
 
+  # Determine turn direction and target rotation
+  if has_left and has_right:
+    target_rotation = 180.0
+    turn_direction = "left"  # Turn left for 180° (arbitrary choice)
+    turn_description = "180°"
+  elif has_left:
+    target_rotation = 90.0
+    turn_direction = "right"
+    turn_description = "90° right"
+  elif has_right:
+    target_rotation = 90.0
+    turn_direction = "left"
+    turn_description = "90° left"
+  else:
+    logger.warning("No valid turn direction detected, aborting turn")
+    return False
+
+  logger.info(f"Starting {turn_description} turn ({turn_direction})")
+
   # First, drive forward slightly to clear the intersection marker
   start_time = time.time()
   while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME:
@@ -198,39 +217,48 @@ def execute_green_mark_turn() -> bool:
     robot.set_speed(BASE_SPEED, BASE_SPEED)
     robot.send_speed()
 
-  # Record initial yaw before turn
+  # Record initial yaw before turn for verification
   robot.update_gyro_stat()
   initial_yaw = robot.yaw
   if initial_yaw is None:
-    logger.warning("Gyro yaw unavailable, cannot execute gyro-based turn")
-    return False
+    logger.warning("Gyro yaw unavailable at start, will proceed without gyro verification")
 
+  # Image center and target position for green mark
+  image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
+  target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)  # Bottom half of screen
+
+  # PID-like gain for adjusting turn speed based on green mark position
+  green_mark_kp = 0.8  # Proportional gain for horizontal offset correction
+
+  # Turning parameters
   turning_base_speed = TURNING_BASE_SPEED
-  if gyro_calculated > 15:
-    turning_base_speed = 1500 + (TURNING_BASE_SPEED - 1500) * 0.5
-  # Execute turn based on detected directions
-  if has_left and has_right:
-    target_rotation = 180.0
-    # direction = "left"
-    turn_description = "180°"
+  max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
+  started_turning = time.time()
+  black_check_enabled = False
 
-    started_turning = time.time()
-    black_check_enabled = False
-    while True:
-      robot.update_button_stat()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        return False
+  while True:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      return False
 
-      robot.update_gyro_stat()
-      current_yaw = robot.yaw
-      if current_yaw is None:
-        logger.warning("Gyro yaw lost during turn")
-        break
+    # Safety timeout
+    if time.time() - started_turning > max_turn_time:
+      logger.warning(f"Turn timeout after {max_turn_time:.1f}s, stopping turn")
+      break
 
-      # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (current_yaw - initial_yaw + 360) % 360
+    # Update gyro for monitoring
+    robot.update_gyro_stat()
+    current_yaw = robot.yaw
+
+    # Calculate rotation for logging (if gyro available)
+    yaw_diff = 0.0
+    if initial_yaw is not None and current_yaw is not None:
+      if turn_direction == "left":
+        yaw_diff = (current_yaw - initial_yaw + 360) % 360
+      else:
+        yaw_diff = (initial_yaw - current_yaw + 360) % 360
 
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
@@ -238,127 +266,100 @@ def execute_green_mark_turn() -> bool:
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 80.0 and not black_check_enabled:
         black_check_enabled = True
-        logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
-
-      # Check if we should stop based on black detection or exceeding target
-      if black_check_enabled:
-        if robot.top_checkpoint_black:
-          logger.info(f"Black detected at top - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
-        if rotation_percentage > 120.0:
-          logger.info(f"Exceeded 120% of target rotation - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
-
-      robot.set_speed(3000 - turning_base_speed,
-                      turning_base_speed)  # Turn left
-      robot.send_speed()
-
-      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation and not black_check_enabled:
-        logger.info(
-            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
-        break
-
-  elif has_left:
-    target_rotation = 90.0
-    # direction = "left"
-    turn_description = "90° right"
-
-    started_turning = time.time()
-    black_check_enabled = False
-    while True:
-      robot.update_button_stat()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        return False
-
-      robot.update_gyro_stat()
-      current_yaw = robot.yaw
-      if current_yaw is None:
-        logger.warning("Gyro yaw lost during turn")
-        break
-
-      # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (current_yaw - initial_yaw + 360) % 360
-
-      # Calculate percentage of target rotation completed
-      rotation_percentage = (yaw_diff / target_rotation) * 100.0
-
-      # Enable black check mode when within ±20% of target (80-120% range)
-      if rotation_percentage >= 80.0 and not black_check_enabled:
+        logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation (gyro: {yaw_diff:.1f}°)")
+    else:
+      # Without gyro, enable black check after a minimum time
+      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and not black_check_enabled:
         black_check_enabled = True
-        logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
+        logger.info("Black check mode enabled (no gyro, time-based)")
+      rotation_percentage = 0.0
 
-      # Check if we should stop based on black detection or exceeding target
-      if black_check_enabled:
-        if robot.top_checkpoint_black:
-          logger.info(f"Black detected at top - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
-        if rotation_percentage > 120.0:
-          logger.info(f"Exceeded 120% of target rotation - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
-
-      robot.set_speed(turning_base_speed,
-                      3000 - turning_base_speed)  # Turn left
-      robot.send_speed()
-
-      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation and not black_check_enabled:
-        logger.info(
-            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
+    # Check if we should stop based on black detection
+    if black_check_enabled:
+      if robot.top_checkpoint_black:
+        logger.info(f"Black detected at top - stopping turn (gyro rotation: {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
+        break
+      # Also check for over-rotation if gyro is available
+      if initial_yaw is not None and current_yaw is not None and rotation_percentage > 120.0:
+        logger.info(f"Exceeded 120% of target rotation - stopping turn (gyro: {yaw_diff:.1f}°)")
         break
 
-  elif has_right:
-    target_rotation = 90.0
-    # direction = "right"
-    turn_description = "90° left"
+    # Get current green mark positions for visual feedback
+    current_green_marks = robot.green_marks
+    motor_left = 1500
+    motor_right = 1500
 
-    started_turning = time.time()
-    black_check_enabled = False
-    while True:
-      robot.update_button_stat()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        return False
+    # Calculate motor speeds based on green mark position (visual feedback)
+    if current_green_marks:
+      # Find the green mark closest to the target position (center-bottom)
+      best_mark = None
+      best_score = float('inf')
 
-      robot.update_gyro_stat()
-      current_yaw = robot.yaw
-      if current_yaw is None:
-        logger.warning("Gyro yaw lost during turn")
-        break
+      for mark in current_green_marks:
+        mark_x, mark_y, _, _ = mark
+        # Score based on distance from center horizontally and preference for bottom
+        x_error = abs(mark_x - image_center_x)
+        y_score = max(0, target_y_min - mark_y)  # Penalize marks above target region
+        score = x_error + y_score * 2
+        if score < best_score:
+          best_score = score
+          best_mark = mark
 
-      # Calculate rotation magnitude (handling wraparound)
-      yaw_diff = (initial_yaw - current_yaw + 360) % 360
+      if best_mark:
+        mark_x, mark_y, _, _ = best_mark
+        # Calculate horizontal offset from center
+        x_offset = mark_x - image_center_x
+        # Normalize offset (-1 to 1 range)
+        x_offset_normalized = x_offset / (consts.LINETRACE_CAMERA_LORES_WIDTH / 2)
 
-      # Calculate percentage of target rotation completed
-      rotation_percentage = (yaw_diff / target_rotation) * 100.0
+        # Base turning speed
+        if turn_direction == "left":
+          # Turn left: left motor slower, right motor faster
+          base_left = 3000 - turning_base_speed
+          base_right = turning_base_speed
+        else:
+          # Turn right: right motor slower, left motor faster
+          base_left = turning_base_speed
+          base_right = 3000 - turning_base_speed
 
-      # Enable black check mode when within ±20% of target (80-120% range)
-      if rotation_percentage >= 80.0 and not black_check_enabled:
-        black_check_enabled = True
-        logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation")
+        # Adjust speeds to keep green mark centered
+        # If mark is to the right of center (positive offset), need to turn more left
+        # If mark is to the left of center (negative offset), need to turn more right
+        adjustment = int(x_offset_normalized * green_mark_kp * 100)
 
-      # Check if we should stop based on black detection or exceeding target
-      if black_check_enabled:
-        if robot.top_checkpoint_black:
-          logger.info(f"Black detected at top - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
-        if rotation_percentage > 120.0:
-          logger.info(f"Exceeded 120% of target rotation - stopping turn (rotated {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
-          break
+        motor_left = clamp(base_left - adjustment)
+        motor_right = clamp(base_right + adjustment)
 
-      robot.set_speed(3000 - turning_base_speed,
-                      turning_base_speed)  # Turn right
-      robot.send_speed()
+        logger.debug(f"Green mark at ({mark_x}, {mark_y}), offset={x_offset_normalized:.2f}, adj={adjustment}")
+    else:
+      # No green mark visible, use fixed turning speed
+      if turn_direction == "left":
+        motor_left = 3000 - turning_base_speed
+        motor_right = turning_base_speed
+      else:
+        motor_left = turning_base_speed
+        motor_right = 3000 - turning_base_speed
 
-      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and yaw_diff >= target_rotation and not black_check_enabled:
-        logger.info(
-            f"{turn_description} turn completed (rotated {yaw_diff:.1f}°)")
-        break
+    robot.set_speed(motor_left, motor_right)
+    robot.send_speed()
 
   # Stop after turn
   robot.set_speed(1500, 1500)
   robot.send_speed()
+
+  # Log gyro verification
+  robot.update_gyro_stat()
+  final_yaw = robot.yaw
+  if initial_yaw is not None and final_yaw is not None:
+    if turn_direction == "left":
+      total_rotation = (final_yaw - initial_yaw + 360) % 360
+    else:
+      total_rotation = (initial_yaw - final_yaw + 360) % 360
+    rotation_error = abs(total_rotation - target_rotation)
+    logger.info(f"Gyro verification: rotated {total_rotation:.1f}° (target: {target_rotation:.1f}°, error: {rotation_error:.1f}°)")
+  else:
+    logger.info("Gyro verification unavailable (yaw data missing)")
+
   robot.write_last_slope_get_time(time.time())
   return True  # Completed successfully
 
