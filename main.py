@@ -99,6 +99,24 @@ def clamp(value: int,
   return max(min_val, min(max_val, value))
 
 
+def normalize_rotation_angle(angle: float) -> float:
+  """Normalize rotation angle to handle opposite-direction turns.
+
+  When the robot turns slightly in the opposite direction of intended,
+  the angle calculation can wrap around (e.g., 359.5° instead of -0.5°).
+  This function converts angles >180° to their negative equivalent.
+
+  Args:
+    angle: Rotation angle in degrees (0-360 range from modulo calculation).
+
+  Returns:
+    Normalized angle in degrees (-180 to 180 range).
+  """
+  if angle > 180.0:
+    return angle - 360.0
+  return angle
+
+
 def should_process_green_mark() -> bool:
   """
   Determine if we should process green marks for intersection turning.
@@ -263,10 +281,8 @@ def execute_green_mark_turn() -> bool:
       else:
         yaw_diff = (initial_yaw - current_yaw + 360) % 360
 
-      # Handle case where robot turned slightly in the opposite direction
-      # (e.g., 359.5° should be treated as -0.5° not a near-complete turn)
-      if yaw_diff > 180.0:
-        yaw_diff = yaw_diff - 360.0
+      # Normalize angle to handle opposite-direction turns
+      yaw_diff = normalize_rotation_angle(yaw_diff)
 
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
@@ -382,10 +398,8 @@ def execute_green_mark_turn() -> bool:
     else:
       total_rotation = (initial_yaw - final_yaw + 360) % 360
 
-    # Handle case where robot turned slightly in the opposite direction
-    # (e.g., 359.5° should be treated as -0.5° not a near-complete turn)
-    if total_rotation > 180.0:
-      total_rotation = total_rotation - 360.0
+    # Normalize angle to handle opposite-direction turns
+    total_rotation = normalize_rotation_angle(total_rotation)
 
     rotation_error = abs(total_rotation - target_rotation)
     logger.info(f"Gyro verification: rotated {total_rotation:.1f}° (target: {target_rotation:.1f}°, error: {rotation_error:.1f}°)")
