@@ -277,9 +277,9 @@ def execute_green_mark_turn() -> bool:
     yaw_diff = 0.0
     if initial_yaw is not None and current_yaw is not None:
       if turn_direction == "left":
-        yaw_diff = (current_yaw - initial_yaw + 360) % 360
+        yaw_diff = (initial_yaw - current_yaw  + 360) % 360
       else:
-        yaw_diff = (initial_yaw - current_yaw + 360) % 360
+        yaw_diff = (current_yaw - initial_yaw + 360) % 360
 
       # Normalize angle to handle opposite-direction turns
       yaw_diff = normalize_rotation_angle(yaw_diff)
