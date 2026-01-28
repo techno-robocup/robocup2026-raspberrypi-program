@@ -245,7 +245,7 @@ def execute_green_mark_turn() -> bool:
   image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
   target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)  # Bottom half of screen
   # Target y position - keep mark near bottom of screen (e.g., 75% down from top)
-  target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.75)
+  target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)
 
   # Proportional gain for adjusting turn speed based on green mark position
   # Scaled relative to turning speed delta from neutral (1500)
