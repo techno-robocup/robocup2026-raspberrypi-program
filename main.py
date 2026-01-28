@@ -65,8 +65,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3 # 1728.0
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100 # 2160.0 - 100
+BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3  # 1728.0
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100  # 2160.0 - 100
 
 
 def is_valid_number(value) -> bool:
@@ -280,7 +280,7 @@ def execute_green_mark_turn() -> bool:
     yaw_diff = 0.0
     if initial_yaw is not None and current_yaw is not None:
       if turn_direction == "left":
-        yaw_diff = (initial_yaw - current_yaw  + 360) % 360
+        yaw_diff = (initial_yaw - current_yaw + 360) % 360
       else:
         yaw_diff = (current_yaw - initial_yaw + 360) % 360
 
