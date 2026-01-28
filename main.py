@@ -243,7 +243,7 @@ def execute_green_mark_turn() -> bool:
 
   # Image center and target position for green mark
   image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
-  target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)  # Bottom half of screen
+  target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.8)  # Bottom half of screen
   # Target y position - keep mark near bottom of screen (e.g., 75% down from top)
   target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)
 
