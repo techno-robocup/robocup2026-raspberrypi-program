@@ -338,8 +338,14 @@ def execute_green_mark_turn() -> bool:
         # Scale adjustment relative to turning speed delta
         adjustment = int(x_offset_normalized * GREEN_MARK_KP * turning_speed_delta)
 
-        motor_left = clamp(base_left - adjustment)
-        motor_right = clamp(base_right + adjustment)
+        if turn_direction == "left":
+          # For left turns, increase left-turn rate when mark is to the right
+          motor_left = clamp(base_left - adjustment)
+          motor_right = clamp(base_right + adjustment)
+        else:
+          # For right turns, increase right-turn rate when mark is to the right
+          motor_left = clamp(base_left + adjustment)
+          motor_right = clamp(base_right - adjustment)
 
         # Throttle debug logging to avoid excessive output
         current_time = time.time()
