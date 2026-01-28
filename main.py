@@ -590,16 +590,13 @@ def sleep_sec(sec: float, function=None) -> int:
   return 0
 
 
-def update_ball_flags(dist: float, y_center: float, w: float) -> None:
-  best_target_y = y_center
-  best_target_w = w
-
-  is_bottom_third = best_target_y > BALL_Y_2_3
-  is_bottom_sixth = best_target_y > BALL_Y_5_6
+def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> None:
+  is_bottom_third = (y_center > BALL_Y_2_3) and (size > consts.BALL_CATCH_SIZE)
+  is_bottom_sixth = y_center > BALL_Y_5_6
 
   if dist is not None:
-    half_w = best_target_w / 2
-    margin = best_target_w * 0.2
+    half_w = w / 2
+    margin = w * 0.2
 
     ball_left = dist - half_w + RESCUE_CX + margin
     ball_right = dist + half_w + RESCUE_CX - margin
@@ -704,7 +701,7 @@ def find_best_target() -> None:
     detected_classes = []
     best_angle = None
     best_size = None
-    best_target_y = None
+    y_center = None
     max_area = float(0)
     for box in boxes:
       try:
@@ -721,7 +718,7 @@ def find_best_target() -> None:
             max_area = area
             best_angle = dist
             best_size = area
-            best_target_y = best_y
+            y_center = best_y
       elif cls == robot.rescue_target:
         updated, max_area, dist, area, best_y, best_w = update_best_box(
             box.xywh[0], max_area)
@@ -729,12 +726,12 @@ def find_best_target() -> None:
           max_area = area
           best_angle = dist
           best_size = area
-          best_target_y = best_y
+          y_center = best_y
           if cls in [
               consts.TargetList.SILVER_BALL.value,
               consts.TargetList.BLACK_BALL.value
           ]:
-            update_ball_flags(dist, best_y, best_w)
+            update_ball_flags(dist, best_y, best_w, best_size)
       elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
         robot.write_rescue_turning_angle(0)
         max_area = 0
@@ -744,8 +741,8 @@ def find_best_target() -> None:
           max_area = area
           best_angle = dist
           best_size = area
-          best_target_y = best_y
-          update_ball_flags(dist, best_y, best_w)
+          y_center = best_y
+          update_ball_flags(dist, best_y, best_w, best_size)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
       if cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
         robot.write_detect_black_ball(True)
@@ -758,10 +755,10 @@ def find_best_target() -> None:
     else:
       robot.write_rescue_size(int(best_size))
     # Persist best target vertical center (y), if available
-    if best_target_y is None:
+    if y_center is None:
       robot.write_rescue_y(None)
     else:
-      robot.write_rescue_y(float(best_target_y))
+      robot.write_rescue_y(float(y_center))
   if robot.rescue_offset is not None and robot.rescue_size is not None and robot.rescue_y is not None:
     logger.info(
         f"Best target found - Offset: {robot.rescue_offset:.1f}px, Size: {robot.rescue_size}px², Y: {robot.rescue_y:.1f}px"
