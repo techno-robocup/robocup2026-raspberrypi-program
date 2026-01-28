@@ -65,8 +65,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3
-BALL_Y_5_6 = RESCUE_IMAGE_HEIGHT * 5 / 6
+BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3 # 1728.0
+BALL_Y_5_6 = RESCUE_IMAGE_HEIGHT * 5 / 6 # 2160.0
 
 
 def is_valid_number(value) -> bool:
@@ -677,13 +677,16 @@ def find_best_target() -> None:
   with yolo_lock:
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
   current_time = time.time()
-  result_image = robot.rescue_image
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", result_image)
+  origin_image = robot.rescue_image.copy()
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", origin_image)
+  result_image = robot.rescue_image.copy()
   if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
       result_image = yolo_results[0].plot()
     except TypeError as e:
       logger.error(f"Error plotting YOLO result: {e}.")
+  draw_ball_debug(result_image)
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
   if yolo_results is None or len(yolo_results) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
@@ -765,8 +768,6 @@ def find_best_target() -> None:
     )
   else:
     logger.info("No valid target found after processing detections")
-  draw_ball_debug(result_image)
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
 
 
 def catch_ball() -> int:
@@ -944,7 +945,6 @@ def calculate_ball() -> tuple[int, int]:
     diff_angle *= 1.3
     dist_term = 0
   if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (not robot.ball_near_flag):
-    diff_angle *= 0.8
     dist_term *= 1.5
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
