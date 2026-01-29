@@ -40,7 +40,6 @@ uart_dev.connect(selected_device.device, consts.UART_BAUD_RATE,
 robot.set_uart_device(uart_dev)
 
 BASE_SPEED = 1680
-TURNING_BASE_SPEED = 1600
 assert 1500 < BASE_SPEED < 2000
 assert 1500 < TURNING_BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
@@ -241,8 +240,6 @@ def execute_green_mark_turn() -> bool:
     logger.warning("Gyro yaw unavailable at start, will proceed without gyro verification")
 
   # Turning parameters
-  turning_base_speed = TURNING_BASE_SPEED
-  turning_speed_delta = turning_base_speed - 1500  # How much above neutral the turning speed is
   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
   started_turning = time.time()
   black_check_enabled = False
@@ -305,11 +302,11 @@ def execute_green_mark_turn() -> bool:
 
     # Set fixed turning speeds
     if turn_direction == "left":
-      motor_left = 3000 - turning_base_speed
-      motor_right = turning_base_speed
+      motor_left = consts.LEVEL_TURN_SPEED_F
+      motor_right = consts.LEVEL_TURN_SPEED_S
     else:
-      motor_left = turning_base_speed
-      motor_right = 3000 - turning_base_speed
+      motor_left = consts.LEVEL_TURN_SPEED_S
+      motor_right = consts.LEVEL_TURN_SPEED_F
 
     robot.set_speed(motor_left, motor_right)
     robot.send_speed()
