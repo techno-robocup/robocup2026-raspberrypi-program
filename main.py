@@ -66,7 +66,7 @@ RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
 BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3  # 1728.0
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100  # 2160.0 - 100
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 40  # 2160.0 - 40
 
 
 def is_valid_number(value) -> bool:
@@ -997,7 +997,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(80, min(dist_term, 250)))
+    dist_term = int(max(80, min(dist_term, 220)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -80
