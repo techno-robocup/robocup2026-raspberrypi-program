@@ -242,7 +242,6 @@ def execute_green_mark_turn() -> bool:
 
   # Turning parameters
   turning_base_speed = TURNING_BASE_SPEED
-  turning_speed_delta = turning_base_speed - 1500  # How much above neutral the turning speed is
   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
   started_turning = time.time()
   black_check_enabled = False
