@@ -221,8 +221,11 @@ def execute_green_mark_turn() -> bool:
   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
   # First, drive forward slightly to clear the intersection marker
+  current_gyro_degrees = (math.degrees(
+      math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
+                     gyro_roll is not None and gyro_pitch is not None else 0)
   start_time = time.time()
-  while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME:
+  while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME * (1 if current_gyro_degrees < 10 else 1.5):
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
