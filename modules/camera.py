@@ -359,8 +359,8 @@ def detect_red_marks(orig_image: np.ndarray) -> None:
   kernel = np.ones((3, 3), np.uint8)
   red_mask = cv2.morphologyEx(red_mask, cv2.MORPH_CLOSE, kernel, iterations=3)
 
-  if not robot.linetrace_stop:
-    cv2.imwrite(f"bin/{time.time():.3f}_red_mask.jpg", red_mask)
+  # if not robot.linetrace_stop:
+  #   cv2.imwrite(f"bin/{time.time():.3f}_red_mask.jpg", red_mask)
 
   red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL,
                                      cv2.CHAIN_APPROX_SIMPLE)
