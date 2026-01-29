@@ -48,7 +48,7 @@ MIN_SPEED = 1000
 KP = 245
 DP = 200
 BOP = 0.045  # Ball Offset P
-BSP = 1.3  # Ball Size P
+BSP = 1.1  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -64,8 +64,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 100  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 50  # 2160.0 - x
+BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 120  # 1728.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 200  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -758,7 +758,7 @@ def catch_ball() -> int:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(1)
+  sleep_sec(0.8)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1420, 0)
@@ -767,13 +767,13 @@ def catch_ball() -> int:
   sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1000, 0)
+  robot.set_arm(950, 0)
   robot.send_arm()
   robot.set_speed(1400, 1400)
-  sleep_sec(1.3)
+  sleep_sec(1.2)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1000, 1)
+  robot.set_arm(950, 1)
   robot.send_arm()
   sleep_sec(0.5)
   robot.set_arm(3072, 1)
@@ -916,6 +916,7 @@ def calculate_ball() -> tuple[int, int]:
     diff_angle = 0
     dist_term = 0
   if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (not robot.ball_near_flag):
+    diff_angle = 0
     dist_term *= 1.0
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and robot.ball_near_flag:
     # diff_angle *= -0.5
