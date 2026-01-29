@@ -49,7 +49,7 @@ MIN_SPEED = 1000
 KP = 245
 DP = 200
 BOP = 0.045  # Ball Offset P
-BSP = 1.4  # Ball Size P
+BSP = 1.3  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -908,7 +908,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(50, min(dist_term, 200)))
+    dist_term = int(max(40, min(dist_term, 200)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -80
@@ -918,7 +918,7 @@ def calculate_ball() -> tuple[int, int]:
   if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (not robot.ball_near_flag):
     dist_term *= 1.0
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and robot.ball_near_flag:
-    diff_angle *= -0.5
+    # diff_angle *= -0.5
     dist_term = -80
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag):  # offset
    # diff_angle *= 1.3
