@@ -94,8 +94,8 @@ GREEN_MARK_TURN_180_TIME = 3.5
 GREEN_MARK_Y_THRESHOLD_RATIO = 4 / 5  # Mark must be in bottom fifth
 
 # Maximum timeout for line-based turns (safety fallback)
-MAX_TURN_90_TIME = 4.0
-MAX_TURN_180_TIME = 7.0
+MAX_TURN_90_TIME = 6.0
+MAX_TURN_180_TIME = 12.0
 TURN_CHECK_DELAY = 0.5  # Delay before checking for line crossings
 
 # Checkpoint position for turn detection (ratio of image dimensions)
