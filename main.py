@@ -573,7 +573,7 @@ def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> No
   if dist is not None:
     half_w = w / 2
     # margin = w * 0.2
-    margin = w * 0.1
+    margin = w * 0.15
 
     ball_left = dist - half_w + RESCUE_CX + margin
     ball_right = dist + half_w + RESCUE_CX - margin
@@ -922,6 +922,7 @@ def calculate_ball() -> tuple[int, int]:
     dist_term *= 1.0
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and robot.ball_near_flag:
     # diff_angle *= -0.5
+    diff_angle = 0
     dist_term = -80
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag):  # offset
    # diff_angle *= 1.3
