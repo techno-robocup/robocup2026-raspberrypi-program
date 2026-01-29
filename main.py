@@ -65,8 +65,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 60  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 60  # 2160.0 - x
+BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 10  # 1728.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 10  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -758,7 +758,7 @@ def catch_ball() -> int:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(1.3)
+  sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1420, 0)
