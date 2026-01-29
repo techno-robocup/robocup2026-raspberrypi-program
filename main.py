@@ -48,8 +48,8 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 245
 DP = 200
-BOP = 0.043  # Ball Offset P
-BSP = 2  # Ball Size P
+BOP = 0.045  # Ball Offset P
+BSP = 1.5  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -794,7 +794,7 @@ def release_ball() -> bool:
     True on successful completion.
   """
   robot.set_speed(1700, 1700)
-  sleep_sec(1.2)
+  sleep_sec(1.5)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1300, 1300)
@@ -810,7 +810,7 @@ def release_ball() -> bool:
   sleep_sec(0.5)
   robot.write_rescue_turning_angle(0)
   robot.set_speed(1300, 1300)
-  sleep_sec(1)
+  sleep_sec(0.7)
   robot.set_speed(1750, 1250)
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
@@ -908,7 +908,7 @@ def calculate_ball() -> tuple[int, int]:
   dist_term = 0
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(80, min(dist_term, 220)))
+    dist_term = int(max(50, min(dist_term, 200)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -80
@@ -930,7 +930,7 @@ def calculate_ball() -> tuple[int, int]:
   # logger.info(f"offset: {angle} size:{size}")
   # logger.info(f"diff_angle: {diff_angle} dist_term {dist_term}")
   # logger.info(f"Motor speed L{base_L} R{base_R}")
-  base_L, base_R = clamp(base_L, 1300, 1780), clamp(base_R, 1300, 1780)
+  base_L, base_R = clamp(base_L, 1300, 1750), clamp(base_R, 1300, 1750)
   logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
   return base_L, base_R
 
