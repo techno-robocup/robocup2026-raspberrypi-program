@@ -758,7 +758,7 @@ def catch_ball() -> int:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
-  sleep_sec(0.8)
+  sleep_sec(0.3)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(1420, 0)
@@ -923,8 +923,8 @@ def calculate_ball() -> tuple[int, int]:
     diff_angle = 0
     dist_term = -80
   if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag):  # offset
-   # diff_angle *= 1.3
-    dist_term = 0
+  #  diff_angle *= 1.3
+    dist_term = 40
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
