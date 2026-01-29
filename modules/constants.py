@@ -123,7 +123,7 @@ GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green
 # F stands for fast, S stands for slow
 # F and S should be inverted on implementation side
 # whether you are desiring to turn it to left/right
-LEVEL_TURN_SPEED_F= 1650
+LEVEL_TURN_SPEED_F = 1650
 LEVEL_TURN_SPEED_S = 1350
 
 if __name__ == "__main__":
