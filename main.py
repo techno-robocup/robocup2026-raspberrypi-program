@@ -163,18 +163,14 @@ def should_process_green_mark() -> bool:
 
 def execute_green_mark_turn() -> bool:
   """
-  Execute a turn based on detected green marks using visual feedback and gyro verification.
+  Execute a turn based on detected green marks using gyro verification.
 
-  Turn logic (visual feedback + gyro verification):
+  Turn logic:
   - Both left and right: 180° turn
   - Only left: 90° right turn
   - Only right: 90° left turn
 
-  Visual feedback based turning:
-  - While turning, keep the green mark around the middle horizontally and in the
-    bottom portion of the screen
-  - Adjust motor speeds based on green mark position to maintain visibility
-  - Use gyro to verify the turn was completed correctly
+  Use gyro to verify the turn was completed correctly
 
   Gyro verification:
   - Record initial yaw before turn
@@ -241,24 +237,12 @@ def execute_green_mark_turn() -> bool:
   if initial_yaw is None:
     logger.warning("Gyro yaw unavailable at start, will proceed without gyro verification")
 
-  # Image center and target position for green mark
-  image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
-  target_y_min = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.8)  # Bottom half of screen
-  # Target y position - keep mark near bottom of screen (e.g., 75% down from top)
-  target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)
-
-  # Proportional gain for adjusting turn speed based on green mark position
-  # Scaled relative to turning speed delta from neutral (1500)
-  GREEN_MARK_KP = 0.4  # Proportional gain for horizontal offset correction
-  GREEN_MARK_KP_Y = 0.3  # Proportional gain for vertical offset correction (forward/backward)
-
   # Turning parameters
   turning_base_speed = TURNING_BASE_SPEED
   turning_speed_delta = turning_base_speed - 1500  # How much above neutral the turning speed is
   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
   started_turning = time.time()
   black_check_enabled = False
-  last_debug_log_time = 0.0  # Throttle debug logging
 
   while True:
     robot.update_button_stat()
@@ -316,86 +300,13 @@ def execute_green_mark_turn() -> bool:
         logger.warning(f"Significant over-rotation ({rotation_percentage:.1f}%) before black check - stopping turn (gyro: {yaw_diff:.1f}°)")
         break
 
-    # Get current green mark positions for visual feedback
-    current_green_marks = robot.green_marks
-    motor_left = 1500
-    motor_right = 1500
-
-    # Calculate motor speeds based on green mark position (visual feedback)
-    if current_green_marks:
-      # Find the green mark closest to the target position (center-bottom)
-      best_mark = None
-      best_score = float('inf')
-
-      for mark in current_green_marks:
-        mark_x, mark_y, _, _ = mark
-        # Score based on distance from center horizontally and proximity to bottom of screen
-        # Lower y value = top of screen, higher y value = bottom of screen
-        x_error = abs(mark_x - image_center_x)
-        # Penalize marks in top portion of screen (y < target_y_min)
-        y_score = max(0, target_y_min - mark_y)
-        score = x_error + y_score * 2
-        if score < best_score:
-          best_score = score
-          best_mark = mark
-
-      if best_mark:
-        mark_x, mark_y, _, _ = best_mark
-        # Calculate horizontal offset from center
-        x_offset = mark_x - image_center_x
-        # Normalize offset (-1 to 1 range)
-        x_offset_normalized = x_offset / (consts.LINETRACE_CAMERA_LORES_WIDTH / 2)
-
-        # Calculate vertical offset from target (bottom of screen)
-        # Positive offset = mark is below target (too close), need to slow down/back up
-        # Negative offset = mark is above target (too far), need to speed up/move forward
-        y_offset = mark_y - target_y
-        # Normalize offset (-1 to 1 range)
-        y_offset_normalized = y_offset / (consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
-
-        # Base turning speed
-        if turn_direction == "left":
-          # Turn left: left motor slower, right motor faster
-          base_left = 3000 - turning_base_speed
-          base_right = turning_base_speed
-        else:
-          # Turn right: right motor slower, left motor faster
-          base_left = turning_base_speed
-          base_right = 3000 - turning_base_speed
-
-        # Adjust speeds to keep green mark centered
-        # Positive offset = mark is to the right of center, need to turn more left
-        # Negative offset = mark is to the left of center, need to turn more right
-        # Scale adjustment relative to turning speed delta
-        adjustment = int(x_offset_normalized * GREEN_MARK_KP * turning_speed_delta)
-
-        # Y-axis adjustment: add forward bias to both motors
-        # Negative y_offset_normalized = mark too high (far), add forward motion
-        # Positive y_offset_normalized = mark too low (close), reduce forward/add backward
-        y_adjustment = int(-y_offset_normalized * GREEN_MARK_KP_Y * turning_speed_delta)
-
-        if turn_direction == "left":
-          # For left turns, increase left-turn rate when mark is to the right
-          motor_left = clamp(base_left - adjustment + y_adjustment)
-          motor_right = clamp(base_right + adjustment + y_adjustment)
-        else:
-          # For right turns, increase right-turn rate when mark is to the right
-          motor_left = clamp(base_left + adjustment + y_adjustment)
-          motor_right = clamp(base_right - adjustment + y_adjustment)
-
-        # Throttle debug logging to avoid excessive output
-        current_time = time.time()
-        if current_time - last_debug_log_time >= 0.2:  # Log at most every 200ms
-          logger.debug(f"Green mark at ({mark_x}, {mark_y}), x_offset={x_offset_normalized:.2f}, y_offset={y_offset_normalized:.2f}, x_adj={adjustment}, y_adj={y_adjustment}")
-          last_debug_log_time = current_time
+    # Set fixed turning speeds
+    if turn_direction == "left":
+      motor_left = 3000 - turning_base_speed
+      motor_right = turning_base_speed
     else:
-      # No green mark visible, use fixed turning speed
-      if turn_direction == "left":
-        motor_left = 3000 - turning_base_speed
-        motor_right = turning_base_speed
-      else:
-        motor_left = turning_base_speed
-        motor_right = 3000 - turning_base_speed
+      motor_left = turning_base_speed
+      motor_right = 3000 - turning_base_speed
 
     robot.set_speed(motor_left, motor_right)
     robot.send_speed()
