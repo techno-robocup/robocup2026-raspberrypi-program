@@ -49,7 +49,7 @@ MIN_SPEED = 1000
 KP = 245
 DP = 200
 BOP = 0.043  # Ball Offset P
-BSP = 2.5  # Ball Size P
+BSP = 2  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -65,8 +65,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = RESCUE_IMAGE_HEIGHT * 2 / 3  # 1728.0
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 40  # 2160.0 - 40
+BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 40  # 1728.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 40  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
