@@ -89,7 +89,7 @@ TURN_90_TIME = 1.6
 TURN_18_TIME = 0.32
 
 # Green mark intersection turning times (seconds)
-GREEN_MARK_APPROACH_TIME = 0
+GREEN_MARK_APPROACH_TIME = 1
 GREEN_MARK_TURN_180_TIME = 3.5
 GREEN_MARK_Y_THRESHOLD_RATIO = 4 / 5  # Mark must be in bottom fifth
 
