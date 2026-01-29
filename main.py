@@ -49,7 +49,7 @@ MIN_SPEED = 1000
 KP = 245
 DP = 200
 BOP = 0.045  # Ball Offset P
-BSP = 1.3  # Ball Size P
+BSP = 1.1  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -770,13 +770,13 @@ def catch_ball() -> int:
   sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1000, 0)
+  robot.set_arm(950, 0)
   robot.send_arm()
   robot.set_speed(1400, 1400)
   sleep_sec(1.2)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1000, 1)
+  robot.set_arm(950, 1)
   robot.send_arm()
   sleep_sec(0.5)
   robot.set_arm(3072, 1)
