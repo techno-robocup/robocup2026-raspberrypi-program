@@ -65,7 +65,7 @@ RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
 BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 120  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 200  # 2160.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 160  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -564,7 +564,7 @@ def sleep_sec(sec: float, function=None) -> int:
 
 
 def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> None:
-  is_bottom_third = (size > consts.BALL_CATCH_SIZE and y_center > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.1)
+  is_bottom_third = y_center > BALL_Y_2_3 or (size > consts.BALL_CATCH_SIZE * 1.1)
   is_bottom_sixth = y_center > BALL_Y_5_6
 
   if dist is not None:
