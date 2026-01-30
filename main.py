@@ -910,7 +910,7 @@ def calculate_ball() -> tuple[int, int]:
     dist_term = int(max(40, min(dist_term, 200)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
-    dist_term = -80
+    dist_term = -100
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag):
     diff_angle = 0
     dist_term = 0
@@ -934,6 +934,7 @@ def calculate_ball() -> tuple[int, int]:
   # logger.info(f"Motor speed L{base_L} R{base_R}")
   base_L, base_R = clamp(base_L, 1300, 1750), clamp(base_R, 1300, 1750)
   logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
+  logger.info(f"catch offset:{robot.ball_catch_offset_flag} dist:{robot.ball_catch_dist_flag} near:{robot.ball_near_flag}")
   return base_L, base_R
 
 
