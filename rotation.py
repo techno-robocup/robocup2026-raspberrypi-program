@@ -29,3 +29,7 @@ while True:
     print("Flat")
     robot.set_speed(consts.LEVEL_TURN_SPEED_F, consts.LEVEL_TURN_SPEED_S)
     robot.send_speed()
+  else:
+    print("Not flat")
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
