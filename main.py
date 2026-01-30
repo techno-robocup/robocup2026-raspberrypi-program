@@ -231,6 +231,14 @@ def execute_green_mark_turn() -> bool:
   #     return False
   #   robot.set_speed(BASE_SPEED, BASE_SPEED)
   #   robot.send_speed()
+  while time.time() - start_time < 0.3:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      return False
+    robot.set_speed(3000 - BASE_SPEED, 3000 - BASE_SPEED)
+    robot.send_speed()
 
   # Record initial yaw before turn for verification
   robot.update_gyro_stat()
