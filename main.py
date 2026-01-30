@@ -301,11 +301,11 @@ def execute_green_mark_turn() -> bool:
 
     # Set fixed turning speeds
     if turn_direction == "left":
-      motor_left = consts.LEVEL_TURN_SPEED_F
-      motor_right = consts.LEVEL_TURN_SPEED_S
-    else:
       motor_left = consts.LEVEL_TURN_SPEED_S
       motor_right = consts.LEVEL_TURN_SPEED_F
+    else:
+      motor_left = consts.LEVEL_TURN_SPEED_F
+      motor_right = consts.LEVEL_TURN_SPEED_S
 
     robot.set_speed(motor_left, motor_right)
     robot.send_speed()
