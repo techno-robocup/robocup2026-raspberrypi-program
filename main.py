@@ -563,7 +563,7 @@ def sleep_sec(sec: float, function=None) -> int:
 
 
 def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> None:
-  is_bottom_third = y_center > BALL_Y_2_3 or (size > consts.BALL_CATCH_SIZE * 1.1)
+  is_bottom_third = (size > consts.BALL_CATCH_MIN_SIZE and y_center > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.1)
   is_bottom_sixth = y_center > BALL_Y_5_6
 
   if dist is not None:
