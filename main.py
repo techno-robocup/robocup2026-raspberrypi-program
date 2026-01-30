@@ -223,14 +223,14 @@ def execute_green_mark_turn() -> bool:
       math.acos(math.cos(robot.roll) * math.cos(robot.pitch))) if
                      robot.roll is not None and robot.pitch is not None else 0)
   start_time = time.time()
-  while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME * (1 if current_gyro_degrees < 10 else 1.5):
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      return False
-    robot.set_speed(BASE_SPEED, BASE_SPEED)
-    robot.send_speed()
+  # while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME * (1 if current_gyro_degrees < 10 else 1.5):
+  #   robot.update_button_stat()
+  #   if robot.robot_stop:
+  #     robot.set_speed(1500, 1500)
+  #     robot.send_speed()
+  #     return False
+  #   robot.set_speed(BASE_SPEED, BASE_SPEED)
+  #   robot.send_speed()
 
   # Record initial yaw before turn for verification
   robot.update_gyro_stat()
