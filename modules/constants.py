@@ -24,7 +24,7 @@ MOTOR_MIN_SPEED = 1000
 Rescue_Camera_Port = 0
 Rescue_Camera_Controls = {
     "AfMode": libcamera.controls.AfModeEnum.Continuous,
-    "AfSpeed": libcamera.controls.AfSpeedEnum.Max,
+    "AfSpeed": libcamera.controls.AfSpeedEnum.Fast,
     "AeFlickerMode": libcamera.controls.AeFlickerModeEnum.Manual,
     "AeFlickerPeriod": 10000,
     "AeMeteringMode": libcamera.controls.AeMeteringModeEnum.Matrix,
