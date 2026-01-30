@@ -218,25 +218,32 @@ def execute_green_mark_turn() -> bool:
 
   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
-  # First, drive forward slightly to clear the intersection marker
-  current_gyro_degrees = (math.degrees(
-      math.acos(math.cos(robot.roll) * math.cos(robot.pitch))) if
-                     robot.roll is not None and robot.pitch is not None else 0)
-  start_time = time.time()
-  # while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME * (1 if current_gyro_degrees < 10 else 1.5):
-  #   robot.update_button_stat()
-  #   if robot.robot_stop:
-  #     robot.set_speed(1500, 1500)
-  #     robot.send_speed()
-  #     return False
-  #   robot.set_speed(BASE_SPEED, BASE_SPEED)
-  #   robot.send_speed()
-  while time.time() - start_time < 0.3:
+  # Back up until the green mark is centered in the image
+  target_y = int(consts.LINETRACE_CAMERA_LORES_HEIGHT * 0.5)
+  backup_start_time = time.time()
+  backup_timeout = 2.0  # Safety timeout in seconds
+
+  while True:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       return False
+
+    # Safety timeout
+    if time.time() - backup_start_time > backup_timeout:
+      logger.warning("Backup timeout reached, proceeding with turn")
+      break
+
+    # Check green mark position
+    green_marks = robot.green_marks
+    if green_marks:
+      # Use the first detected green mark's Y position
+      mark_y = green_marks[0][1]  # center_y
+      if mark_y <= target_y:
+        logger.info(f"Green mark centered at y={mark_y} (target={target_y}), stopping backup")
+        break
+
     robot.set_speed(3000 - BASE_SPEED, 3000 - BASE_SPEED)
     robot.send_speed()
 
