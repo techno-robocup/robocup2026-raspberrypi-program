@@ -340,8 +340,7 @@ def execute_green_mark_turn() -> bool:
   return True  # Completed successfully
 
 
-def should_execute_line_recovery(line_area: Optional[float],
-                                 angle_error: Optional[float]) -> bool:
+def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   """
   Check if line recovery should be executed.
 
@@ -351,13 +350,13 @@ def should_execute_line_recovery(line_area: Optional[float],
   3. Always respects cooldown to prevent rapid repeated recoveries
 
   Args:
-    line_area: Current detected line area in pixels
+    arg_line_area: Current detected line area in pixels
     angle_error: Current angle error from vertical (radians), can be None
 
   Returns:
     True if recovery should be executed
   """
-  if line_area is None or not is_valid_number(line_area):
+  if arg_line_area is None or not is_valid_number(arg_line_area):
     return False
 
   # Check cooldown to prevent rapid re-triggering during recovery
@@ -373,7 +372,7 @@ def should_execute_line_recovery(line_area: Optional[float],
   # Check if x-offset is significant
   x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.1
 
-  area_condition = line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
+  area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   x_offset_condition = x_offset_significant
 
   # Only trigger when area is small AND x-offset is significant
@@ -381,7 +380,7 @@ def should_execute_line_recovery(line_area: Optional[float],
 
   if should_recover:
     logger.info(
-        f"Line recovery triggered: Low area ({line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})"
+        f"Line recovery triggered: Low area ({arg_line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})"
     )
 
   return should_recover
@@ -1226,8 +1225,7 @@ if __name__ == "__main__":
           angle_error = get_current_angle_error()
           line_area = robot.line_area
 
-          if angle_error is not None and should_execute_line_recovery(
-              line_area, angle_error):
+          if angle_error is not None and should_execute_line_recovery(line_area):
             execute_line_recovery()
           else:
             motorl, motorr = calculate_motor_speeds()
