@@ -622,14 +622,14 @@ def draw_ball_debug(image) -> None:
       - Vertical thresholds (2/3, 5/6 of image height)
       - Horizontal catch tolerance band (ball width)
     """
-  HLINE_COLOR = (0, 255, 0)
-  CENTER_COLOR = (0, 0, 255)
+  hline_color = (0, 255, 0)
+  center_color = (0, 0, 255)
   cx = int(RESCUE_CX)
   y_2_3 = int(BALL_Y_2_3)
   y_5_6 = int(BALL_Y_5_6)
-  cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), HLINE_COLOR, 2)
-  cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), HLINE_COLOR, 2)
-  cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), CENTER_COLOR, 1)
+  cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), hline_color, 2)
+  cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), hline_color, 2)
+  cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), center_color, 1)
 
 
 def find_best_target() -> None:
