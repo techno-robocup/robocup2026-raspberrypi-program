@@ -821,16 +821,6 @@ def release_ball() -> bool:
   robot.send_speed()
   return True
 
-
-def drop_ball() -> bool:
-  robot.set_speed(1500, 1500)
-  robot.set_arm(1536, 0)
-  sleep_sec(0.4)
-  robot.set_arm(3072, 0)
-  robot.send_arm()
-  return 0
-
-
 def change_position() -> bool:
   """Rotate approximately 30 degrees to search for targets.
 
