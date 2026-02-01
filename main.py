@@ -219,9 +219,6 @@ def execute_green_mark_turn() -> bool:
   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
   # First, drive forward slightly to clear the intersection marker
-  current_gyro_degrees = (math.degrees(
-      math.acos(math.cos(robot.roll) * math.cos(robot.pitch))) if
-                     robot.roll is not None and robot.pitch is not None else 0)
   start_time = time.time()
   # while time.time() - start_time < consts.GREEN_MARK_APPROACH_TIME * (1 if current_gyro_degrees < 10 else 1.5):
   #   robot.update_button_stat()
@@ -920,7 +917,7 @@ def calculate_ball() -> tuple[int, int]:
     return 1500, 1500
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(40, min(dist_term, 200)))
+    dist_term = int(max(40.0, min(dist_term, 200)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -100
