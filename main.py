@@ -472,9 +472,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   if angle < 0:
     angle += math.pi
 
-  angle_error = angle - (math.pi / 2)
+  local_angle_error = angle - (math.pi / 2)
 
-  steering = int(KP * angle_error)
+  steering = int(KP * local_angle_error)
 
   # Calculate speed adjustment based on line area
   line_area = robot.line_area
@@ -512,13 +512,13 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   adjusted_base_speed = 1500 + int(
       (BASE_SPEED - 1500) * speed_multiplier * gyro_multiplier)
 
-  # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000)}")
+  # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(local_angle_error)**6 * DP), 1500, 2000)}")
   motor_l = clamp(
-      int(clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
-      steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
+      int(clamp(int(adjusted_base_speed - abs(local_angle_error) ** 6 * DP), 1500, 2000) -
+          steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      int(clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
-      steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
+      int(clamp(int(adjusted_base_speed - abs(local_angle_error) ** 6 * DP), 1500, 2000) +
+          steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
