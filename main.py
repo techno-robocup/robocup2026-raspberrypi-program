@@ -533,6 +533,8 @@ def signal_handler(sig, frame):
     frame: Current stack frame (unused).
   """
   logger.info("Received shutdown signal")
+  logger.info("received signal: " + str(sig))
+  logger.info("frame: " + str(frame))
   robot.set_speed(1500, 1500)
   robot.send_speed()
   sys.exit(0)
