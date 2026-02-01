@@ -477,26 +477,26 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   steering = int(KP * local_angle_error)
 
   # Calculate speed adjustment based on line area
-  line_area = robot.line_area
+  local_line_area = robot.line_area
   speed_multiplier = 1.0  # Default: full speed
 
-  if line_area is not None and is_valid_number(line_area):
+  if local_line_area is not None and is_valid_number(local_line_area):
     # Reduce speed when line gets smaller
     # Area thresholds:
     # > 3000: full speed (100%)
     # 300-3000: power curve for realistic gradual ramp-up
     # < 300: clamped to minimum (30%)
-    if line_area < 3000:
+    if local_line_area < 3000:
       # Power function (quadratic) for realistic response curve
       # Normalized to 0-1 range, then apply pow(x,2) for aggressive acceleration
-      normalized = (line_area - consts.MIN_BLACK_LINE_AREA) / (
+      normalized = (local_line_area - consts.MIN_BLACK_LINE_AREA) / (
           3000 - consts.MIN_BLACK_LINE_AREA)
       power_curve = normalized**2  # Quadratic gives aggressive ramp
       # Scale to 0.3-1.0 range
       speed_multiplier = 0.3 + power_curve * 0.7
       speed_multiplier = max(0.3, min(1.0, speed_multiplier))
       logger.info(
-          f"Line area: {line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
+          f"Line area: {local_line_area:.0f}, speed multiplier: {speed_multiplier:.2f}"
       )
 
   # Get gyro roll angle and reduce speed when tilted significantly
