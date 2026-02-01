@@ -610,7 +610,7 @@ def update_best_box(
   area = w * h
   dist = x_center - RESCUE_CX
   if area <= max_area:
-    return False, max_area, None, None, None, None
+    return False, max_area, dist, area, y_center, w
 
   return True, area, dist, area, y_center, w
 
