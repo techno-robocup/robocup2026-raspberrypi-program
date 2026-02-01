@@ -519,11 +519,11 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000)}")
   motor_l = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
-      steering * gyro_multiplier, MIN_SPEED, MAX_SPEED)
+      int(clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) -
+      steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
-      steering * gyro_multiplier, MIN_SPEED, MAX_SPEED)
+      int(clamp(int(adjusted_base_speed - abs(angle_error)**6 * DP), 1500, 2000) +
+      steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
