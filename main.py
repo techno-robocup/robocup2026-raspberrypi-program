@@ -351,7 +351,6 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
 
   Args:
     arg_line_area: Current detected line area in pixels
-    angle_error: Current angle error from vertical (radians), can be None
 
   Returns:
     True if recovery should be executed
