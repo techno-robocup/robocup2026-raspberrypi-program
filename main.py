@@ -609,7 +609,7 @@ def update_best_box(
   area = w * h
   dist = x_center - RESCUE_CX
   if area <= max_area:
-    return False, max_area, None, None, None, None
+    return False, max_area, dist, area, y_center, w
 
   return True, area, dist, area, y_center, w
 
@@ -819,16 +819,6 @@ def release_ball() -> bool:
   robot.set_speed(1500, 1500)
   robot.send_speed()
   return True
-
-
-def drop_ball() -> bool:
-  robot.set_speed(1500, 1500)
-  robot.set_arm(1536, 0)
-  sleep_sec(0.4)
-  robot.set_arm(3072, 0)
-  robot.send_arm()
-  return 0
-
 
 def change_position() -> bool:
   """Rotate approximately 30 degrees to search for targets.
