@@ -822,6 +822,7 @@ def release_ball() -> bool:
   robot.send_speed()
   return True
 
+
 def change_position() -> bool:
   """Rotate approximately 30 degrees to search for targets.
 
