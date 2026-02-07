@@ -1079,6 +1079,7 @@ def handle_exit() -> None:
 
 
 def handle_ball() -> None:
+  clamp_turning_angle()
   last_offset_flag = robot.ball_catch_offset_flag
   last_dist_flag = robot.ball_catch_dist_flag
   last_near_flag = robot.ball_near_flag
