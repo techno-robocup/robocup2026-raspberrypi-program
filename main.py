@@ -813,7 +813,6 @@ def release_ball() -> bool:
   robot.set_arm(3065, 0)
   robot.send_arm()
   sleep_sec(0.5)
-  robot.write_rescue_turning_angle(0)
   robot.set_speed(1300, 1300)
   sleep_sec(0.7)
   robot.set_speed(1750, 1250)
