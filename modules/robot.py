@@ -218,7 +218,7 @@ class Robot:
     self.__uart_device: Optional[uart_io] = None
     self.__MOTOR_L = 1500
     self.__MOTOR_R = 1500
-    self.__MOTOR_ARM = 3072
+    self.__MOTOR_ARM = 3065
     self.__MOTOR_WIRE = 0
     self.__Rescue_Camera = modules.camera.Camera(
         consts.Rescue_Camera_Port, consts.Rescue_Camera_Controls,
