@@ -149,8 +149,7 @@ class uart_io:
     """
     self.__message_id_increment += 1
     logger.get_logger().debug(
-        f"→ Sending message ID {self.__message_id_increment}: '{message}'"
-    )
+        f"→ Sending message ID {self.__message_id_increment}: '{message}'")
     return self.__send(Message(self.__message_id_increment, message))
 
   def __send(self, message: Message) -> bool | str:
@@ -164,7 +163,9 @@ class uart_io:
           try:
             retMessage = Message(message_str)
             if retMessage.Id == message.Id:
-              logger.get_logger().debug(f"← Received response for message ID {message.Id}: '{retMessage.Message}'")
+              logger.get_logger().debug(
+                  f"← Received response for message ID {message.Id}: '{retMessage.Message}'"
+              )
               return retMessage.Message
             elif retMessage.Id < message.Id:
               continue
@@ -288,10 +289,10 @@ class Robot:
     Returns:
         None: Always returns None
     """
-    self.__MOTOR_L = int(min(max(consts.MOTOR_MIN_SPEED, motor_l),
-                         consts.MOTOR_MAX_SPEED))
-    self.__MOTOR_R = int(min(max(consts.MOTOR_MIN_SPEED, motor_r),
-                         consts.MOTOR_MAX_SPEED))
+    self.__MOTOR_L = int(
+        min(max(consts.MOTOR_MIN_SPEED, motor_l), consts.MOTOR_MAX_SPEED))
+    self.__MOTOR_R = int(
+        min(max(consts.MOTOR_MIN_SPEED, motor_r), consts.MOTOR_MAX_SPEED))
     self.__last_time_set = time.time()
     return None
 
@@ -304,11 +305,12 @@ class Robot:
     """
     assert self.__uart_device is not None
     if self.__MOTOR_L is None or self.__MOTOR_R is None:
-      logger.get_logger().error(
-          "Motor speeds not set before sending to ESP32.")
+      logger.get_logger().error("Motor speeds not set before sending to ESP32.")
       return False
-    assert isinstance(self.__MOTOR_L, int), f"Type of self.__MOTOR_L is {type(self.__MOTOR_L)}"
-    assert isinstance(self.__MOTOR_R, int), f"Type of self.__MOTOR_R is {type(self.__MOTOR_R)}"
+    assert isinstance(self.__MOTOR_L,
+                      int), f"Type of self.__MOTOR_L is {type(self.__MOTOR_L)}"
+    assert isinstance(self.__MOTOR_R,
+                      int), f"Type of self.__MOTOR_R is {type(self.__MOTOR_R)}"
     # if self.__last_time_set is None or time.time() - self.__last_time_set > 0.3:
     #   logger.get_logger().info(
     #       f"Stopping due to last time set too long {self.__last_time_set}")
@@ -543,9 +545,12 @@ class Robot:
     """Get current robot's tilt angle from roll and pitch (degrees)."""
     with self.__gyro_lock:
       gyro_calculated = (math.degrees(
-        math.acos(math.cos(math.radians(self.roll)) * math.cos(math.radians(self.pitch)))) if
-                       self.roll is not None and self.pitch is not None else None)
+          math.acos(
+              math.cos(math.radians(self.roll)) *
+              math.cos(math.radians(self.pitch)))) if self.roll is not None
+                         and self.pitch is not None else None)
       return gyro_calculated
+
   @property
   def rescue_offset(self) -> Optional[float]:
     """Get horizontal offset to rescue target (thread-safe)."""

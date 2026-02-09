@@ -179,7 +179,8 @@ def execute_green_mark_turn() -> bool:
   - True if turn completed successfully
   - False if interrupted by button
   """
-  logger.info("Executing green mark turn using visual feedback with gyro verification")
+  logger.info(
+      "Executing green mark turn using visual feedback with gyro verification")
 
   green_black_detected = robot.green_black_detected
 
@@ -227,9 +228,11 @@ def execute_green_mark_turn() -> bool:
   elif robot.pitch > math.radians(10):
     approach_time = 0.3
     approach_base_speed = 1680
-  logger.info(f"Current degrees")
-  logger.info(f"Pitch: {robot.pitch}, Roll: {robot.roll}, Angle: {robot.current_angle}")
-  logger.info(f"Approaching time: {approach_time}s at speed {approach_base_speed}")
+  logger.info("Current degrees")
+  logger.info(
+      f"Pitch: {robot.pitch}, Roll: {robot.roll}, Angle: {robot.current_angle}")
+  logger.info(
+      f"Approaching time: {approach_time}s at speed {approach_base_speed}")
   start_time = time.time()
   while time.time() - start_time < 0.3:
     robot.update_button_stat()
@@ -244,7 +247,8 @@ def execute_green_mark_turn() -> bool:
   robot.update_gyro_stat()
   initial_yaw = robot.yaw
   if initial_yaw is None:
-    logger.warning("Gyro yaw unavailable at start, will proceed without gyro verification")
+    logger.warning(
+        "Gyro yaw unavailable at start, will proceed without gyro verification")
 
   # Turning parameters
   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
@@ -284,10 +288,13 @@ def execute_green_mark_turn() -> bool:
       # Enable black check mode when within ±20% of target (80-120% range)
       if rotation_percentage >= 66.0 and not black_check_enabled:
         black_check_enabled = True
-        logger.info(f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation (gyro: {yaw_diff:.1f}°)")
+        logger.info(
+            f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation (gyro: {yaw_diff:.1f}°)"
+        )
     else:
       # Without gyro, enable black check after a minimum time
-      if time.time() - started_turning > consts.GREEN_GYRO_PASS_TIME and not black_check_enabled:
+      if time.time(
+      ) - started_turning > consts.GREEN_GYRO_PASS_TIME and not black_check_enabled:
         black_check_enabled = True
         logger.info("Black check mode enabled (no gyro, time-based)")
       rotation_percentage = 0.0
@@ -295,16 +302,22 @@ def execute_green_mark_turn() -> bool:
     # Check if we should stop based on black detection
     if black_check_enabled:
       if robot.top_checkpoint_black:
-        logger.info(f"Black detected at top - stopping turn (gyro rotation: {yaw_diff:.1f}°, {rotation_percentage:.1f}%)")
+        logger.info(
+            f"Black detected at top - stopping turn (gyro rotation: {yaw_diff:.1f}°, {rotation_percentage:.1f}%)"
+        )
         break
       # Also check for over-rotation if gyro is available
       if initial_yaw is not None and current_yaw is not None and rotation_percentage > 120.0:
-        logger.info(f"Exceeded 120% of target rotation - stopping turn (gyro: {yaw_diff:.1f}°)")
+        logger.info(
+            f"Exceeded 120% of target rotation - stopping turn (gyro: {yaw_diff:.1f}°)"
+        )
         break
     else:
       # Safety check for significant over-rotation even before black check is enabled
       if initial_yaw is not None and current_yaw is not None and rotation_percentage > 150.0:
-        logger.warning(f"Significant over-rotation ({rotation_percentage:.1f}%) before black check - stopping turn (gyro: {yaw_diff:.1f}°)")
+        logger.warning(
+            f"Significant over-rotation ({rotation_percentage:.1f}%) before black check - stopping turn (gyro: {yaw_diff:.1f}°)"
+        )
         break
 
     # Set fixed turning speeds
@@ -335,7 +348,9 @@ def execute_green_mark_turn() -> bool:
     total_rotation = normalize_rotation_angle(total_rotation)
 
     rotation_error = abs(total_rotation - target_rotation)
-    logger.info(f"Gyro verification: rotated {total_rotation:.1f}° (target: {target_rotation:.1f}°, error: {rotation_error:.1f}°)")
+    logger.info(
+        f"Gyro verification: rotated {total_rotation:.1f}° (target: {target_rotation:.1f}°, error: {rotation_error:.1f}°)"
+    )
   else:
     logger.info("Gyro verification unavailable (yaw data missing)")
 
@@ -517,10 +532,14 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(local_angle_error)**6 * DP), 1500, 2000)}")
   motor_l = clamp(
-      int(clamp(int(adjusted_base_speed - abs(local_angle_error) ** 6 * DP), 1500, 2000) -
+      int(
+          clamp(int(adjusted_base_speed -
+                    abs(local_angle_error)**6 * DP), 1500, 2000) -
           steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      int(clamp(int(adjusted_base_speed - abs(local_angle_error) ** 6 * DP), 1500, 2000) +
+      int(
+          clamp(int(adjusted_base_speed -
+                    abs(local_angle_error)**6 * DP), 1500, 2000) +
           steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
@@ -570,8 +589,10 @@ def sleep_sec(sec: float, function=None) -> int:
   return 0
 
 
-def update_ball_flags(dist: float, y_center: float, w: float, size: float) -> None:
-  is_bottom_third = (size > consts.BALL_CATCH_MIN_SIZE and y_center > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.1)
+def update_ball_flags(dist: float, y_center: float, w: float,
+                      size: float) -> None:
+  is_bottom_third = (size > consts.BALL_CATCH_MIN_SIZE and y_center
+                     > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.1)
   is_bottom_sixth = y_center > BALL_Y_5_6
 
   if dist is not None:
@@ -904,7 +925,8 @@ def calculate_ball() -> tuple[int, int]:
   else:
     diff_angle = 0
   dist_term = 0
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag):
+  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (
+      not robot.ball_near_flag):
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return 1500, 1500
@@ -914,17 +936,21 @@ def calculate_ball() -> tuple[int, int]:
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -100
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag):
+  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (
+      not robot.ball_near_flag):
     diff_angle = 0
     dist_term = 0
-  if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (not robot.ball_near_flag):
+  if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (
+      not robot.ball_near_flag):
     diff_angle = 0
     dist_term *= 1.0
-  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and robot.ball_near_flag:
+  if (not robot.ball_catch_offset_flag
+      ) and robot.ball_catch_dist_flag and robot.ball_near_flag:
     # diff_angle *= -0.5
     diff_angle = 0
     dist_term = -80
-  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (not robot.ball_near_flag):  # offset
+  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (
+      not robot.ball_near_flag):  # offset
     #  diff_angle *= 1.3
     if diff_angle > 0:
       diff_angle = 60
@@ -940,7 +966,9 @@ def calculate_ball() -> tuple[int, int]:
   # logger.info(f"Motor speed L{base_L} R{base_R}")
   base_L, base_R = clamp(base_L, 1300, 1750), clamp(base_R, 1300, 1750)
   logger.info(f"Clamped Motor Speeds L{base_L} R{base_R}")
-  logger.info(f"catch offset:{robot.ball_catch_offset_flag} dist:{robot.ball_catch_dist_flag} near:{robot.ball_near_flag}")
+  logger.info(
+      f"catch offset:{robot.ball_catch_offset_flag} dist:{robot.ball_catch_dist_flag} near:{robot.ball_near_flag}"
+  )
   return base_L, base_R
 
 
@@ -1223,7 +1251,8 @@ if __name__ == "__main__":
           angle_error = get_current_angle_error()
           line_area = robot.line_area
 
-          if angle_error is not None and should_execute_line_recovery(line_area):
+          if angle_error is not None and should_execute_line_recovery(
+              line_area):
             execute_line_recovery()
           else:
             motorl, motorr = calculate_motor_speeds()
