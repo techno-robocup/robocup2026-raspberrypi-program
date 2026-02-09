@@ -1120,6 +1120,19 @@ def handle_ball() -> None:
   robot.set_speed(motorl, motorr)
   robot.send_speed()
   if last_offset_flag and last_dist_flag and (not last_near_flag):  # Catch
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    cnt_time = time.time()
+    while cnt_time < robot.rescue_saved_time:
+      robot.update_button_stat()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        return
+      robot.send_speed()
+    find_best_target()
+    if not(robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag)):
+      return
     catch_ball()
     if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
       robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)

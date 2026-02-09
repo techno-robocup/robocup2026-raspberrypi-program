@@ -259,6 +259,7 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
       #   cv2.imwrite(f"bin/{current_time:.3f}_rescue_depth.jpg", depth_u8)
       if robot is not None:
         robot.write_rescue_image(image)
+        robot.write_rescue_saved_time(time.time())
 
 
 green_marks: List[Tuple[int, int, int, int]] = []
