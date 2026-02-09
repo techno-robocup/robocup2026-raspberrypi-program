@@ -240,7 +240,7 @@ class Robot:
     self.__rescue_y: Optional[float] = None
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0  # Total revolutions
-    self.__rescue_saved_time: int = 0
+    self.__rescue_saved_time: float = 0
     self.__ball_catch_dist_flag = False  # catch ball flag
     self.__ball_catch_offset_flag = False
     self.__ball_near_flag = False
@@ -359,13 +359,13 @@ class Robot:
     assert self.__uart_device is not None
     return self.__uart_device.send("GET button") == "ON"
 
-  def write_rescue_saved_time(self, time: int) -> None:
+  def write_rescue_saved_time(self, time: float) -> None:
     with self.__rescue_camera_lock:
-      self.__rescue_saved_time
+      self.__rescue_saved_time = time
     return None
 
   @property
-  def rescue_saved_time(self) -> int:
+  def rescue_saved_time(self) -> float:
     with self.__rescue_camera_lock:
       return self.__rescue_saved_time
 
