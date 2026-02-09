@@ -219,6 +219,17 @@ def execute_green_mark_turn() -> bool:
   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
   # First, drive forward slightly to clear the intersection marker
+  approach_time = 0.3
+  approach_base_speed = 1320
+  # The code assumes that the pitch is the degree to the moving direction
+  if robot.current_angle < math.radians(10):
+    pass
+  elif robot.pitch > math.radians(10):
+    approach_time = 0.3
+    approach_base_speed = 1680
+  logger.info(f"Current degrees")
+  logger.info(f"Pitch: {robot.pitch}, Roll: {robot.roll}, Angle: {robot.current_angle}")
+  logger.info(f"Approaching time: {approach_time}s at speed {approach_base_speed}")
   start_time = time.time()
   while time.time() - start_time < 0.3:
     robot.update_button_stat()
@@ -226,7 +237,7 @@ def execute_green_mark_turn() -> bool:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       return False
-    robot.set_speed(3000 - BASE_SPEED, 3000 - BASE_SPEED)
+    robot.set_speed(approach_base_speed, approach_base_speed)
     robot.send_speed()
 
   # Record initial yaw before turn for verification
