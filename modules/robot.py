@@ -1,3 +1,4 @@
+import math
 import threading
 import time
 from typing import List, Optional
@@ -537,6 +538,14 @@ class Robot:
     with self.__gyro_lock:
       return self.__acc_z
 
+  @property
+  def current_angle(self) -> Optional[float]:
+    """Get current robot's tilt angle from roll and pitch (degrees)."""
+    with self.__gyro_lock:
+      gyro_calculated = (math.degrees(
+        math.acos(math.cos(math.radians(self.roll)) * math.cos(math.radians(self.pitch)))) if
+                       self.roll is not None and self.pitch is not None else None)
+      return gyro_calculated
   @property
   def rescue_offset(self) -> Optional[float]:
     """Get horizontal offset to rescue target (thread-safe)."""
