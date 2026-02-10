@@ -749,6 +749,18 @@ def find_best_target() -> None:
           y_center = best_y
           update_ball_flags(dist, best_y, best_w, best_size)
         robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+      elif consts.TargetList.EXIT.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
+        robot.write_rescue_turning_angle(0)
+        max_area = 0
+        updated, max_area, dist, area, best_y, best_w = update_best_box(
+            box.xywh[0], max_area)
+        if updated:
+          max_area = area
+          best_angle = dist
+          best_size = area
+          y_center = best_y
+          update_ball_flags(dist, best_y, best_w, best_size)
+        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
       if cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
         robot.write_detect_black_ball(True)
     if best_angle is None:
