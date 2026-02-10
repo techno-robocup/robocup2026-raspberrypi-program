@@ -544,12 +544,14 @@ class Robot:
   def current_angle(self) -> Optional[float]:
     """Get current robot's tilt angle from roll and pitch (degrees)."""
     with self.__gyro_lock:
-      gyro_calculated = (math.degrees(
+      roll = self.__roll
+      pitch = self.__pitch
+      if roll is None or pitch is None:
+        return None
+      return math.degrees(
           math.acos(
-              math.cos(math.radians(self.roll)) *
-              math.cos(math.radians(self.pitch)))) if self.roll is not None
-                         and self.pitch is not None else None)
-      return gyro_calculated
+              math.cos(math.radians(roll)) *
+              math.cos(math.radians(pitch))))
 
   @property
   def rescue_offset(self) -> Optional[float]:
