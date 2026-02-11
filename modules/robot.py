@@ -170,8 +170,8 @@ class uart_io:
     """
     try:
       self.__message_id_increment += 1
-      response = self.__send(
-          Message(self.__message_id_increment, "healthcheck"))
+      response = self.__send(Message(self.__message_id_increment,
+                                     "healthcheck"))
       if isinstance(response, str) and response == "OK":
         logger.get_logger().info("Healthcheck passed.")
       else:
@@ -194,7 +194,7 @@ class uart_io:
               'ascii').strip()
         except Exception as e:
           logger.get_logger().error(
-            f"Exception during read from serial port: {e}\non message ID {message.Id}"
+              f"Exception during read from serial port: {e}\non message ID {message.Id}"
           )
           self.__healthcheck_or_reconnect()
           return False
@@ -589,8 +589,7 @@ class Robot:
         return None
       return math.degrees(
           math.acos(
-              math.cos(math.radians(roll)) *
-              math.cos(math.radians(pitch))))
+              math.cos(math.radians(roll)) * math.cos(math.radians(pitch))))
 
   @property
   def rescue_offset(self) -> Optional[float]:

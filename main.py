@@ -890,7 +890,8 @@ def set_target() -> bool:
   if robot.rescue_turning_angle is None:
     robot.write_rescue_turning_angle(0)
     return False
-  if robot.rescue_turning_angle >= 720 or (robot.rescue_turning_angle >= 360 and (not robot.detect_black_ball)):
+  if robot.rescue_turning_angle >= 720 or (robot.rescue_turning_angle >= 360 and
+                                           (not robot.detect_black_ball)):
     robot.write_rescue_target(consts.TargetList.EXIT.value)
   elif robot.rescue_turning_angle >= 360 and robot.detect_black_ball:
     robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
@@ -1143,7 +1144,8 @@ def handle_ball() -> None:
         return
       robot.send_speed()
     find_best_target()
-    if not(robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (not robot.ball_near_flag)):
+    if not (robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and
+            (not robot.ball_near_flag)):
       return
     catch_ball()
     if robot.rescue_target == consts.TargetList.SILVER_BALL.value:
