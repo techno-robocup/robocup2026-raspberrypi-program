@@ -1,5 +1,4 @@
 import math
-import threading
 import time
 from typing import List, Optional
 
@@ -7,6 +6,7 @@ import numpy as np
 import numpy.typing as npt
 import serial
 import serial.tools.list_ports
+from readerwriterlock import rwlock
 
 import modules.camera
 import modules.constants as consts
@@ -230,12 +230,12 @@ class Robot:
         consts.Linetrace_Camera_Port, consts.Linetrace_Camera_Controls,
         consts.Linetrace_Camera_Size, consts.Linetrace_Camera_Formats,
         consts.Linetrace_Camera_lores, consts.Linetrace_Camera_precallback)
-    self.__rescue_camera_lock = threading.Lock()
-    self.__linetrace_lock = threading.Lock()
+    self.__rescue_camera_lock = rwlock.RWLockFairD()
+    self.__linetrace_lock = rwlock.RWLockFairD()
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
     self.__Linetrace_Camera.start_cam()
     self.__Rescue_Camera.start_cam()
-    self.__rescue_lock = threading.Lock()
+    self.__rescue_lock = rwlock.RWLockFairD()
     self.__is_rescue_flag = False
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
@@ -255,12 +255,12 @@ class Robot:
     self.__robot_stop: bool = False
     self.__top_checkpoint_black: bool = False
     # Green mark detection state
-    self.__green_marks_lock = threading.Lock()
+    self.__green_marks_lock = rwlock.RWLockFairD()
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
     self.__last_time_set: Optional[float] = None
     self.__last_slope_get_time: Optional[float] = None
-    self.__gyro_lock = threading.Lock()
+    self.__gyro_lock = rwlock.RWLockFairD()
     self.__yaw: float = 0.0
     self.__roll: float = 0.0
     self.__pitch: float = 0.0
@@ -363,13 +363,13 @@ class Robot:
     return self.__uart_device.send("GET button") == "ON"
 
   def write_rescue_saved_time(self, time: float) -> None:
-    with self.__rescue_camera_lock:
+    with self.__rescue_camera_lock.gen_wlock():
       self.__rescue_saved_time = time
     return None
 
   @property
   def rescue_saved_time(self) -> float:
-    with self.__rescue_camera_lock:
+    with self.__rescue_camera_lock.gen_rlock():
       return self.__rescue_saved_time
 
   def write_rescue_image(self, image: npt.NDArray[np.uint8]) -> None:
@@ -378,7 +378,7 @@ class Robot:
     Args:
       image: BGR image array from rescue camera.
     """
-    with self.__rescue_camera_lock:
+    with self.__rescue_camera_lock.gen_wlock():
       self.__rescue_camera_image = image.copy()
     return None
 
@@ -389,7 +389,7 @@ class Robot:
     Returns:
       BGR image array, or None if no image captured yet.
     """
-    with self.__rescue_camera_lock:
+    with self.__rescue_camera_lock.gen_rlock():
       return self.__rescue_camera_image
 
   def write_is_rescue_flag(self, flag: bool) -> None:
@@ -398,7 +398,7 @@ class Robot:
     Args:
       flag: True to enter rescue mode, False for linetrace mode.
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__is_rescue_flag = flag
 
   @property
@@ -412,7 +412,7 @@ class Robot:
     Args:
       angle: Pixel offset from image center, or None if no target.
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__rescue_offset = angle
 
   def write_rescue_size(self, size: Optional[int]) -> None:
@@ -421,7 +421,7 @@ class Robot:
     Args:
       size: Target area in pixels^2, or None if no target.
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__rescue_size = size
 
   def write_rescue_y(self, y: Optional[float]) -> None:
@@ -430,7 +430,7 @@ class Robot:
     Args:
       y: Pixel y-coordinate of bbox center, or None if no target.
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__rescue_y = y
 
   def write_rescue_target(self, target: int) -> None:
@@ -439,7 +439,7 @@ class Robot:
     Args:
       target: TargetList enum value (SILVER_BALL, BLACK_BALL, etc.).
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__rescue_target = target
 
   def write_rescue_turning_angle(self, angle: int) -> None:
@@ -448,7 +448,7 @@ class Robot:
     Args:
       angle: Total degrees rotated (0-720+).
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__rescue_turning_angle = angle
 
   def write_ball_catch_dist_flag(self, flag: bool) -> None:
@@ -457,19 +457,19 @@ class Robot:
     Args:
       flag: True if ball is close enough to catch.
     """
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__ball_catch_dist_flag = flag
 
   def write_ball_catch_offset_flag(self, flag: bool) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__ball_catch_offset_flag = flag
 
   def write_ball_near_flag(self, flag: bool) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__ball_near_flag = flag
 
   def write_has_moved_to_cage(self, flag: bool) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__has_moved_to_cage = flag
 
   def update_button_stat(self) -> None:
@@ -500,50 +500,50 @@ class Robot:
     if len(angles) != 6:
       logger.get_logger().error(f"Unexpected gyro data format: '{response}'")
       return None
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_wlock():
       self.__yaw, self.__roll, self.__pitch, self.__acc_x, self.__acc_y, self.__acc_z = angles
     return None
 
   @property
   def yaw(self) -> float:
     """Get current yaw angle from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__yaw
 
   @property
   def roll(self) -> float:
     """Get current roll angle from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__roll
 
   @property
   def pitch(self) -> float:
     """Get current pitch angle from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__pitch
 
   @property
   def acc_x(self) -> float:
     """Get current X-axis acceleration from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__acc_x
 
   @property
   def acc_y(self) -> float:
     """Get current Y-axis acceleration from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__acc_y
 
   @property
   def acc_z(self) -> float:
     """Get current Z-axis acceleration from gyro."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return self.__acc_z
 
   @property
   def current_angle(self) -> Optional[float]:
     """Get current robot's tilt angle from roll and pitch (degrees)."""
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       roll = self.__roll
       pitch = self.__pitch
       if roll is None or pitch is None:
@@ -556,61 +556,61 @@ class Robot:
   @property
   def rescue_offset(self) -> Optional[float]:
     """Get horizontal offset to rescue target (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__rescue_offset
 
   @property
   def rescue_size(self) -> Optional[int]:
     """Get detected target size in pixels^2 (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__rescue_size
 
   @property
   def rescue_y(self) -> Optional[float]:
     """Get vertical center (y) of rescue target (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__rescue_y
 
   @property
   def rescue_target(self) -> int:
     """Get current rescue target type as TargetList value (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__rescue_target
 
   @property
   def rescue_turning_angle(self) -> int:
     """Get cumulative turning angle in degrees (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__rescue_turning_angle
 
   @property
   def ball_catch_dist_flag(self) -> bool:
     """Check if ball is close enough to catch (thread-safe)."""
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__ball_catch_dist_flag
 
   @property
   def ball_catch_offset_flag(self) -> bool:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__ball_catch_offset_flag
 
   @property
   def ball_near_flag(self) -> bool:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__ball_near_flag
 
   @property
   def has_moved_to_cage(self) -> bool:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__has_moved_to_cage
 
   @property
   def detect_black_ball(self) -> bool:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__detect_black_ball
 
   def write_detect_black_ball(self, flag: bool) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__detect_black_ball = flag
 
   def write_linetrace_stop(self, flag: bool) -> None:
@@ -619,7 +619,7 @@ class Robot:
     Args:
       flag: True to stop linetrace operation.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__is_stop = flag
 
   def write_linetrace_slope(self, slope: Optional[float]) -> None:
@@ -647,13 +647,13 @@ class Robot:
     Args:
       area: Line area in pixels, or None if not detected.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__line_area = area
 
   @property
   def line_area(self) -> Optional[float]:
     """Get detected black line area in pixels (thread-safe)."""
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_rlock():
       return self.__line_area
 
   def write_line_center_x(self, center_x: Optional[int]) -> None:
@@ -662,19 +662,19 @@ class Robot:
     Args:
       center_x: Line center x-coordinate in pixels, or None if not detected.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__line_center_x = center_x
 
   @property
   def line_center_x(self) -> Optional[int]:
     """Get detected line center x-coordinate in pixels (thread-safe)."""
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_rlock():
       return self.__line_center_x
 
   @property
   def linetrace_stop(self) -> bool:
     """Check if linetrace is stopped (thread-safe)."""
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_rlock():
       return self.__is_stop
 
   def write_top_checkpoint_black(self, is_black: bool) -> None:
@@ -683,7 +683,7 @@ class Robot:
     Args:
       is_black: True if black line detected at top of image.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__top_checkpoint_black = is_black
 
   @property
@@ -692,7 +692,7 @@ class Robot:
 
     Used for counting line crossings during turns.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_rlock():
       return self.__top_checkpoint_black
 
   def write_green_marks(self, marks: List[tuple[int, int, int, int]]) -> None:
@@ -701,7 +701,7 @@ class Robot:
     Args:
       marks: List of (center_x, center_y, width, height) tuples.
     """
-    with self.__green_marks_lock:
+    with self.__green_marks_lock.gen_wlock():
       self.__green_marks = marks.copy()
 
   def write_green_black_detected(self, detections: List[np.ndarray]) -> None:
@@ -710,7 +710,7 @@ class Robot:
     Args:
       detections: List of arrays [bottom, top, left, right] for each mark.
     """
-    with self.__green_marks_lock:
+    with self.__green_marks_lock.gen_wlock():
       self.__green_black_detected = detections.copy()
 
   @property
@@ -720,7 +720,7 @@ class Robot:
     Returns:
       List of (center_x, center_y, width, height) tuples.
     """
-    with self.__green_marks_lock:
+    with self.__green_marks_lock.gen_rlock():
       return self.__green_marks.copy()
 
   @property
@@ -730,7 +730,7 @@ class Robot:
     Returns:
       List of [bottom, top, left, right] detection arrays.
     """
-    with self.__green_marks_lock:
+    with self.__green_marks_lock.gen_rlock():
       return self.__green_black_detected.copy()
 
   def write_last_slope_get_time(self, time: float) -> None:
@@ -741,7 +741,7 @@ class Robot:
     Args:
       time: Unix timestamp from time.time().
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__last_slope_get_time = time
 
   @property
@@ -769,7 +769,7 @@ class Robot:
     Returns:
       Magnitude of acceleration vector.
     """
-    with self.__gyro_lock:
+    with self.__gyro_lock.gen_rlock():
       return (self.__acc_x**2 + self.__acc_y**2)**0.5
 
 
