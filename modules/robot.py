@@ -196,7 +196,8 @@ class uart_io:
           logger.get_logger().error(
               f"Exception during read from serial port: {e}\non message ID {message.Id}"
           )
-          self.__healthcheck_or_reconnect()
+          if message.Message != "healthcheck":
+            self.__healthcheck_or_reconnect()
           return False
         if message_str:
           try:
