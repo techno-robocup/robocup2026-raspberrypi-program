@@ -164,20 +164,21 @@ class uart_io:
     """Send a healthcheck message and reconnect if it fails.
 
     Sends "healthcheck" to the device and expects "OK" in response.
-    If the healthcheck fails or raises an exception, reconnects to
-    the device.
+    If the response is not "OK" or an exception occurs, reconnects
+    to the device. This method calls __send() directly (not the
+    public send()) to avoid recursive healthcheck attempts.
     """
     try:
       self.__message_id_increment += 1
       response = self.__send(
           Message(self.__message_id_increment, "healthcheck"))
-      if response != "OK":
+      if isinstance(response, str) and response == "OK":
+        logger.get_logger().info("Healthcheck passed.")
+      else:
         logger.get_logger().warning(
             f"Healthcheck failed: expected 'OK', got '{response}'. Reconnecting..."
         )
         self.reConnect()
-      else:
-        logger.get_logger().info("Healthcheck passed.")
     except Exception as e:
       logger.get_logger().error(
           f"Healthcheck raised exception: {e}. Reconnecting...")
