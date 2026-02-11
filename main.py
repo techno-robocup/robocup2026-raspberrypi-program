@@ -1,11 +1,11 @@
 import math
 import signal
 import sys
-import threading
 import time
 from typing import Optional
 
 import cv2
+from readerwriterlock import rwlock
 
 import modules.constants as consts
 import modules.logger
@@ -16,7 +16,7 @@ logger = modules.logger.get_logger()
 logger.info("Logger initialized")
 
 # Mutex lock for thread-safe YOLO evaluation
-yolo_lock = threading.Lock()
+yolo_lock = rwlock.RWLockFairD()
 
 robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
@@ -676,7 +676,7 @@ def find_best_target() -> None:
   robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   # yolo_results = None
-  with yolo_lock:
+  with yolo_lock.gen_wlock():
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
   current_time = time.time()
   origin_image = robot.rescue_image.copy()

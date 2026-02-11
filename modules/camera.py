@@ -1,4 +1,3 @@
-import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -6,6 +5,7 @@ import cv2
 import numpy as np
 from numba import jit
 from picamera2 import CompletedRequest, MappedArray, Picamera2
+from readerwriterlock import rwlock
 
 import modules.constants as consts
 import modules.logger
@@ -25,18 +25,14 @@ logger = modules.logger.get_logger()
 
 # Depth-Anything-V2 model - lazy loaded
 _depth_model = None
-_depth_model_lock = threading.Lock()
-
-# Flag to track if depth evaluation is currently running
-_depth_evaluation_running = False
-_depth_evaluation_lock = threading.Lock()
+_depth_model_lock = rwlock.RWLockFairD()
 
 
 def get_depth_model():
   """Get or initialize the Depth-Anything-V2 model (lazy loading with thread safety)."""
   global _depth_model
   if _depth_model is None:
-    with _depth_model_lock:
+    with _depth_model_lock.gen_wlock():
       if _depth_model is None:  # Double-check locking
         try:
           import os
@@ -667,7 +663,7 @@ def _draw_debug_contours(debug_image: np.ndarray) -> None:
                (255, 0, 0), 2)
 
 
-LASTBLACKLINE_LOCK = threading.Lock()
+LASTBLACKLINE_LOCK = rwlock.RWLockFairD()
 lastblackline = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
 line_area: Optional[float] = None
 
@@ -821,7 +817,7 @@ def Linetrace_Camera_Pre_callback(request):
       global line_area
       line_area = cv2.contourArea(best_contour)
 
-      with LASTBLACKLINE_LOCK:
+      with LASTBLACKLINE_LOCK.gen_wlock():
         lastblackline = cx
       if robot is not None:
         robot.write_line_area(line_area)
