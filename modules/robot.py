@@ -189,8 +189,15 @@ class uart_io:
       assert self.__Serial_port is not None
       self.__Serial_port.write(str(message).encode("ascii"))
       while True:
-        message_str = self.__Serial_port.read_until(b'\n').decode(
-            'ascii').strip()
+        try:
+          message_str = self.__Serial_port.read_until(b'\n').decode(
+              'ascii').strip()
+        except Exception as e:
+          logger.get_logger().error(
+            f"Exception during read from serial port: {e}\non message ID {message.Id}"
+          )
+          self.__healthcheck_or_reconnect()
+          return False
         if message_str:
           try:
             retMessage = Message(message_str)
