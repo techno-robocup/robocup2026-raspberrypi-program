@@ -27,11 +27,6 @@ logger = modules.logger.get_logger()
 _depth_model = None
 _depth_model_lock = rwlock.RWLockFairD()
 
-# Flag to track if depth evaluation is currently running
-_depth_evaluation_running = False
-# The `-depth_evaluation_lock is currently not used but reserved for future use
-_depth_evaluation_lock = rwlock.RWLockFairD()
-
 
 def get_depth_model():
   """Get or initialize the Depth-Anything-V2 model (lazy loading with thread safety)."""

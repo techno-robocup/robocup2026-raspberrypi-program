@@ -627,7 +627,7 @@ class Robot:
     Args:
       slope: Line slope value, or None if line not detected.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_wlock():
       self.__slope = slope
 
   @property
@@ -637,7 +637,7 @@ class Robot:
     Returns:
       Slope value for steering calculation, or None if unavailable.
     """
-    with self.__linetrace_lock:
+    with self.__linetrace_lock.gen_rlock():
       return self.__slope
 
   def write_line_area(self, area: Optional[float]) -> None:
