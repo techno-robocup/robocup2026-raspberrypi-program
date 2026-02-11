@@ -550,8 +550,7 @@ class Robot:
         return None
       return math.degrees(
           math.acos(
-              math.cos(math.radians(roll)) *
-              math.cos(math.radians(pitch))))
+              math.cos(math.radians(roll)) * math.cos(math.radians(pitch))))
 
   @property
   def rescue_offset(self) -> Optional[float]:
