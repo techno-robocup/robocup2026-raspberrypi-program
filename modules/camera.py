@@ -29,6 +29,7 @@ _depth_model_lock = rwlock.RWLockFairD()
 
 # Flag to track if depth evaluation is currently running
 _depth_evaluation_running = False
+# The `-depth_evaluation_lock is currently not used but reserved for future use
 _depth_evaluation_lock = rwlock.RWLockFairD()
 
 
