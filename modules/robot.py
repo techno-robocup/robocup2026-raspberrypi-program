@@ -139,7 +139,9 @@ class uart_io:
     """Send a message and wait for matching response.
 
     Automatically assigns an incrementing ID to the message for
-    request-response matching.
+    request-response matching. On exception, performs a healthcheck
+    by sending "healthcheck" and expecting "OK". If the healthcheck
+    fails or raises an exception, reconnects to the device.
 
     Args:
       message: The command string to send (e.g., "MOTOR 1500 1500").
@@ -150,15 +152,53 @@ class uart_io:
     self.__message_id_increment += 1
     logger.get_logger().debug(
         f"→ Sending message ID {self.__message_id_increment}: '{message}'")
-    return self.__send(Message(self.__message_id_increment, message))
+    try:
+      return self.__send(Message(self.__message_id_increment, message))
+    except Exception as e:
+      logger.get_logger().error(
+          f"Exception during send (ID {self.__message_id_increment}): {e}")
+      self.__healthcheck_or_reconnect()
+      return False
+
+  def __healthcheck_or_reconnect(self) -> None:
+    """Send a healthcheck message and reconnect if it fails.
+
+    Sends "healthcheck" to the device and expects "OK" in response.
+    If the response is not "OK" or an exception occurs, reconnects
+    to the device. This method calls __send() directly (not the
+    public send()) to avoid recursive healthcheck attempts.
+    """
+    try:
+      self.__message_id_increment += 1
+      response = self.__send(Message(self.__message_id_increment,
+                                     "healthcheck"))
+      if isinstance(response, str) and response == "OK":
+        logger.get_logger().info("Healthcheck passed.")
+      else:
+        logger.get_logger().warning(
+            f"Healthcheck failed: expected 'OK', got '{response}'. Reconnecting..."
+        )
+        self.reConnect()
+    except Exception as e:
+      logger.get_logger().error(
+          f"Healthcheck raised exception: {e}. Reconnecting...")
+      self.reConnect()
 
   def __send(self, message: Message) -> bool | str:
     if self.isConnected():
       assert self.__Serial_port is not None
       self.__Serial_port.write(str(message).encode("ascii"))
       while True:
-        message_str = self.__Serial_port.read_until(b'\n').decode(
-            'ascii').strip()
+        try:
+          message_str = self.__Serial_port.read_until(b'\n').decode(
+              'ascii').strip()
+        except Exception as e:
+          logger.get_logger().error(
+              f"Exception during read from serial port: {e}\non message ID {message.Id}"
+          )
+          if message.Message != "healthcheck":
+            self.__healthcheck_or_reconnect()
+          return False
         if message_str:
           try:
             retMessage = Message(message_str)
@@ -550,8 +590,7 @@ class Robot:
         return None
       return math.degrees(
           math.acos(
-              math.cos(math.radians(roll)) *
-              math.cos(math.radians(pitch))))
+              math.cos(math.radians(roll)) * math.cos(math.radians(pitch))))
 
   @property
   def rescue_offset(self) -> Optional[float]:
