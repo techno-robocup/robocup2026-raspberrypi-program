@@ -219,29 +219,37 @@ def execute_green_mark_turn() -> bool:
 
   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
-  # First, drive forward slightly to clear the intersection marker
-  approach_time = 0.3
-  approach_base_speed = 1320
-  # The code assumes that the pitch is the degree to the moving direction
-  if robot.current_angle < math.radians(10):
-    pass
-  elif robot.pitch > math.radians(10):
-    approach_time = 0.3
-    approach_base_speed = 1680
-  logger.info("Current degrees")
+  # Drive backward slowly until the green mark reaches the vertical middle
+  approach_speed = 1400
+  approach_target_y = consts.LINETRACE_CAMERA_LORES_HEIGHT // 2
+  approach_timeout = 3.0
   logger.info(
-      f"Pitch: {robot.pitch}, Roll: {robot.roll}, Angle: {robot.current_angle}")
-  logger.info(
-      f"Approaching time: {approach_time}s at speed {approach_base_speed}")
+      f"Approaching: driving backward at {approach_speed} until green mark y <= {approach_target_y}"
+  )
   start_time = time.time()
-  while time.time() - start_time < 0.3:
+  while time.time() - start_time < approach_timeout:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       return False
-    robot.set_speed(approach_base_speed, approach_base_speed)
+
+    # Check if any green mark has reached the middle of the screen
+    current_marks = robot.green_marks
+    if current_marks:
+      lowest_y = max(mark[1] for mark in current_marks)
+      if lowest_y <= approach_target_y:
+        logger.info(
+            f"Green mark reached target y={lowest_y} (<= {approach_target_y}), stopping approach"
+        )
+        break
+
+    robot.set_speed(approach_speed, approach_speed)
     robot.send_speed()
+
+  # Stop briefly before turning
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
 
   # Record initial yaw before turn for verification
   robot.update_gyro_stat()
