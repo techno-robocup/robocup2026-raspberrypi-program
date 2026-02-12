@@ -388,9 +388,10 @@ class Robot:
       List of distance values in centimeters.
     """
     assert self.__uart_device is not None
-    return list(
-        map(float,
-            Message(self.__uart_device.send("GET usonic")).Message.split()))
+    response = self.__uart_device.send("GET usonic")
+    if isinstance(response, bool):
+      return []
+    return list(map(float, response.split()))
 
   @property
   def button(self) -> bool:
