@@ -1035,9 +1035,9 @@ def wall_follow_ccw() -> bool:
   Returns True if an opening is detected.
   """
   TARGET_MIN = 10.0
-  TARGET_MAX = 30.0
+  TARGET_MAX = 20.0
   FRONT_FLAG_DIST = 10.0
-  OPEN_THRESHOLD = 70.0
+  OPEN_THRESHOLD = 40.0
   BASE_SPEED = 1680
   BASE_TURN = 100
   ultrasonic = robot.ultrasonic
