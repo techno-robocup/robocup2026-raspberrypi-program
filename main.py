@@ -1032,22 +1032,22 @@ def wall_follow_ccw() -> bool:
   BASE_SPEED = 1680
   BASE_TURN = 100
   ultrasonic = robot.ultrasonic
-  front_dist = ultrasonic[0]
-  side_dist = ultrasonic[1]
-  o_side_dist = ultrasonic[2]
-  logger.info(f"front {front_dist}, side {side_dist} o_side {o_side_dist}")
+  l_dist = ultrasonic[0]
+  front_dist = ultrasonic[1]
+  r_dist = ultrasonic[2]
+  logger.info(f"l {l_dist} front {front_dist} ,r {r_dist}")
   if front_dist is None or front_dist <= 0 or front_dist == 510.0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The front ultrasonic sensor is not responding")
     return False
-  if side_dist is None or side_dist <= 0 or side_dist == 510.0:
+  if l_dist is None or l_dist <= 0 or l_dist == 510.0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The side ultrasonic sensor is not responding.")
     return False
 
-  if side_dist > OPEN_THRESHOLD:
+  if l_dist > OPEN_THRESHOLD:
     logger.info("Wall opening detected")
     return True
   elif front_dist <= 4.0:
@@ -1058,9 +1058,9 @@ def wall_follow_ccw() -> bool:
     return False
 
   turn = 0
-  if side_dist > TARGET_MAX:
+  if l_dist > TARGET_MAX:
     turn = BASE_TURN * -1
-  if side_dist < TARGET_MIN:
+  if l_dist < TARGET_MIN:
     turn = BASE_TURN
   left_speed = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
