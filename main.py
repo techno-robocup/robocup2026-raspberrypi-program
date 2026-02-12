@@ -1184,17 +1184,12 @@ def handle_cage() -> None:
 
 
 def is_stopping_by_button() -> None:
-  if robot.rescue_target == consts.TargetList.SILVER_BALL.value or robot.rescue_target == consts.TargetList.GREEN_CAGE.value:
-    robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-  elif robot.rescue_target == consts.TargetList.BLACK_BALL.value or robot.rescue_target == consts.TargetList.RED_CAGE.value:
-    robot.write_rescue_target(consts.TargetList.BLACK_BALL.value)
-  else:
-    robot.write_rescue_target(consts.TargetList.EXIT.value)
   robot.set_speed(1500, 1500)
   robot.set_arm(3065, 0)
   robot.send_speed()
   robot.send_arm()
   robot.write_rescue_turning_angle(0)
+  robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
   logger.info("robot stop true, stopping..")
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
@@ -1204,7 +1199,6 @@ def is_stopping_by_button() -> None:
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(False)
-
 
 logger.info("Objects Initialized")
 
