@@ -841,7 +841,7 @@ def release_ball() -> bool:
   Returns:
     True on successful completion.
   """
-  robot.set_speed(1700, 1700)
+  robot.set_speed(1650, 1650)
   sleep_sec(1.5)
   robot.set_speed(1500, 1500)
   robot.send_speed()
@@ -1027,6 +1027,7 @@ def wall_follow_ccw() -> bool:
   """
   TARGET_MIN = 10.0
   TARGET_MAX = 30.0
+  FRONT_FLAG_DIST = 10.0
   OPEN_THRESHOLD = 70.0
   BASE_SPEED = 1680
   BASE_TURN = 100
@@ -1049,7 +1050,7 @@ def wall_follow_ccw() -> bool:
   if l_dist > OPEN_THRESHOLD:
     logger.info("Wall opening detected")
     return True
-  elif front_dist <= 4.0:
+  elif front_dist <= FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME * 0.5)
     robot.set_speed(1500, 1500)
@@ -1112,8 +1113,12 @@ def handle_exit() -> None:
       robot.send_speed()
       robot.set_speed(1650, 1650)
       sleep_sec(2.4)
-      robot.set_speed(1750, 1250)
+      robot.set_speed(1500,1500)
+      robot.send_speed()
+      robot.set_speed(1250, 1750)
       sleep_sec(consts.TURN_90_TIME)
+      robot.set_speed(1500,1500)
+      robot.send_speed()
       while True:
         robot.update_button_stat()
         if robot.robot_stop:
