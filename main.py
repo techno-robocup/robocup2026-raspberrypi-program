@@ -1051,7 +1051,7 @@ def wall_follow_ccw() -> bool:
     logger.info("Wall opening detected")
     return True
   elif front_dist <= 4.0:
-    robot.set_speed(1250, 1750)
+    robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME * 0.5)
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1062,8 +1062,8 @@ def wall_follow_ccw() -> bool:
     turn = BASE_TURN * -1
   if l_dist < TARGET_MIN:
     turn = BASE_TURN
-  left_speed = BASE_SPEED - turn
-  right_speed = BASE_SPEED + turn
+  left_speed = BASE_SPEED + turn
+  right_speed = BASE_SPEED - turn
   # logger.info(f"motor speed L{left_speed} R{right_speed}")
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
@@ -1100,7 +1100,7 @@ def handle_exit() -> None:
         sleep_sec(0.5)
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        robot.set_speed(1250, 1750)
+        robot.set_speed(1750, 1250)
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
