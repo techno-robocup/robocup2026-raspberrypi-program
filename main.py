@@ -251,6 +251,15 @@ def execute_green_mark_turn() -> bool:
   robot.set_speed(1500, 1500)
   robot.send_speed()
 
+  # If statements for each angles
+  if robot.current_angle < 10:
+    start_time = time.time()
+    while time.time() - start_time < 1:
+      robot.set_speed(1600, 1600)
+      robot.send_speed()
+  else:
+    pass # TODO: It will be written in the future
+
   # Record initial yaw before turn for verification
   robot.update_gyro_stat()
   initial_yaw = robot.yaw
