@@ -221,7 +221,7 @@ def execute_green_mark_turn() -> bool:
 
   # Drive backward slowly until the green mark reaches the vertical middle
   approach_speed = 1430
-  approach_target_y = consts.LINETRACE_CAMERA_LORES_HEIGHT // 2
+  approach_target_y = consts.LINETRACE_CAMERA_LORES_HEIGHT // 4 * 3
   approach_timeout = 8.0
   logger.info(
       f"Approaching: driving backward at {approach_speed} until green mark y <= {approach_target_y}"
