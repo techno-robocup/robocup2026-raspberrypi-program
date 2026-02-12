@@ -1066,7 +1066,7 @@ def wall_follow_ccw() -> bool:
     robot.send_speed()
     return False
 
-  turn = 0
+  turn = -30
   if l_dist > TARGET_MAX:
     turn = BASE_TURN * -1
   if l_dist < TARGET_MIN:
@@ -1202,7 +1202,7 @@ def is_stopping_by_button() -> None:
   robot.send_speed()
   robot.send_arm()
   robot.write_rescue_turning_angle(0)
-  robot.write_rescue_target(consts.TargetList.GREEN_CAGE.value)
+  robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   logger.info("robot stop true, stopping..")
   robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
