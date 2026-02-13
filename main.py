@@ -258,7 +258,7 @@ def execute_green_mark_turn() -> bool:
       robot.set_speed(1600, 1600)
       robot.send_speed()
   else:
-    pass # TODO: It will be written in the future
+    pass  # TODO: It will be written in the future
 
   # Record initial yaw before turn for verification
   robot.update_gyro_stat()
@@ -671,6 +671,7 @@ def draw_ball_debug(image) -> None:
   cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), hline_color, 2)
   cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), center_color, 1)
 
+
 def run_yolo() -> None:
   with yolo_lock.gen_wlock():
     yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
@@ -685,7 +686,9 @@ def run_yolo() -> None:
       logger.error(f"Error plotting YOLO result: {e}.")
   draw_ball_debug(result_image)
   cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
-  robot.write_rescue_boxes(yolo_results[0].boxes if yolo_results and len(yolo_results) > 0 else None)
+  robot.write_rescue_boxes(
+      yolo_results[0].boxes if yolo_results and len(yolo_results) > 0 else None)
+
 
 def find_best_target() -> None:
   """Detect and track the best rescue target using YOLO object detection.
@@ -1076,7 +1079,9 @@ def wall_follow_ccw() -> bool:
 
   return False
 
+
 cnt = 0
+
 
 def handle_before_search() -> None:
   global cnt
@@ -1096,6 +1101,7 @@ def handle_before_search() -> None:
   run_yolo()
   if robot.ultrasonic[0] > 45.0:
     cnt += 1
+
 
 def handle_not_found() -> None:
   change_position()
@@ -1145,11 +1151,11 @@ def handle_exit() -> None:
       robot.send_speed()
       robot.set_speed(1650, 1650)
       sleep_sec(2.6)
-      robot.set_speed(1500,1500)
+      robot.set_speed(1500, 1500)
       robot.send_speed()
       robot.set_speed(1250, 1750)
       sleep_sec(consts.TURN_90_TIME)
-      robot.set_speed(1500,1500)
+      robot.set_speed(1500, 1500)
       robot.send_speed()
       while True:
         robot.update_button_stat()
@@ -1237,6 +1243,7 @@ def is_stopping_by_button() -> None:
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(True)
 
+
 logger.info("Objects Initialized")
 
 if __name__ == "__main__":
@@ -1270,7 +1277,7 @@ if __name__ == "__main__":
       if robot.target_before_exit == -1:
         handle_before_search()
       elif not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
-                                          (robot.rescue_size is None)):
+                                            (robot.rescue_size is None)):
         logger.debug("not fund")
         handle_not_found()
       elif robot.rescue_target == consts.TargetList.EXIT.value:
