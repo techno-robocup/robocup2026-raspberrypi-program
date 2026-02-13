@@ -1036,7 +1036,7 @@ def wall_follow_ccw() -> bool:
   """
   TARGET_MIN = 10.0
   TARGET_MAX = 20.0
-  FRONT_FLAG_DIST = 10.0
+  FRONT_FLAG_DIST = 13.0
   OPEN_THRESHOLD = 40.0
   BASE_SPEED = 1680
   BASE_TURN = 100
@@ -1121,7 +1121,7 @@ def handle_exit() -> None:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       robot.set_speed(1650, 1650)
-      sleep_sec(2.4)
+      sleep_sec(3)
       robot.set_speed(1500,1500)
       robot.send_speed()
       robot.set_speed(1250, 1750)
