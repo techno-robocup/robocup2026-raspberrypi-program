@@ -1121,7 +1121,7 @@ def handle_exit() -> None:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       robot.set_speed(1650, 1650)
-      sleep_sec(3)
+      sleep_sec(2.6)
       robot.set_speed(1500,1500)
       robot.send_speed()
       robot.set_speed(1250, 1750)
