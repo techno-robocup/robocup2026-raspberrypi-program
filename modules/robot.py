@@ -7,6 +7,7 @@ import numpy.typing as npt
 import serial
 import serial.tools.list_ports
 from readerwriterlock import rwlock
+from ultralytics.engine.results import Boxes
 
 import modules.camera
 import modules.constants as consts
@@ -296,6 +297,7 @@ class Robot:
     # === Rescue Mode State ===
     self.__is_rescue_flag = False
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
+    self.__rescue_boxes: Optional[Boxes] = None
     self.__rescue_offset: Optional[float] = None
     self.__rescue_size: Optional[int] = None
     self.__rescue_y: Optional[float] = None
@@ -603,6 +605,16 @@ class Robot:
       self.__rescue_saved_time = time
     return None
 
+  def write_rescue_boxes(self, boxes: Optional[Boxes]) -> None:
+    """Store YOLO detection boxes from rescue camera (thread-safe).
+
+    Args:
+      boxes: Ultralytics Boxes object from YOLO results, or None if no detections.
+    """
+    with self.__rescue_camera_lock.gen_wlock():
+      self.__rescue_boxes = boxes
+    return None
+
   def write_is_rescue_flag(self, flag: bool) -> None:
     """Set rescue mode flag (thread-safe).
 
@@ -700,6 +712,16 @@ class Robot:
   def rescue_saved_time(self) -> float:
     with self.__rescue_camera_lock.gen_rlock():
       return self.__rescue_saved_time
+
+  @property
+  def rescue_boxes(self) -> Optional[Boxes]:
+    """Get latest YOLO detection boxes from rescue camera (thread-safe).
+
+    Returns:
+      Ultralytics Boxes object, or None if no detections.
+    """
+    with self.__rescue_camera_lock.gen_rlock():
+      return self.__rescue_boxes
 
   @property
   def is_rescue_flag(self) -> bool:
