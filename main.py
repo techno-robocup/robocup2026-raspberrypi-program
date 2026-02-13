@@ -1117,6 +1117,13 @@ def handle_exit() -> None:
   else:
     # logger.info("wall follow ccw")
     result = wall_follow_ccw()
+    if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+      logger.info("Line detected, exit rescue mode")
+      robot.set_speed(1600, 1630)
+      sleep_sec(1.0)
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      robot.write_is_rescue_flag(False)
     if result:
       robot.set_speed(1500, 1500)
       robot.send_speed()
