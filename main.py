@@ -707,14 +707,7 @@ def find_best_target() -> None:
   robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   # yolo_results = None
-  boxes = robot.write_rescue_boxes(boxes)
-  if boxes is None or len(boxes) == 0:
-    logger.info("Target not found")
-    robot.write_rescue_offset(None)
-    robot.write_rescue_size(None)
-    robot.write_rescue_y(None)
-    robot.write_rescue_boxes(None)
-    return
+  boxes = robot.rescue_boxes
   if boxes is None or len(boxes) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
