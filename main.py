@@ -830,7 +830,7 @@ def catch_ball() -> int:
   sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(950, 1)
+  robot.set_arm(920, 1)
   robot.send_arm()
   sleep_sec(0.5)
   robot.set_arm(3065, 1)
