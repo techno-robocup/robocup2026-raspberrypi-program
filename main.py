@@ -1079,6 +1079,7 @@ def wall_follow_ccw() -> bool:
 cnt = 0
 
 def handle_before_search() -> None:
+  global cnt
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
