@@ -288,6 +288,7 @@ class Robot:
     self.__ball_near_flag = False
     self.__has_moved_to_cage = False
     self.__detect_black_ball = False
+    self.__target_before_exit: int = -1
     self.__slope = None
     self.__line_area: Optional[float] = None
     self.__line_center_x: Optional[int] = None
@@ -661,6 +662,15 @@ class Robot:
     """
     with self.__linetrace_lock.gen_wlock():
       self.__is_stop = flag
+
+  def write_target_before_exit(self, target: int) -> None:
+    with self.__rescue_lock:
+      self.__target_before_exit = target
+
+  @property
+  def target_before_exit(self) -> int:
+    with self.__rescue_lock:
+      return self.__target_before_exit
 
   def write_linetrace_slope(self, slope: Optional[float]) -> None:
     """Set detected line slope (thread-safe).
