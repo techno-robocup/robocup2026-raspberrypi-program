@@ -671,6 +671,21 @@ def draw_ball_debug(image) -> None:
   cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), hline_color, 2)
   cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), center_color, 1)
 
+def run_yolo() -> None:
+  with yolo_lock.gen_wlock():
+    yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
+  current_time = time.time()
+  origin_image = robot.rescue_image.copy()
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", origin_image)
+  result_image = robot.rescue_image.copy()
+  if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
+    try:
+      result_image = yolo_results[0].plot()
+    except TypeError as e:
+      logger.error(f"Error plotting YOLO result: {e}.")
+  draw_ball_debug(result_image)
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
+  robot.write_rescue_boxes(yolo_results[0].boxes if yolo_results and len(yolo_results) > 0 else None)
 
 def find_best_target() -> None:
   """Detect and track the best rescue target using YOLO object detection.
@@ -692,26 +707,14 @@ def find_best_target() -> None:
   robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   # yolo_results = None
-  with yolo_lock.gen_wlock():
-    yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
-  current_time = time.time()
-  origin_image = robot.rescue_image.copy()
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", origin_image)
-  result_image = robot.rescue_image.copy()
-  if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
-    try:
-      result_image = yolo_results[0].plot()
-    except TypeError as e:
-      logger.error(f"Error plotting YOLO result: {e}.")
-  draw_ball_debug(result_image)
-  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
-  if yolo_results is None or len(yolo_results) == 0:
+  boxes = robot.write_rescue_boxes(boxes)
+  if boxes is None or len(boxes) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
     robot.write_rescue_size(None)
     robot.write_rescue_y(None)
+    robot.write_rescue_boxes(None)
     return
-  boxes = yolo_results[0].boxes
   if boxes is None or len(boxes) == 0:
     logger.info("Target not found")
     robot.write_rescue_offset(None)
@@ -1174,6 +1177,7 @@ def handle_ball() -> None:
         robot.send_speed()
         return
       robot.send_speed()
+    run_yolo()
     find_best_target()
     if not (robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and
             (not robot.ball_near_flag)):
@@ -1242,6 +1246,7 @@ if __name__ == "__main__":
     if robot.robot_stop:
       is_stopping_by_button()
     elif robot.is_rescue_flag:
+      run_yolo()
       find_best_target()
       try:
         logger.info(
@@ -1249,7 +1254,9 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
+      if robot.target_before_exit == -1:
+        handle_before_search()
+      elif not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                           (robot.rescue_size is None)):
         logger.debug("not fund")
         handle_not_found()
