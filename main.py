@@ -1083,6 +1083,25 @@ def wall_follow_ccw() -> bool:
 
   return False
 
+cnt = 0
+
+def handle_before_search() -> None:
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_speed(1400, 1400)
+  sleep_sec(4.0)
+  robot.set_speed(1750, 1250)
+  sleep_sec(consts.TURN_90_TIME)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_speed(1650, 1650)
+  sleep_sec(2.0)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  wall_follow_ccw()
+  run_yolo()
+  if robot.ultrasonic[0] > 45.0:
+    cnt += 1
 
 def handle_not_found() -> None:
   change_position()
