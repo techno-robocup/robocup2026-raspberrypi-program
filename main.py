@@ -1079,6 +1079,7 @@ def l_wall_follow_ccw() -> bool:
 
   return False
 
+
 def r_wall_follow_cw() -> bool:
   """
   Follow the wall clockwise using ultrasonic[1].
@@ -1130,6 +1131,7 @@ def r_wall_follow_cw() -> bool:
 
   return False
 
+
 hasFoundExit = 0
 
 
@@ -1141,8 +1143,7 @@ def find_cage() -> Optional[int]:
   min_area = consts.IMAGE_SZ * 0.6
   min_y = RESCUE_IMAGE_HEIGHT * 0.55
   cage_classes = [
-      consts.TargetList.GREEN_CAGE.value,
-      consts.TargetList.RED_CAGE.value
+      consts.TargetList.GREEN_CAGE.value, consts.TargetList.RED_CAGE.value
   ]
 
   for box in boxes:
@@ -1160,6 +1161,7 @@ def find_cage() -> Optional[int]:
       return cls
 
   return None
+
 
 def handle_before_search() -> None:
   global hasFoundExit
