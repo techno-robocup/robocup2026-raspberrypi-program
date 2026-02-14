@@ -1083,6 +1083,34 @@ def wall_follow_ccw() -> bool:
 cnt = 0
 
 
+def find_cage() -> Optional[int]:
+  boxes = robot.rescue_boxes
+  if boxes is None or len(boxes) == 0:
+    return None
+
+  min_area = consts.IMAGE_SZ * 0.6
+  min_y = RESCUE_IMAGE_HEIGHT * 0.55
+  cage_classes = [
+      consts.TargetList.GREEN_CAGE.value,
+      consts.TargetList.RED_CAGE.value
+  ]
+
+  for box in boxes:
+    try:
+      cls = int(box.cls[0])
+      if cls not in cage_classes:
+        continue
+      _, y_center, w, h = map(float, box.xywh[0])
+      area = w * h
+    except Exception as e:
+      logger.exception(f"Error processing cage detection: {e}")
+      continue
+
+    if area >= min_area and y_center >= min_y:
+      return cls
+
+  return None
+
 def handle_before_search() -> None:
   global cnt
   robot.set_speed(1500, 1500)
@@ -1099,6 +1127,9 @@ def handle_before_search() -> None:
   robot.send_speed()
   wall_follow_ccw()
   run_yolo()
+  cage_class = find_cage()
+  if cage_class is not None:
+    robot.write_target_before_exit(cage_class)
   if robot.ultrasonic[0] > 45.0:
     cnt += 1
 
