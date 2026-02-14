@@ -1028,7 +1028,7 @@ def calculate_cage() -> tuple[int, int]:
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
-def wall_follow_ccw() -> bool:
+def l_wall_follow_ccw() -> bool:
   """
   Follow the wall counter-clockwise using ultrasonic[1].
   Returns True if an opening is detected.
@@ -1079,8 +1079,58 @@ def wall_follow_ccw() -> bool:
 
   return False
 
+def r_wall_follow_cw() -> bool:
+  """
+  Follow the wall clockwise using ultrasonic[1].
+  Returns True if an opening is detected.
+  """
+  TARGET_MIN = 12.0
+  TARGET_MAX = 15.0
+  FRONT_FLAG_DIST = 13.0
+  OPEN_THRESHOLD = 45.0
+  BASE_SPEED = 1680
+  BASE_TURN = 100
+  ultrasonic = robot.ultrasonic
+  r_dist = ultrasonic[2]
+  front_dist = ultrasonic[1]
+  l_dist = ultrasonic[0]
+  logger.info(f"l {l_dist} front {front_dist} ,r {r_dist}")
+  if front_dist is None or front_dist <= 0 or front_dist == 510.0:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    logger.info("The front ultrasonic sensor is not responding")
+    return False
+  if r_dist is None or r_dist <= 0 or r_dist == 510.0:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    logger.info("The side ultrasonic sensor is not responding.")
+    return False
 
-cnt = 0
+  if r_dist > OPEN_THRESHOLD:
+    logger.info("Wall opening detected")
+    return True
+  elif front_dist <= FRONT_FLAG_DIST:
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME * 0.8)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return False
+
+  turn = -30
+  if r_dist > TARGET_MAX:
+    turn = BASE_TURN * -1
+  if r_dist < TARGET_MIN:
+    turn = BASE_TURN
+  left_speed = BASE_SPEED + turn
+  right_speed = BASE_SPEED - turn
+  # logger.info(f"motor speed L{left_speed} R{right_speed}")
+  left_speed, right_speed = clamp(left_speed), clamp(right_speed)
+  robot.set_speed(left_speed, right_speed)
+  robot.send_speed()
+
+  return False
+
+hasFoundExit = 0
 
 
 def find_cage() -> Optional[int]:
@@ -1112,7 +1162,7 @@ def find_cage() -> Optional[int]:
   return None
 
 def handle_before_search() -> None:
-  global cnt
+  global hasFoundExit
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1400, 1400)
@@ -1125,13 +1175,13 @@ def handle_before_search() -> None:
   sleep_sec(2.0)
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  wall_follow_ccw()
+  l_wall_follow_ccw()
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
     robot.write_target_before_exit(cage_class)
   if robot.ultrasonic[0] > 45.0:
-    cnt += 1
+    hasFoundExit += 1
 
 
 def handle_not_found() -> None:
@@ -1162,17 +1212,26 @@ def handle_exit() -> None:
         sleep_sec(0.5)
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        robot.set_speed(1750, 1250)
+        if hasFoundExit > 0:
+          robot.set_speed(1750, 1250)
+        else:
+          robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
   else:
     # logger.info("wall follow ccw")
-    result = wall_follow_ccw()
+    if hasFoundExit > 0:
+      result = l_wall_follow_ccw()
+    else:
+      result = r_wall_follow_cw()
     if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
       logger.info("Line detected, exit rescue mode")
-      robot.set_speed(1600, 1630)
+      if hasFoundExit > 0:
+        robot.set_speed(1600, 1630)
+      else:
+        robot.set_speed(1630, 1600)
       sleep_sec(1.0)
       robot.set_speed(1500, 1500)
       robot.send_speed()
@@ -1184,7 +1243,10 @@ def handle_exit() -> None:
       sleep_sec(2.6)
       robot.set_speed(1500, 1500)
       robot.send_speed()
-      robot.set_speed(1250, 1750)
+      if hasFoundExit > 0:
+        robot.set_speed(1250, 1750)
+      else:
+        robot.set_speed(1750, 1250)
       sleep_sec(consts.TURN_90_TIME)
       robot.set_speed(1500, 1500)
       robot.send_speed()
