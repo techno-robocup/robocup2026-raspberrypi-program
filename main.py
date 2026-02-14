@@ -20,23 +20,9 @@ yolo_lock = rwlock.RWLockFairD()
 
 robot = modules.robot.robot
 uart_dev = modules.robot.uart_io()
-uart_devices = uart_dev.list_ports()
 
-# Prioritize USB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
-usb_devices = [
-    d for d in uart_devices if 'USB' in d.device or 'ACM' in d.device
-]
-if usb_devices:
-  selected_device = usb_devices[0]
-elif uart_devices:
-  selected_device = uart_devices[0]
-else:
-  logger.error("No UART devices found")
-  sys.exit(1)
-
-logger.info(f"Connecting to UART device: {selected_device.device}")
-uart_dev.connect(selected_device.device, consts.UART_BAUD_RATE,
-                 consts.UART_TIMEOUT)
+# UART device is auto-selected in uart_io.__connect()
+uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
 BASE_SPEED = 1680
