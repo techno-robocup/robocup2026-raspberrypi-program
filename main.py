@@ -538,6 +538,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
                      gyro_roll is not None and gyro_pitch is not None else None)
   gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 1.0
 
+  logger.info(f"Angle info: yaw={robot.yaw} roll={robot.roll}, pitch={robot.pitch}, calculated={gyro_calculated}, multiplier={gyro_multiplier:.2f}")
+
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
   adjusted_base_speed = 1500 + int(
