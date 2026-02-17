@@ -1095,7 +1095,7 @@ def r_wall_follow_cw() -> bool:
   front_dist = ultrasonic[1]
   l_dist = ultrasonic[0]
   logger.info(f"l {l_dist} front {front_dist} ,r {r_dist}")
-  if front_dist is None or front_dist <= 0 or front_dist == 510.0:
+  if front_dist is None or front_dist <= 0 or front_dist >= 500.0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The front ultrasonic sensor is not responding")
