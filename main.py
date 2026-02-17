@@ -253,10 +253,7 @@ def execute_green_mark_turn() -> bool:
 
   # If statements for each angles
   if robot.current_angle < 10:
-    start_time = time.time()
-    while time.time() - start_time < 1:
-      robot.set_speed(1600, 1600)
-      robot.send_speed()
+    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
   else:
     pass  # TODO: It will be written in the future
 
@@ -302,7 +299,7 @@ def execute_green_mark_turn() -> bool:
       # Calculate percentage of target rotation completed
       rotation_percentage = (yaw_diff / target_rotation) * 100.0
 
-      if rotation_percentage >= 50.0 and not black_check_enabled:
+      if rotation_percentage >= 25.0 and not black_check_enabled:
         black_check_enabled = True
         logger.info(
             f"Black check mode enabled at {rotation_percentage:.1f}% of target rotation (gyro: {yaw_diff:.1f}°)"
@@ -323,7 +320,7 @@ def execute_green_mark_turn() -> bool:
         )
         break
       # Also check for over-rotation if gyro is available
-      if initial_yaw is not None and current_yaw is not None and rotation_percentage > 120.0:
+      if initial_yaw is not None and current_yaw is not None and rotation_percentage > 100.0:
         logger.info(
             f"Exceeded 120% of target rotation - stopping turn (gyro: {yaw_diff:.1f}°)"
         )
@@ -539,7 +536,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   gyro_calculated = (math.degrees(
       math.acos(math.cos(gyro_roll) * math.cos(gyro_pitch))) if
                      gyro_roll is not None and gyro_pitch is not None else None)
-  gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 0.5
+  gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 1.0
 
   # Apply speed multiplier only to the increment above 1500 (stop position)
   # 1500 = stop, so we only reduce the forward speed component
