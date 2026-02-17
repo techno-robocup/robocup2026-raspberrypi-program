@@ -786,7 +786,7 @@ class Robot:
 
   @property
   def target_before_exit(self) -> int:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_rlock():
       return self.__target_before_exit
 
   # ============================================================================
