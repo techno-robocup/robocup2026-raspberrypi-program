@@ -1,5 +1,4 @@
 """Test script to read ultrasonic sensor values via UART."""
-import sys
 import time
 
 import modules.constants as consts
@@ -8,22 +7,9 @@ from modules.robot import Message, uart_io
 
 def main():
   uart_dev = uart_io()
-  uart_devices = uart_dev.list_ports()
 
-  usb_devices = [
-      d for d in uart_devices if 'USB' in d.device or 'ACM' in d.device
-  ]
-  if usb_devices:
-    selected_device = usb_devices[0]
-  elif uart_devices:
-    selected_device = uart_devices[0]
-  else:
-    print("No UART devices found")
-    sys.exit(1)
-
-  print(f"Connecting to {selected_device.device}...")
-  uart_dev.connect(selected_device.device, consts.UART_BAUD_RATE,
-                   consts.UART_TIMEOUT)
+  print("Connecting to UART device (auto-selecting)...")
+  uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
   print("Connected.\n")
 
   try:

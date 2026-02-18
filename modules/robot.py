@@ -94,13 +94,17 @@ class uart_io:
     """
     return list(serial.tools.list_ports.comports())
 
-  def connect(self, port: str, baud_rate: int, timeout: float) -> None:
-    """Establish serial connection to the specified port.
+  def connect(self,
+              baud_rate: int,
+              timeout: float,
+              port: Optional[str] = None) -> None:
+    """Establish serial connection to the specified port or auto-select one.
 
     Args:
-      port: Serial port device path (e.g., '/dev/ttyUSB0').
       baud_rate: Communication speed in bits per second.
       timeout: Read timeout in seconds.
+      port: Optional serial port device path (e.g., '/dev/ttyUSB0').
+            If None, automatically selects a USB device.
     """
     self.__device_name = port
     self.__baud_rate = baud_rate
@@ -109,6 +113,24 @@ class uart_io:
     return None
 
   def __connect(self) -> None:
+    # Auto-select device if not specified
+    if self.__device_name is None:
+      uart_devices = self.list_ports()
+      # Prioritize USB devices (ESP32 typically appears as /dev/ttyUSB* or /dev/ttyACM*)
+      usb_devices = [
+          d for d in uart_devices if 'USB' in d.device or 'ACM' in d.device
+      ]
+      if usb_devices:
+        selected_device = usb_devices[0]
+      elif uart_devices:
+        selected_device = uart_devices[0]
+      else:
+        logger.get_logger().error("No UART devices found")
+        raise RuntimeError("No UART devices found")
+      self.__device_name = selected_device.device
+      logger.get_logger().info(
+          f"Auto-selected UART device: {self.__device_name}")
+
     logger.get_logger().info(f"Connecting to {self.__device_name}")
     while True:
       assert self.__baud_rate is not None
