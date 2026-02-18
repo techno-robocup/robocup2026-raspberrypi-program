@@ -803,6 +803,7 @@ def Linetrace_Camera_Pre_callback(request):
       if not contours:
         if robot is not None:
           robot.write_linetrace_slope(None)
+          robot.write_line_width(None)
         return
 
       best_contour = find_best_contour(contours, w, h, lastblackline)
@@ -810,6 +811,7 @@ def Linetrace_Camera_Pre_callback(request):
       if best_contour is None:
         if robot is not None:
           robot.write_linetrace_slope(None)
+          robot.write_line_width(None)
         return
 
       cx, cy = calculate_contour_center(best_contour)
@@ -817,10 +819,17 @@ def Linetrace_Camera_Pre_callback(request):
       global line_area
       line_area = cv2.contourArea(best_contour)
 
+      # Compute contour width (bottom edge of minAreaRect)
+      rect = cv2.minAreaRect(best_contour)
+      box = cv2.boxPoints(rect)
+      box = box[box[:, 1].argsort()[::-1]]
+      width = abs(box[0][0] - box[1][0])
+
       with LASTBLACKLINE_LOCK.gen_wlock():
         lastblackline = cx
       if robot is not None:
         robot.write_line_area(line_area)
+        robot.write_line_width(width)
         robot.write_line_center_x(cx)
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 

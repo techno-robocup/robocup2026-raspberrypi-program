@@ -311,6 +311,7 @@ class Robot:
     # === Linetrace State ===
     self.__slope = None
     self.__line_area: Optional[float] = None
+    self.__line_width: Optional[float] = None
     self.__line_center_x: Optional[int] = None
     self.__is_stop = False
     self.__top_checkpoint_black: bool = False
@@ -524,6 +525,15 @@ class Robot:
     with self.__linetrace_lock.gen_wlock():
       self.__line_area = area
 
+  def write_line_width(self, width: Optional[float]) -> None:
+    """Set detected black line width in pixels (thread-safe).
+
+    Args:
+      width: Line width in pixels, or None if not detected.
+    """
+    with self.__linetrace_lock.gen_wlock():
+      self.__line_width = width
+
   def write_line_center_x(self, center_x: Optional[int]) -> None:
     """Set detected line center x-coordinate (thread-safe).
 
@@ -577,6 +587,12 @@ class Robot:
     """Get detected black line area in pixels (thread-safe)."""
     with self.__linetrace_lock.gen_rlock():
       return self.__line_area
+
+  @property
+  def line_width(self) -> Optional[float]:
+    """Get detected black line width in pixels (thread-safe)."""
+    with self.__linetrace_lock.gen_rlock():
+      return self.__line_width
 
   @property
   def line_center_x(self) -> Optional[int]:
