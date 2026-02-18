@@ -30,7 +30,7 @@ assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 180
+KP = 190
 DP = 200
 BOP = 0.045  # Ball Offset P
 BSP = 0.5  # Ball Size P
