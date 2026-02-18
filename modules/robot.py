@@ -95,9 +95,9 @@ class uart_io:
     return list(serial.tools.list_ports.comports())
 
   def connect(self,
-               baud_rate: int,
-               timeout: float,
-               port: Optional[str] = None) -> None:
+              baud_rate: int,
+              timeout: float,
+              port: Optional[str] = None) -> None:
     """Establish serial connection to the specified port or auto-select one.
 
     Args:
