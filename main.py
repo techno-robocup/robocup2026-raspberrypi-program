@@ -242,6 +242,12 @@ def execute_green_mark_turn() -> bool:
     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
   elif robot.pitch > 10:
     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+  elif robot.pitch < -10:
+    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+  elif robot.roll > 10:
+    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+  elif robot.roll < -10:
+    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
   else:
     pass  # TODO: It will be written in the future
 
