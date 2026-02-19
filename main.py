@@ -1173,7 +1173,7 @@ def handle_before_search() -> None:
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    robot.set_speed(1450, 1450)
+    robot.set_speed(1350, 1350)
     sleep_sec(4.0)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
