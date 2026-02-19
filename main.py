@@ -1186,18 +1186,45 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     robot.set_speed(1650, 1650)
-    sleep_sec(2.0)
+    prev_time = time.time()
+    while time.time() - prev_time < 2.0:
+      robot.update_button_stat()
+      robot.send_speed()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.info("Sleep interrupted by button")
+        return 1
+      if robot.ultrasonic[1] < 13.0:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1750, 1250)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+      if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+        hasFoundExit += 1
+        robot.set_speed(1350, 1350)
+        sleep_sec(2)
+        robot.set_speed(1750, 1250)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.send_speed(1650, 1650)
+        sleep_sec(2)
+    robot.send_speed()
     robot.set_speed(1500, 1500)
     robot.send_speed()
     hasFoundExit = 0
-  r_wall_follow_ccw()
+  result = r_wall_follow_ccw()
+  if result > 45.0:
+    hasFoundExit += 1
+    robot.set_speed(1650, 1650)
+    sleep_sec(2)
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
     robot.write_target_before_exit(cage_class)
-  if robot.ultrasonic[0] > 45.0:
-    hasFoundExit += 1
-
 
 def handle_not_found() -> None:
   change_position()
@@ -1405,7 +1432,7 @@ if __name__ == "__main__":
         if should_process_green_mark():
           execute_green_mark_turn()
         elif ultrasonic_info[
-            1] <= 3 and ultrasonic_info[1] != -1:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+            0] <= 3:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
