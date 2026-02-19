@@ -733,7 +733,7 @@ class Robot:
       self.__detect_black_ball = flag
 
   def write_target_before_exit(self, target: int) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock():
       self.__target_before_exit = target
 
   @property
