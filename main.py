@@ -1085,7 +1085,7 @@ def l_wall_follow_ccw() -> bool:
   return False
 
 
-def r_wall_follow_cw() -> bool:
+def r_wall_follow_ccw() -> bool:
   """
   Follow the wall clockwise using ultrasonic[1].
   Returns True if an opening is detected.
@@ -1184,7 +1184,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     hasFoundExit = 0
-  l_wall_follow_ccw()
+  r_wall_follow_ccw()
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
@@ -1234,7 +1234,7 @@ def handle_exit() -> None:
     if hasFoundExit > 0:
       result = l_wall_follow_ccw()
     else:
-      result = r_wall_follow_cw()
+      result = r_wall_follow_ccw()
     if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
       logger.info("Line detected, exit rescue mode")
       if hasFoundExit > 0:
