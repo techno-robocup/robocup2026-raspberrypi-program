@@ -1137,7 +1137,7 @@ def r_wall_follow_cw() -> bool:
   return False
 
 
-hasFoundExit = 0
+hasFoundExit = -1
 
 
 def find_cage() -> Optional[int]:
@@ -1170,18 +1170,20 @@ def find_cage() -> Optional[int]:
 
 def handle_before_search() -> None:
   global hasFoundExit
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-  robot.set_speed(1400, 1400)
-  sleep_sec(4.0)
-  robot.set_speed(1750, 1250)
-  sleep_sec(consts.TURN_90_TIME)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-  robot.set_speed(1650, 1650)
-  sleep_sec(2.0)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
+  if hasFoundExit == -1:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1450, 1450)
+    sleep_sec(4.0)
+    robot.set_speed(1750, 1250)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1650, 1650)
+    sleep_sec(2.0)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    hasFoundExit = 0
   l_wall_follow_ccw()
   run_yolo()
   cage_class = find_cage()
