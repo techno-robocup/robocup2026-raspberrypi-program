@@ -461,9 +461,13 @@ class Robot:
     if isinstance(response, bool):
       return []
     current = list(map(float, response.split()))
+    while len(current) < 3:
+      current.append(-1)
     self.__ultrasonic_history.pop(0)
     self.__ultrasonic_history.append(current)
     avg = [sum(col) / len(col) for col in zip(*self.__ultrasonic_history)]
+    while len(avg) < 3:
+      avg.append(-1)
     return avg
 
   @property
