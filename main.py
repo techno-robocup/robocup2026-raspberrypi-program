@@ -1147,7 +1147,7 @@ def find_cage() -> Optional[int]:
   if boxes is None or len(boxes) == 0:
     return None
 
-  min_area = consts.IMAGE_SZ * 0.6
+  min_area = consts.IMAGE_SZ * 0.4
   min_y = RESCUE_IMAGE_HEIGHT * 0.55
   cage_classes = [
       consts.TargetList.GREEN_CAGE.value, consts.TargetList.RED_CAGE.value
