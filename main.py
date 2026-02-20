@@ -843,10 +843,10 @@ def catch_ball() -> int:
   robot.set_arm(920, 1)
   robot.send_arm()
   sleep_sec(0.5)
-  robot.set_arm(3065, 1)
+  robot.set_arm(3030, 1)
   robot.send_arm()
   sleep_sec(0.3)
-  robot.set_arm(3065, 1)
+  robot.set_arm(3030, 1)
   robot.send_arm()
   return 0
 
@@ -872,7 +872,7 @@ def release_ball() -> bool:
   robot.set_arm(1700, 0)
   robot.send_arm()
   sleep_sec(1.5)
-  robot.set_arm(3065, 0)
+  robot.set_arm(3030, 0)
   robot.send_arm()
   sleep_sec(0.5)
   robot.set_speed(1300, 1300)
@@ -1364,7 +1364,7 @@ def handle_cage() -> None:
 
 def is_stopping_by_button() -> None:
   robot.set_speed(1500, 1500)
-  robot.set_arm(3065, 0)
+  robot.set_arm(3030, 0)
   robot.send_speed()
   robot.send_arm()
   robot.write_rescue_turning_angle(0)
@@ -1389,7 +1389,7 @@ if __name__ == "__main__":
 
   logger.info("Starting program")
   robot.set_speed(1500, 1500)
-  robot.set_arm(3065, 0)
+  robot.set_arm(3030, 0)
   robot.send_arm()
   robot.send_speed()
   robot.write_linetrace_stop(False)
