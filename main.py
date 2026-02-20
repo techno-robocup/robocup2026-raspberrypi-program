@@ -1040,18 +1040,18 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
+TARGET_MIN = 14.0
+TARGET_MAX = 17.0
+FRONT_FLAG_DIST = 14.0
+OPEN_THRESHOLD = 45.0
+BASE_SPEED = 1680
+BASE_TURN = 100
 
 def l_wall_follow_ccw() -> bool:
   """
   Follow the wall counter-clockwise using ultrasonic[1].
   Returns True if an opening is detected.
   """
-  TARGET_MIN = 14.0
-  TARGET_MAX = 17.0
-  FRONT_FLAG_DIST = 14.0
-  OPEN_THRESHOLD = 45.0
-  BASE_SPEED = 1680
-  BASE_TURN = 100
   ultrasonic = robot.ultrasonic
   l_dist = ultrasonic[0]
   front_dist = ultrasonic[1]
@@ -1098,12 +1098,6 @@ def r_wall_follow_ccw() -> bool:
   Follow the wall clockwise using ultrasonic[1].
   Returns True if an opening is detected.
   """
-  TARGET_MIN = 14.0
-  TARGET_MAX = 17.0
-  FRONT_FLAG_DIST = 14.0
-  OPEN_THRESHOLD = 45.0
-  BASE_SPEED = 1680
-  BASE_TURN = 100
   ultrasonic = robot.ultrasonic
   r_dist = ultrasonic[2]
   front_dist = ultrasonic[1]
@@ -1196,7 +1190,7 @@ def handle_before_search() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         logger.info("Sleep interrupted by button")
-        return 1
+        return
       if robot.ultrasonic[1] < 13.0:
         robot.set_speed(1500, 1500)
         robot.send_speed()
@@ -1204,6 +1198,7 @@ def handle_before_search() -> None:
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
+        return
       if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
         hasFoundExit += 1
         robot.set_speed(1350, 1350)
@@ -1214,6 +1209,7 @@ def handle_before_search() -> None:
         robot.send_speed()
         robot.set_speed(1650, 1650)
         sleep_sec(2)
+        return
     robot.send_speed()
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1226,7 +1222,7 @@ def handle_before_search() -> None:
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
-    logger.debug(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
+    logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
 
 def handle_not_found() -> None:
