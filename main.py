@@ -1200,7 +1200,7 @@ def handle_before_search() -> None:
         robot.send_speed()
         return
       if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
-        hasFoundExit += 1
+        hasFoundExit = 1
         robot.set_speed(1350, 1350)
         sleep_sec(2)
         robot.set_speed(1750, 1250)
@@ -1215,7 +1215,7 @@ def handle_before_search() -> None:
     robot.send_speed()
     hasFoundExit = 0
   result = r_wall_follow_ccw()
-  if result > 45.0:
+  if result > OPEN_THRESHOLD:
     hasFoundExit += 1
     robot.set_speed(1650, 1650)
     sleep_sec(2)
