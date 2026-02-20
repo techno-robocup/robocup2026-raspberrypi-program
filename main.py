@@ -551,12 +551,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   r_multi = 1
   if robot.pitch > 10:
     if angle_error > 0:
-        l_multi = 0.5
-        r_multi = 0.5
+        l_multi = 0.7
+        r_multi = 0.7
   elif robot.pitch < -10:
     if angle_error < 0:
-      l_multi = 0.5
-      r_multi = 0.5
+      l_multi = 0.7
+      r_multi = 0.7
 
   motor_l = clamp(
       int(
