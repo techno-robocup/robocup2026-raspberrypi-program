@@ -1040,10 +1040,10 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
-TARGET_MIN = 4.0
-TARGET_MAX = 6.0
+TARGET_MIN = 6.0
+TARGET_MAX = 8.0
 FRONT_FLAG_DIST = 6.0
-OPEN_THRESHOLD = 25.0
+OPEN_THRESHOLD = 35.0
 BASE_SPEED = 1680
 BASE_TURN = 100
 
@@ -1073,7 +1073,7 @@ def l_wall_follow_ccw() -> bool:
     return True
   elif front_dist <= FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
-    sleep_sec(consts.TURN_90_TIME * 0.8)
+    sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
@@ -1119,7 +1119,7 @@ def r_wall_follow_ccw() -> bool:
     return True
   elif front_dist <= FRONT_FLAG_DIST:
     robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME * 0.8)
+    sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
