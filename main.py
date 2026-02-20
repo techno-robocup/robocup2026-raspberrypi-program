@@ -1040,10 +1040,10 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
-TARGET_MIN = 14.0
-TARGET_MAX = 17.0
-FRONT_FLAG_DIST = 14.0
-OPEN_THRESHOLD = 45.0
+TARGET_MIN = 4.0
+TARGET_MAX = 6.0
+FRONT_FLAG_DIST = 6.0
+OPEN_THRESHOLD = 25.0
 BASE_SPEED = 1680
 BASE_TURN = 100
 
@@ -1124,11 +1124,11 @@ def r_wall_follow_ccw() -> bool:
     robot.send_speed()
     return False
 
-  turn = -30
+  turn = 30
   if r_dist > TARGET_MAX:
-    turn = BASE_TURN * -1
-  if r_dist < TARGET_MIN:
     turn = BASE_TURN
+  if r_dist < TARGET_MIN:
+    turn = BASE_TURN * -1
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
   # logger.info(f"motor speed L{left_speed} R{right_speed}")
