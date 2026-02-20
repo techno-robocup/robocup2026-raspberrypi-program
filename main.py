@@ -1218,7 +1218,23 @@ def handle_before_search() -> None:
   if result > OPEN_THRESHOLD:
     hasFoundExit += 1
     robot.set_speed(1650, 1650)
-    sleep_sec(2)
+    prev_time = time.time()
+    while time.time() - prev_time < 2.0:
+      robot.update_button_stat()
+      robot.send_speed()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.info("Sleep interrupted by button")
+        return
+      if robot.ultrasonic[1] < 13.0:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1750, 1250)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        return
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
