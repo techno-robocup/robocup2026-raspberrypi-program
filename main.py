@@ -549,7 +549,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # Reduce the speed when the robot on slope and when it tries to go downside
   l_multi = 1
   r_multi = 1
-  angle_error_portion = abs(angle_error) / ((math.pi()/4) * 0.9)
+  angle_error_portion = abs(angle_error) / ((math.pi/4) * 0.9)
   if robot.pitch > 10:
     if angle_error > 0:
         l_multi = angle_error_portion ** 3
