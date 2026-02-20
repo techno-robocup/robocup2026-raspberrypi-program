@@ -1046,9 +1046,9 @@ def l_wall_follow_ccw() -> bool:
   Follow the wall counter-clockwise using ultrasonic[1].
   Returns True if an opening is detected.
   """
-  TARGET_MIN = 12.0
-  TARGET_MAX = 15.0
-  FRONT_FLAG_DIST = 13.0
+  TARGET_MIN = 14.0
+  TARGET_MAX = 17.0
+  FRONT_FLAG_DIST = 14.0
   OPEN_THRESHOLD = 45.0
   BASE_SPEED = 1680
   BASE_TURN = 100
@@ -1098,9 +1098,9 @@ def r_wall_follow_ccw() -> bool:
   Follow the wall clockwise using ultrasonic[1].
   Returns True if an opening is detected.
   """
-  TARGET_MIN = 12.0
-  TARGET_MAX = 15.0
-  FRONT_FLAG_DIST = 13.0
+  TARGET_MIN = 14.0
+  TARGET_MAX = 17.0
+  FRONT_FLAG_DIST = 14.0
   OPEN_THRESHOLD = 45.0
   BASE_SPEED = 1680
   BASE_TURN = 100
