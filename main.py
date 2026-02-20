@@ -547,27 +547,27 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # logger.info(f"Current adjusted speed: {clamp(int(adjusted_base_speed - abs(local_angle_error)**6 * DP), 1500, 2000)}")
 
   # Reduce the speed when the robot on slope and when it tries to go downside
-  l_power = 8
-  r_power = 8
+  l_multi = 1
+  r_multi = 1
   if robot.pitch > 10:
     if angle_error > 0:
-        l_power = 0.5
-        r_power = 0.5
+        l_multi = 0.5
+        r_multi = 0.5
   elif robot.pitch < -10:
     if angle_error < 0:
-      l_power = 0.5
-      r_power = 0.5
+      l_multi = 0.5
+      r_multi = 0.5
 
   motor_l = clamp(
       int(
           clamp(int(adjusted_base_speed -
-                    abs(local_angle_error)**l_power * DP), 1500, 2000) -
-          steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
+                    abs(local_angle_error)**7 * DP), 1500, 2000) -
+          steering * gyro_multiplier * l_multi), MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
       int(
           clamp(int(adjusted_base_speed -
-                    abs(local_angle_error)**r_power * DP), 1500, 2000) +
-          steering * gyro_multiplier), MIN_SPEED, MAX_SPEED)
+                    abs(local_angle_error)**7 * DP), 1500, 2000) +
+          steering * gyro_multiplier * r_multi), MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
