@@ -350,6 +350,9 @@ class Robot:
     self.__Linetrace_Camera.start_cam()
     self.__Rescue_Camera.start_cam()
 
+    # Ultrasonic sensor readings history for averaging
+    self.__ultrasonic_history: List[List[float]] = [[], [], []]
+
     # Set robot reference in camera module to avoid circular import
     modules.camera.set_robot(self)
 
@@ -444,6 +447,24 @@ class Robot:
     """
     assert self.__uart_device is not None
     return self.__uart_device.send("GET button") == "ON"
+
+  @property
+  def avg_ultrasonic(self) -> List[float]:
+    """Get ultrasonic sensor reading from ESP32.
+    It returns the average of 3 past readings to reduce noise.
+
+    Returns:
+      List of distance values in centimeters.
+    """
+    assert self.__uart_device is not None
+    response = self.__uart_device.send("GET usonic")
+    if isinstance(response, bool):
+      return []
+    current = list(map(float, response.split()))
+    self.__ultrasonic_history.pop(0)
+    self.__ultrasonic_history.append(current)
+    avg = [sum(col) / len(col) for col in zip(*self.__ultrasonic_history)]
+    return avg
 
   @property
   def ultrasonic(self) -> List[float]:
