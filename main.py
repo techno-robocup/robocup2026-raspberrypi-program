@@ -1224,6 +1224,7 @@ def handle_before_search() -> None:
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
+    logger.debug(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
 
 def handle_not_found() -> None:
