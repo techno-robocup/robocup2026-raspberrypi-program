@@ -1409,9 +1409,9 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      # if robot.target_before_exit == -1:
-      #   handle_before_search()
-      if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
+      if robot.target_before_exit == -1:
+        handle_before_search()
+      elif not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                             (robot.rescue_size is None)):
         logger.debug("not fund")
         handle_not_found()
