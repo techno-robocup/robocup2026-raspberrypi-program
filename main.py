@@ -1429,7 +1429,7 @@ if __name__ == "__main__":
         handle_cage()
     else:
       if not robot.linetrace_stop:
-        ultrasonic_info = robot.ultrasonic
+        ultrasonic_info = robot.avg_ultrasonic
         # Check for green mark intersections before normal line following
         logger.info(ultrasonic_info)
         if should_process_green_mark():
