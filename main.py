@@ -400,7 +400,7 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   x_offset_condition = x_offset_significant
 
   # Trigger recovery if the line area is wide even though the offset is small
-  line_is_wide = robot.line_width > consts.LINETRACE_CAMERA_LORES_WIDTH / 10
+  line_is_wide = robot.line_width > consts.LINETRACE_CAMERA_LORES_WIDTH / 15
 
   # Only trigger when area is small AND x-offset is significant or line is wide (indicating a gap or veering off)
   should_recover = (area_condition and x_offset_condition) or (area_condition and line_is_wide)
