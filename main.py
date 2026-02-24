@@ -879,7 +879,7 @@ def release_ball() -> bool:
   sleep_sec(0.5)
   robot.set_speed(1300, 1300)
   sleep_sec(0.7)
-  robot.set_speed(1750, 1250)
+  robot.set_speed(1250, 1750)
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
@@ -895,7 +895,7 @@ def change_position() -> bool:
   Returns:
     True on successful completion.
   """
-  robot.set_speed(1750, 1250)
+  robot.set_speed(1250, 1750)
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
   sleep_sec(0.1)
