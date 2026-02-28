@@ -403,7 +403,8 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   line_is_wide = robot.line_width > consts.LINETRACE_CAMERA_LORES_WIDTH / 15
 
   # Only trigger when area is small AND x-offset is significant or line is wide (indicating a gap or veering off)
-  should_recover = (area_condition and x_offset_condition) or (area_condition and line_is_wide)
+  should_recover = (area_condition and x_offset_condition) or (area_condition
+                                                               and line_is_wide)
 
   if should_recover:
     logger.info(
@@ -551,8 +552,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   r_multi = 1
   if robot.pitch > 10:
     if angle_error > 0:
-        l_multi = 0.5
-        r_multi = 0.5
+      l_multi = 0.5
+      r_multi = 0.5
   elif robot.pitch < -10:
     if angle_error < 0:
       l_multi = 0.5
@@ -1040,12 +1041,14 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
+
 TARGET_MIN = 6.0
 TARGET_MAX = 8.0
 FRONT_FLAG_DIST = 10.0
 OPEN_THRESHOLD = 22.0
 BASE_SPEED = 1680
 BASE_TURN = 100
+
 
 def l_wall_follow_ccw() -> bool:
   """
@@ -1240,6 +1243,7 @@ def handle_before_search() -> None:
   if cage_class is not None:
     logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
+
 
 def handle_not_found() -> None:
   change_position()
@@ -1446,8 +1450,8 @@ if __name__ == "__main__":
         logger.info(ultrasonic_info)
         if should_process_green_mark():
           execute_green_mark_turn()
-        elif ultrasonic_info[
-            1] <= 3 and ultrasonic_info[1] != -1 :  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+        elif ultrasonic_info[1] <= 3 and ultrasonic_info[
+            1] != -1:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
