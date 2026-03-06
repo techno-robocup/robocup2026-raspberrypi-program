@@ -30,8 +30,11 @@ assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 190
+KP = 100
+KI = 2
+KD = 30
 DP = 200
+INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.045  # Ball Offset P
 BSP = 0.5  # Ball Size P
 COP = 0.06  # Cage Offset P
@@ -40,6 +43,11 @@ EOP = 0.03  # Exit Offset P
 ESP = 2  # Exit Size P
 
 catch_failed_cnt = 0
+
+# PID state for linetrace steering
+_pid_prev_error: float = 0.0
+_pid_integral: float = 0.0
+_pid_prev_time: Optional[float] = None
 
 # Gap recovery state - timestamp of last recovery to prevent immediate re-trigger
 last_gap_recovery_time: float = 0.0
@@ -487,12 +495,18 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   - angle < π/2: line tilts right, turn right
   - angle > π/2: line tilts left, turn left
   """
+  global _pid_prev_error, _pid_integral, _pid_prev_time
+
   if slope is None:  # When the were no args
     slope = robot.linetrace_slope
   if slope is None:  # When the robot could not find an appropriate slope
     if time.time() - robot.last_slope_get_time > consts.RESCUE_FLAG_TIME:
       robot.write_is_rescue_flag(True)
       return 1500, 1500
+    # Reset PID state when line is lost
+    _pid_prev_error = 0.0
+    _pid_integral = 0.0
+    _pid_prev_time = None
     return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
@@ -503,7 +517,23 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   local_angle_error = angle - (math.pi / 2)
 
-  steering = int(KP * local_angle_error)
+  # PID calculation
+  now = time.time()
+  dt = (now - _pid_prev_time) if _pid_prev_time is not None else 0.0
+  # Clamp dt to avoid spikes after long pauses (e.g. green-mark turn)
+  dt = min(dt, 0.1)
+
+  # Integral term with anti-windup
+  _pid_integral += local_angle_error * dt
+  _pid_integral = max(-INTEGRAL_MAX, min(INTEGRAL_MAX, _pid_integral))
+
+  # Derivative term (rate of error change)
+  derivative = ((local_angle_error - _pid_prev_error) / dt) if dt > 0 else 0.0
+
+  steering = int(KP * local_angle_error + KI * _pid_integral + KD * derivative)
+
+  _pid_prev_error = local_angle_error
+  _pid_prev_time = now
 
   # Calculate speed adjustment based on line area
   local_line_area = robot.line_area
@@ -1380,6 +1410,14 @@ def handle_cage() -> None:
     set_target()
 
 
+def reset_pid_state() -> None:
+  """Reset PID state variables (call when switching modes / stopping)."""
+  global _pid_prev_error, _pid_integral, _pid_prev_time
+  _pid_prev_error = 0.0
+  _pid_integral = 0.0
+  _pid_prev_time = None
+
+
 def is_stopping_by_button() -> None:
   robot.set_speed(1500, 1500)
   robot.set_arm(3030, 0)
@@ -1396,6 +1434,7 @@ def is_stopping_by_button() -> None:
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(True)
+  reset_pid_state()
 
 
 logger.info("Objects Initialized")
@@ -1450,6 +1489,7 @@ if __name__ == "__main__":
         logger.info(ultrasonic_info)
         if should_process_green_mark():
           execute_green_mark_turn()
+          reset_pid_state()
         elif ultrasonic_info[1] <= 3 and ultrasonic_info[
             1] != -1:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
           logger.info("Object avoidance triggered")
@@ -1487,6 +1527,7 @@ if __name__ == "__main__":
           if angle_error is not None and should_execute_line_recovery(
               line_area):
             execute_line_recovery()
+            reset_pid_state()
           else:
             motorl, motorr = calculate_motor_speeds()
             robot.set_speed(motorl, motorr)
