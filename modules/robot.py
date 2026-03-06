@@ -319,6 +319,7 @@ class Robot:
 
     # === Rescue Mode State ===
     self.__is_rescue_flag = False
+    self.__rescue_entered_angle: int = -1
     self.__rescue_camera_image: Optional[npt.NDArray[np.uint8]] = None
     self.__rescue_boxes: Optional[Boxes] = None
     self.__rescue_offset: Optional[float] = None
@@ -687,6 +688,10 @@ class Robot:
     with self.__rescue_lock.gen_wlock():
       self.__is_rescue_flag = flag
 
+  def write_rescue_entered_angle(self, angle: int) -> None:
+    with self.__rescue_lock:
+      self.__rescue_entered_angle = angle
+
   def write_rescue_offset(self, angle: Optional[float]) -> None:
     """Set horizontal offset to rescue target (thread-safe).
 
@@ -790,6 +795,10 @@ class Robot:
   def is_rescue_flag(self) -> bool:
     """Check if robot is in rescue mode."""
     return self.__is_rescue_flag
+
+  @property
+  def rescue_entered_angle(self) -> int:
+    return self.__rescue_entered_angle
 
   @property
   def rescue_offset(self) -> Optional[float]:
