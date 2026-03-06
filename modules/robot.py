@@ -328,9 +328,7 @@ class Robot:
     self.__rescue_target: int = consts.TargetList.SILVER_BALL.value
     self.__rescue_turning_angle: int = 0
     self.__rescue_saved_time: float = 0
-    self.__ball_catch_dist_flag = False
-    self.__ball_catch_offset_flag = False
-    self.__ball_near_flag = False
+    self.__rescue_flags: List[bool, bool, bool] = [False, False, False]
     self.__has_moved_to_cage = False
     self.__detect_black_ball = False
     self.__target_before_exit: int = -1
@@ -744,15 +742,15 @@ class Robot:
       flag: True if ball is close enough to catch.
     """
     with self.__rescue_lock.gen_wlock():
-      self.__ball_catch_dist_flag = flag
+      self.__rescue_flags[0] = flag
 
   def write_ball_catch_offset_flag(self, flag: bool) -> None:
     with self.__rescue_lock.gen_wlock():
-      self.__ball_catch_offset_flag = flag
+      self.__rescue_flags[1] = flag
 
   def write_ball_near_flag(self, flag: bool) -> None:
     with self.__rescue_lock.gen_wlock():
-      self.__ball_near_flag = flag
+      self.__rescue_flags[2] = flag
 
   def write_has_moved_to_cage(self, flag: bool) -> None:
     with self.__rescue_lock.gen_wlock():
@@ -834,17 +832,17 @@ class Robot:
   def ball_catch_dist_flag(self) -> bool:
     """Check if ball is close enough to catch (thread-safe)."""
     with self.__rescue_lock.gen_rlock():
-      return self.__ball_catch_dist_flag
+      return self.__rescue_flags[0]
 
   @property
   def ball_catch_offset_flag(self) -> bool:
     with self.__rescue_lock.gen_rlock():
-      return self.__ball_catch_offset_flag
+      return self.__rescue_flags[1]
 
   @property
   def ball_near_flag(self) -> bool:
     with self.__rescue_lock.gen_rlock():
-      return self.__ball_near_flag
+      return self.__resuce_flags[2]
 
   @property
   def has_moved_to_cage(self) -> bool:
