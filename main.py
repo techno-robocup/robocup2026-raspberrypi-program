@@ -432,6 +432,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   if slope is None:  # When the robot could not find an appropriate slope
     if time.time() - robot.last_slope_get_time > consts.RESCUE_FLAG_TIME:
       robot.write_is_rescue_flag(True)
+      robot.linetrace_slope = None
+      robot.line_area = 0
       return 1500, 1500
     # Reset PID state when line is lost
     _pid_prev_error = 0.0
