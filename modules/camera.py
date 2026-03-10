@@ -267,8 +267,8 @@ red_contours: List[np.ndarray] = []
 
 
 def detect_green_marks(orig_image: np.ndarray,
-                       blackline_image: np.ndarray) -> None:
-  """Detect multiple X-shaped green marks and their relationship with black lines."""
+                       skeleton_image: np.ndarray) -> None:
+  """Detect multiple X-shaped green marks and their relationship with skeleton lines."""
   # global green_marks, green_black_detected, green_contours, robot
 
   # Convert to HSV (avoid copying if possible)
@@ -314,8 +314,8 @@ def detect_green_marks(orig_image: np.ndarray,
       # Store mark info
       green_marks.append((center_x, center_y, w, h))
 
-      # Check for black lines around the mark
-      black_detections = _check_black_lines_around_mark(blackline_image,
+      # Check for skeleton lines around the mark
+      black_detections = _check_black_lines_around_mark(skeleton_image,
                                                         center_x, center_y, w,
                                                         h)
       green_black_detected.append(black_detections)
@@ -328,7 +328,7 @@ def detect_green_marks(orig_image: np.ndarray,
   # Save debug image if there were green marks
   if green_marks and debug_image is not None:
     # Add checkpoint visualization to green mark debug images
-    h, w = blackline_image.shape[:2]
+    h, w = skeleton_image.shape[:2]
     checkpoint_x = int(w * consts.TURN_CHECKPOINT_X_RATIO)
     checkpoint_y = int(h * consts.TURN_CHECKPOINT_Y_RATIO)
     checkpoint_size = consts.TURN_CHECKPOINT_SIZE
@@ -410,15 +410,16 @@ def _count_black_pixels(roi: np.ndarray, threshold: int) -> tuple:
   return black_count, roi.size
 
 
-def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
+def _check_black_lines_around_mark(skeleton_image: np.ndarray, center_x: int,
                                    center_y: int, w: int, h: int) -> np.ndarray:
-  """Check for black lines around a mark in four directions."""
+  """Check for skeleton line pixels around a mark in four directions."""
   black_detections = np.zeros(4, dtype=np.int8)  # [bottom, top, left, right]
 
   # Define ROI sizes relative to mark size
   roi_width = int(w * 0.5)
   roi_height = int(h * 0.5)
-  black_threshold_ratio = 0.75  # 75% of pixels must be black
+  # Minimum number of skeleton pixels to consider a line present
+  min_skeleton_pixels = 3
 
   # Check bottom
   roi_b_y1 = center_y + h // 2
@@ -426,9 +427,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
                  consts.LINETRACE_CAMERA_LORES_HEIGHT)
   roi_b_x1 = center_x - roi_width // 2
   roi_b_x2 = center_x + roi_width // 2
-  roi_b = blackline_image[roi_b_y1:roi_b_y2, roi_b_x1:roi_b_x2]
-  black_count, total = _count_black_pixels(roi_b, consts.BLACK_WHITE_THRESHOLD)
-  if total > 0 and black_count / total <= black_threshold_ratio:
+  roi_b = skeleton_image[roi_b_y1:roi_b_y2, roi_b_x1:roi_b_x2]
+  if cv2.countNonZero(roi_b) >= min_skeleton_pixels:
     black_detections[0] = 1
 
   # Check top
@@ -436,9 +436,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_t_y2 = center_y - h // 2
   roi_t_x1 = center_x - roi_width // 2
   roi_t_x2 = center_x + roi_width // 2
-  roi_t = blackline_image[roi_t_y1:roi_t_y2, roi_t_x1:roi_t_x2]
-  black_count, total = _count_black_pixels(roi_t, consts.BLACK_WHITE_THRESHOLD)
-  if total > 0 and black_count / total <= black_threshold_ratio:
+  roi_t = skeleton_image[roi_t_y1:roi_t_y2, roi_t_x1:roi_t_x2]
+  if cv2.countNonZero(roi_t) >= min_skeleton_pixels:
     black_detections[1] = 1
 
   # Check left
@@ -446,9 +445,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_l_y2 = center_y + roi_height // 2
   roi_l_x1 = max(center_x - w // 2 - roi_width, 0)
   roi_l_x2 = center_x - w // 2
-  roi_l = blackline_image[roi_l_y1:roi_l_y2, roi_l_x1:roi_l_x2]
-  black_count, total = _count_black_pixels(roi_l, consts.BLACK_WHITE_THRESHOLD)
-  if total > 0 and black_count / total <= black_threshold_ratio:
+  roi_l = skeleton_image[roi_l_y1:roi_l_y2, roi_l_x1:roi_l_x2]
+  if cv2.countNonZero(roi_l) >= min_skeleton_pixels:
     black_detections[2] = 1
 
   # Check right
@@ -457,9 +455,8 @@ def _check_black_lines_around_mark(blackline_image: np.ndarray, center_x: int,
   roi_r_x1 = center_x + w // 2
   roi_r_x2 = min(center_x + w // 2 + roi_width,
                  consts.LINETRACE_CAMERA_LORES_WIDTH)
-  roi_r = blackline_image[roi_r_y1:roi_r_y2, roi_r_x1:roi_r_x2]
-  black_count, total = _count_black_pixels(roi_r, consts.BLACK_WHITE_THRESHOLD)
-  if total > 0 and black_count / total <= black_threshold_ratio:
+  roi_r = skeleton_image[roi_r_y1:roi_r_y2, roi_r_x1:roi_r_x2]
+  if cv2.countNonZero(roi_r) >= min_skeleton_pixels:
     black_detections[3] = 1
 
   return black_detections
@@ -909,7 +906,8 @@ def Linetrace_Camera_Pre_callback(request):
                     binary_debug)
 
       detect_red_marks(image)
-      detect_green_marks(image, binary_image)
+      skeleton = _skeletonize_line(binary_image)
+      detect_green_marks(image, skeleton)
 
       contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE,
                                      cv2.CHAIN_APPROX_SIMPLE)
@@ -948,7 +946,6 @@ def Linetrace_Camera_Pre_callback(request):
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 
       # --- Green mark look-ahead prediction (runs every frame) ---
-      skeleton = _skeletonize_line(binary_image)
       skeleton_angle, projected_points = _get_line_direction_and_project(
           skeleton, cx, cy, projection_length=150)
 

@@ -212,6 +212,7 @@ def execute_green_mark_turn() -> bool:
   logger.info(
       f"Approaching: driving backward at {approach_speed} until green mark y <= {approach_target_y}"
   )
+  min_approach_time = 1.0  # Always reverse for at least 1 second
   start_time = time.time()
   while time.time() - start_time < approach_timeout:
     robot.update_button_stat()
@@ -219,6 +220,8 @@ def execute_green_mark_turn() -> bool:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       return False
+
+    elapsed = time.time() - start_time
 
     # Check if any green mark has reached the middle of the screen
     current_marks = robot.green_marks
@@ -230,9 +233,12 @@ def execute_green_mark_turn() -> bool:
         )
         break
     else:
-      # Green mark disappeared while reversing - stop immediately
-      logger.info("Green mark lost during approach, stopping")
-      break
+      # Green mark disappeared - keep reversing until min time elapsed
+      if elapsed >= min_approach_time:
+        logger.info(
+            f"Green mark lost after {elapsed:.2f}s (>= {min_approach_time}s), stopping"
+        )
+        break
 
     robot.set_speed(approach_speed, approach_speed)
     robot.send_speed()
