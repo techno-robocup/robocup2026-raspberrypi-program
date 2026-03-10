@@ -847,7 +847,7 @@ class Robot:
   @property
   def ball_near_flag(self) -> bool:
     with self.__rescue_lock.gen_rlock():
-      return self.__resuce_flags[2]
+      return self.__rescue_flags[2]
 
   @property
   def has_moved_to_cage(self) -> bool:
