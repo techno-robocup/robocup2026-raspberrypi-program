@@ -271,7 +271,7 @@ def detect_green_marks(orig_image: np.ndarray,
   # global green_marks, green_black_detected, green_contours, robot
 
   # Convert to HSV (avoid copying if possible)
-  hsv = cv2.cvtColor(orig_image, cv2.COLOR_RGB2HSV)
+  hsv = cv2.cvtColor(orig_image, cv2.COLOR_BGR2HSV)
 
   # Create mask for green color
   green_mask = cv2.inRange(hsv, consts.lower_green, consts.upper_green)
@@ -691,22 +691,22 @@ def _apply_contrast_reduction(v_channel: np.ndarray,
 def reduce_contrast_v(image, factor=0.5):
   """Reduce contrast on V channel only (HSV).
   Factor < 1 reduces contrast, factor > 1 increases contrast."""
-  hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+  hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
   h, s, v = cv2.split(hsv)
   # Use JIT-optimized contrast reduction
   v = _apply_contrast_reduction(v, factor, 128.0)
   hsv = cv2.merge([h, s, v])
-  return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+  return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
 
 def reduce_glare_clahe(image, clip_limit=2.0):
   """Use CLAHE on luminance to balance brightness and reduce glare."""
-  lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+  lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
   luminance, a_channel, b_channel = cv2.split(lab)
   clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
   luminance = clahe.apply(luminance)
   lab = cv2.merge([luminance, a_channel, b_channel])
-  return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+  return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
 
 def reduce_glare_combined(image, contrast_factor=0.5, clip_limit=2.0):
@@ -751,7 +751,7 @@ def Linetrace_Camera_Pre_callback(request):
       image = reduce_glare_combined(image)
       if not robot.linetrace_stop:
         cv2.imwrite(f"bin/{current_time:.3f}_linetrace_format.jpg", image)
-      gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+      gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
       _, binary_image = cv2.threshold(gray_image, consts.BLACK_WHITE_THRESHOLD,
                                       255, cv2.THRESH_BINARY_INV)
       kernel = np.ones((10, 10), np.uint8)
