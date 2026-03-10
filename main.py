@@ -699,7 +699,7 @@ def find_best_target() -> None:
         logger.exception(f"Error processing detection box: {e}")
         continue
       if robot.rescue_target == consts.TargetList.EXIT.value:
-        if cls == consts.TargetList.GREEN_CAGE.value:
+        if cls == robot.target_before_exit:
           updated, max_area, dist, area, best_y, best_w = update_best_box(
               box.xywh[0], max_area)
           if updated:
