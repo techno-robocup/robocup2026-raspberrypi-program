@@ -1153,7 +1153,7 @@ def handle_before_search() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         logger.info("Sleep interrupted by button")
-        return
+        break
       if robot.ultrasonic[1] < 13.0:
         robot.set_speed(1500, 1500)
         robot.send_speed()
@@ -1161,8 +1161,8 @@ def handle_before_search() -> None:
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        return
-      if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+        break
+      if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
         hasFoundExit = 1
         robot.set_speed(1350, 1350)
         sleep_sec(2)
@@ -1172,7 +1172,7 @@ def handle_before_search() -> None:
         robot.send_speed()
         robot.set_speed(1650, 1650)
         sleep_sec(2)
-        return
+        break
     robot.send_speed()
     robot.set_speed(1500, 1500)
     robot.send_speed()
