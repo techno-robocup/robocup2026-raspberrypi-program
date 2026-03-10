@@ -1491,7 +1491,7 @@ if __name__ == "__main__":
           execute_green_mark_turn()
           reset_pid_state()
         elif ultrasonic_info[1] <= 3 and ultrasonic_info[
-            1] != -1:  # TODO: The index is really wired, the return value is including some bug, but not sure what is the problem
+            1] != -1 and ultrasonic_info[1] != 0:
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
