@@ -1157,7 +1157,7 @@ def handle_before_search() -> None:
       if robot.ultrasonic[1] < 13.0:
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        robot.set_speed(1750, 1250)
+        robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
@@ -1166,7 +1166,7 @@ def handle_before_search() -> None:
         hasFoundExit = 1
         robot.set_speed(1350, 1350)
         sleep_sec(2)
-        robot.set_speed(1750, 1250)
+        robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
         robot.set_speed(1500, 1500)
         robot.send_speed()
