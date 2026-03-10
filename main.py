@@ -1037,7 +1037,7 @@ def l_wall_follow_ccw() -> bool:
     robot.send_speed()
     return False
 
-  turn = -30
+  turn = 0
   if l_dist > TARGET_MAX:
     turn = BASE_TURN * -1
   if l_dist < TARGET_MIN:
@@ -1083,7 +1083,7 @@ def r_wall_follow_ccw() -> bool:
     robot.send_speed()
     return False
 
-  turn = 30
+  turn = 0
   if r_dist > TARGET_MAX:
     turn = BASE_TURN
   if r_dist < TARGET_MIN:
