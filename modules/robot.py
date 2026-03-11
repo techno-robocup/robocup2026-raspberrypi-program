@@ -313,6 +313,7 @@ class Robot:
     self.__line_area: Optional[float] = None
     self.__line_width: Optional[float] = None
     self.__line_center_x: Optional[int] = None
+    self.__line_center_y: Optional[int] = None
     self.__is_stop = False
     self.__top_checkpoint_black: bool = False
     self.__last_slope_get_time: Optional[float] = None
@@ -572,6 +573,10 @@ class Robot:
     with self.__linetrace_lock.gen_wlock():
       self.__line_center_x = center_x
 
+  def write_line_center_y(self, center_y: Optional[int]) -> None:
+    with self.__linetrace_lock.gen_wlock():
+      self.__line_center_y = center_y
+
   def write_linetrace_stop(self, flag: bool) -> None:
     """Set linetrace stop flag (thread-safe).
 
@@ -628,6 +633,11 @@ class Robot:
     """Get detected line center x-coordinate in pixels (thread-safe)."""
     with self.__linetrace_lock.gen_rlock():
       return self.__line_center_x
+
+  @property
+  def line_center_y(self) -> Optional[int]:
+    with self.__linetrace_lock.gen_rlock():
+      return self.__line_center_y
 
   @property
   def linetrace_stop(self) -> bool:
