@@ -1490,6 +1490,16 @@ if __name__ == "__main__":
         if should_process_green_mark():
           execute_green_mark_turn()
           reset_pid_state()
+        elif robot.green_ahead:
+          # Green mark detected ahead along line direction — slow down to prepare
+          motorl, motorr = calculate_motor_speeds()
+          slowdown = consts.GREEN_AHEAD_SLOWDOWN_SPEED
+          motorl = min(motorl, slowdown)
+          motorr = min(motorr, slowdown)
+          robot.set_speed(motorl, motorr)
+          logger.info(
+              f"Green ahead — slowing down (dist={robot.green_ahead_distance:.0f})"
+          )
         elif ultrasonic_info[1] <= 3 and ultrasonic_info[
             1] != -1 and ultrasonic_info[1] != 0:
           logger.info("Object avoidance triggered")

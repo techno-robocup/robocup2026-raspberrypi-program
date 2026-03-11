@@ -345,6 +345,11 @@ class Robot:
     self.__green_marks: List[tuple[int, int, int, int]] = []
     self.__green_black_detected: List[np.ndarray] = []
 
+    # === Green Mark Look-Ahead Prediction State ===
+    self.__green_ahead: bool = False
+    self.__green_ahead_distance: float = 0.0
+    self.__line_skeleton_angle: float = 0.0
+
     # Start cameras
     self.__Linetrace_Camera.start_cam()
     self.__Rescue_Camera.start_cam()
@@ -962,6 +967,37 @@ class Robot:
     """
     with self.__green_marks_lock.gen_rlock():
       return self.__green_black_detected.copy()
+
+  # ============================================================================
+  # Green Mark Look-Ahead Prediction Methods
+  # ============================================================================
+
+  def write_green_ahead(self, flag: bool) -> None:
+    with self.__green_marks_lock.gen_wlock():
+      self.__green_ahead = flag
+
+  def write_green_ahead_distance(self, distance: float) -> None:
+    with self.__green_marks_lock.gen_wlock():
+      self.__green_ahead_distance = distance
+
+  def write_line_skeleton_angle(self, angle: float) -> None:
+    with self.__green_marks_lock.gen_wlock():
+      self.__line_skeleton_angle = angle
+
+  @property
+  def green_ahead(self) -> bool:
+    with self.__green_marks_lock.gen_rlock():
+      return self.__green_ahead
+
+  @property
+  def green_ahead_distance(self) -> float:
+    with self.__green_marks_lock.gen_rlock():
+      return self.__green_ahead_distance
+
+  @property
+  def line_skeleton_angle(self) -> float:
+    with self.__green_marks_lock.gen_rlock():
+      return self.__line_skeleton_angle
 
 
 robot = Robot()

@@ -1,3 +1,4 @@
+import math
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -734,6 +735,119 @@ def _check_region_is_black(region: np.ndarray,
   return np.mean(region) > threshold
 
 
+def _skeletonize_line(binary_image: np.ndarray) -> np.ndarray:
+  """Skeletonize the binary image to get 1-pixel-wide line."""
+  try:
+    return cv2.ximgproc.thinning(binary_image,
+                                 thinningType=cv2.ximgproc.THINNING_ZHANGSUEN)
+  except AttributeError:
+    # Fallback: iterative morphological thinning
+    skeleton = np.zeros_like(binary_image)
+    element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+    img = binary_image.copy()
+    while True:
+      eroded = cv2.erode(img, element)
+      opened = cv2.dilate(eroded, element)
+      temp = cv2.subtract(img, opened)
+      skeleton = cv2.bitwise_or(skeleton, temp)
+      img = eroded.copy()
+      if cv2.countNonZero(img) == 0:
+        break
+    return skeleton
+
+
+def _get_line_direction_and_project(
+    skeleton: np.ndarray, start_x: int, start_y: int, projection_length: int = 150
+) -> Tuple[Optional[float], List[Tuple[int, int]]]:
+  """Get line direction at (start_x, start_y) from the skeleton, then project forward.
+
+  Returns:
+      angle: Line angle in radians (None if insufficient skeleton pixels)
+      projected_points: List of (x, y) points along the projected path
+  """
+  h, w = skeleton.shape[:2]
+
+  # Sample skeleton pixels in a neighborhood around the starting point
+  neighborhood = 40
+  y_min = max(0, start_y - neighborhood)
+  y_max = min(h, start_y + neighborhood)
+  x_min = max(0, start_x - neighborhood)
+  x_max = min(w, start_x + neighborhood)
+
+  region = skeleton[y_min:y_max, x_min:x_max]
+  pts = np.column_stack(np.nonzero(region))  # (row, col) pairs
+
+  if len(pts) < 5:
+    return None, []
+
+  # Convert to image coordinates
+  pts_xy = pts[:, ::-1].astype(np.float64)  # (col, row) = (x, y)
+  pts_xy[:, 0] += x_min
+  pts_xy[:, 1] += y_min
+
+  # PCA to find line direction
+  mean = np.mean(pts_xy, axis=0)
+  centered = pts_xy - mean
+  cov = np.cov(centered.T)
+  eigenvalues, eigenvectors = np.linalg.eigh(cov)
+  # Principal component = direction of largest variance
+  principal = eigenvectors[:, np.argmax(eigenvalues)]
+
+  # Make sure the direction points upward (toward top of image = ahead on field)
+  if principal[1] > 0:
+    principal = -principal
+
+  angle = math.atan2(principal[1], principal[0])
+
+  # Project forward from (start_x, start_y)
+  projected_points = []
+  for dist in range(0, projection_length, 5):
+    px = int(start_x + principal[0] * dist)
+    py = int(start_y + principal[1] * dist)
+    if 0 <= px < w and 0 <= py < h:
+      projected_points.append((px, py))
+    else:
+      break
+
+  return angle, projected_points
+
+
+def _check_green_along_projection(
+    marks: List[Tuple[int, int, int, int]],
+    projected_points: List[Tuple[int, int]],
+    tolerance: int = 30,
+) -> List[Tuple[Tuple[int, int, int, int], float]]:
+  """Check if any green marks are near the projected line path.
+
+  Args:
+      marks: List of (cx, cy, w, h) detected green marks
+      projected_points: Points along the projected line direction
+      tolerance: Max pixel distance from path to count as "on path"
+
+  Returns:
+      List of (mark, distance) tuples for marks along the projected path.
+      distance is the index along the projection (higher = farther ahead).
+  """
+  if not marks or not projected_points:
+    return []
+
+  results = []
+  proj_arr = np.array(projected_points, dtype=np.float64)
+
+  for mark in marks:
+    cx, cy, mw, mh = mark
+    mark_pt = np.array([cx, cy], dtype=np.float64)
+    dists = np.linalg.norm(proj_arr - mark_pt, axis=1)
+    min_idx = int(np.argmin(dists))
+    min_dist = dists[min_idx]
+    if min_dist <= tolerance:
+      results.append((mark, float(min_idx)))
+
+  # Sort by distance (closest first)
+  results.sort(key=lambda x: x[1])
+  return results
+
+
 def Linetrace_Camera_Pre_callback(request):
   global lastblackline  # , LASTBLACKLINE_LOCK
   current_time = time.time()
@@ -833,8 +947,56 @@ def Linetrace_Camera_Pre_callback(request):
         robot.write_line_center_x(cx)
         robot.write_linetrace_slope(calculate_slope(best_contour, cx, cy, w, h))
 
+      # --- Green mark look-ahead prediction (runs every frame) ---
+      skeleton = _skeletonize_line(binary_image)
+      skeleton_angle, projected_points = _get_line_direction_and_project(
+          skeleton, cx, cy, projection_length=150)
+
+      if robot is not None:
+        if skeleton_angle is not None:
+          robot.write_line_skeleton_angle(skeleton_angle)
+        if green_marks:
+          ahead_results = _check_green_along_projection(
+              green_marks, projected_points, tolerance=30)
+          if ahead_results:
+            robot.write_green_ahead(True)
+            robot.write_green_ahead_distance(ahead_results[0][1])
+          else:
+            robot.write_green_ahead(False)
+            robot.write_green_ahead_distance(0.0)
+        else:
+          robot.write_green_ahead(False)
+          robot.write_green_ahead_distance(0.0)
+
       debug_image = visualize_tracking(image, best_contour, cx, cy)
       _draw_debug_contours(debug_image)
+
+      # Draw skeleton and projection debug overlay
+      if not robot.linetrace_stop:
+        # Overlay skeleton as thin cyan line
+        skel_coords = np.nonzero(skeleton)
+        if len(skel_coords[0]) > 0:
+          debug_image[skel_coords[0], skel_coords[1]] = (255, 255, 0)  # cyan
+        # Draw projected path as magenta line
+        for i in range(len(projected_points) - 1):
+          cv2.line(debug_image, projected_points[i], projected_points[i + 1],
+                   (255, 0, 255), 2)
+        # Highlight green marks along path
+        if green_marks:
+          ahead_results = _check_green_along_projection(
+              green_marks, projected_points, tolerance=30)
+          for mark, dist in ahead_results:
+            mcx, mcy, mw, mh = mark
+            cv2.circle(debug_image, (mcx, mcy), 12, (0, 255, 255), 3)
+            cv2.putText(debug_image, f"AHEAD:{dist:.0f}", (mcx + 15, mcy),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+        # Show angle text
+        if skeleton_angle is not None:
+          cv2.putText(debug_image,
+                      f"angle:{math.degrees(skeleton_angle):.1f}deg",
+                      (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                      (255, 0, 255), 1)
+
       if not robot.linetrace_stop:
         cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)
 
