@@ -375,7 +375,7 @@ def execute_line_recovery() -> bool:
   last_gap_recovery_time = time.time()  # Set cooldown start
 
   start_time = time.time()
-  while robot.line_area is None or robot.line_area <= consts.LINE_RECOVERY_AREA_THRESHOLD * 4:
+  while robot.line_area is None or robot.line_area <= consts.LINE_RECOVERY_AREA_THRESHOLD * 5:
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
@@ -1108,7 +1108,7 @@ def r_wall_follow_ccw() -> bool:
   return False
 
 
-hasFoundExit = -1
+hasFoundExit = 0
 
 
 def find_cage() -> Optional[int]:
@@ -1138,72 +1138,58 @@ def find_cage() -> Optional[int]:
 
   return None
 
+def recover_rescue_area() -> None:
+  robot.set_speed(1350, 1350)
+  sleep_sec(2)
+  robot.set_speed(1250, 1750)
+  sleep_sec(consts.TURN_90_TIME)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_speed(1650, 1650)
+  sleep_sec(2)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+
+def forward_block_with_monitor() -> None:
+  global hasFoundExit
+  robot.set_speed(1650, 1650)
+  prev_time = time.time()
+  while time.time() - prev_time < 2.0:
+    robot.update_button_stat()
+    robot.send_speed()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      logger.info("Sleep interrupted by button")
+      return
+    if robot.ultrasonic[1] < 13.0:
+      return
+    if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+      hasFoundExit = 1
+      recover_rescue_area()
+      return
 
 def handle_before_search() -> None:
   global hasFoundExit
-  if hasFoundExit == -1:
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    robot.set_speed(1350, 1350)
-    sleep_sec(4.0)
-    robot.set_speed(1750, 1250)
-    sleep_sec(consts.TURN_90_TIME)
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    robot.set_speed(1650, 1650)
-    prev_time = time.time()
-    while time.time() - prev_time < 2.0:
-      robot.update_button_stat()
-      robot.send_speed()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        logger.info("Sleep interrupted by button")
-        break
-      if robot.ultrasonic[1] < 13.0:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        break
-      if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-        hasFoundExit = 1
-        robot.set_speed(1350, 1350)
-        sleep_sec(2)
-        robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1650, 1650)
-        sleep_sec(2)
-        break
-    robot.send_speed()
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    hasFoundExit = 0
+  # init
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_speed(1350, 1350)
+  sleep_sec(4.0)
+  robot.set_speed(1750, 1250)
+  sleep_sec(consts.TURN_90_TIME)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  # init
+  forward_block_with_monitor()
   result = r_wall_follow_ccw()
-  if result > OPEN_THRESHOLD:
-    hasFoundExit += 1
-    robot.set_speed(1650, 1650)
-    prev_time = time.time()
-    while time.time() - prev_time < 2.0:
-      robot.update_button_stat()
-      robot.send_speed()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        logger.info("Sleep interrupted by button")
-        return
-      if robot.ultrasonic[1] < 13.0:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1750, 1250)
-        sleep_sec(consts.TURN_90_TIME)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        return
+  if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+    hasFoundExit = 1
+    recover_rescue_area()
+    return
+  if result:
+    hasFoundExit = 1
+    forward_block_with_monitor()
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
@@ -1354,6 +1340,9 @@ def reset_pid_state() -> None:
 
 
 def is_stopping_by_button() -> None:
+  global hasFoundExit
+  if robot.target_before_exit == -1:
+    hasFoundExit = 0
   robot.set_speed(1500, 1500)
   robot.set_arm(3030, 0)
   robot.send_speed()
