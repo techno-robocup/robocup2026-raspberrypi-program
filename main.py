@@ -229,6 +229,10 @@ def execute_green_mark_turn() -> bool:
             f"Green mark reached target y={lowest_y} (<= {approach_target_y}), stopping approach"
         )
         break
+    else:
+      # Green mark disappeared while reversing - stop immediately
+      logger.info("Green mark lost during approach, stopping")
+      break
 
     robot.set_speed(approach_speed, approach_speed)
     robot.send_speed()
