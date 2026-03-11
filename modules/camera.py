@@ -507,6 +507,27 @@ def _draw_checkpoint_debug(image: np.ndarray, checkpoint_x: int,
               cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
 
 
+def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
+                            mark_h: int) -> Optional[int]:
+  """Find the x-center of the approaching line below a green mark.
+
+  Scans the binary image at a row well below the green mark where the
+  line is expected to be clean (not part of the intersection blob).
+
+  Returns:
+    The x-coordinate of the line center, or None if no line found.
+  """
+  h, w = binary_image.shape[:2]
+  # Try several rows below the mark to find a clean line
+  for offset in [mark_h * 3, mark_h * 4, mark_h * 2]:
+    check_y = min(h - 1, mark_center_y + max(offset, 30))
+    row = binary_image[check_y, :]
+    white_pixels = np.where(row > 0)[0]
+    if len(white_pixels) > 0:
+      return int(np.mean(white_pixels))
+  return None
+
+
 def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
   """Modify binary image to show only the desired path at green mark intersections.
 
@@ -515,10 +536,11 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
   The normal line-following algorithm then naturally steers the robot through
   the turn.
 
-  Turn direction logic (matches execute_green_mark_turn):
-  - Left black line detected  -> turn right -> draw line to the right
-  - Right black line detected -> turn left  -> draw line to the left
-  - Both left and right       -> 180 turn   -> draw line to the left
+  Turn direction is determined by the green mark's position relative to the
+  approaching line (the line below the mark):
+  - Mark to the RIGHT of the line -> turn right -> draw line to the right
+  - Mark to the LEFT of the line  -> turn left  -> draw line to the left
+  - Marks on BOTH sides           -> 180 turn   -> draw line to the left
 
   Returns:
     Modified binary image (copy) or the original if no modification needed.
@@ -527,22 +549,57 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
     return binary_image
 
   h, w = binary_image.shape[:2]
-  modified = None  # Lazy copy
+
+  # First pass: determine turn direction for each mark based on its
+  # position relative to the approaching line.
+  any_right = False
+  any_left = False
+  actionable = []  # (mark, detection) pairs that have left/right lines
 
   for mark, detection in zip(green_marks, green_black_detected):
     center_x, center_y, mark_w, mark_h = mark
 
-    # Only require left and/or right lines to determine turn direction.
-    # The approaching line may come from the top or bottom depending on
-    # the tile layout, so we do not filter on detection[0]/detection[1].
     has_left = detection[2] == 1
     has_right = detection[3] == 1
 
     if not has_left and not has_right:
       continue
 
-    if modified is None:
-      modified = binary_image.copy()
+    actionable.append((mark, detection))
+
+    # Determine which side of the line the green mark is on by
+    # finding the line center below the mark.
+    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
+    if line_cx is not None:
+      tolerance = max(mark_w // 3, 5)
+      if center_x > line_cx + tolerance:
+        any_right = True
+      elif center_x < line_cx - tolerance:
+        any_left = True
+    else:
+      # Fallback: use skeleton-based detection when the line
+      # below the mark cannot be found.
+      if has_left and not has_right:
+        any_right = True
+      elif has_right and not has_left:
+        any_left = True
+
+  if not actionable or (not any_right and not any_left):
+    return binary_image
+
+  # Decide overall turn direction
+  if any_right and any_left:
+    turn_dir = 'u'  # 180 turn
+  elif any_right:
+    turn_dir = 'r'
+  else:
+    turn_dir = 'l'
+
+  # Second pass: modify the binary image
+  modified = binary_image.copy()
+
+  for mark, detection in actionable:
+    center_x, center_y, mark_w, mark_h = mark
 
     # Erase a region around the green mark to remove the intersection
     margin = int(max(mark_w, mark_h) * 1.5)
@@ -559,10 +616,10 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
     start_pt = (center_x, ey2)
     mid_pt = (center_x, center_y)
 
-    if has_left and has_right:
+    if turn_dir == 'u':
       # 180 turn: draw line going far to the left
       end_pt = (0, center_y)
-    elif has_left:
+    elif turn_dir == 'r':
       # Turn right: draw line extending to the right
       end_pt = (min(w, center_x + margin * 3), center_y)
     else:
@@ -572,7 +629,7 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
     cv2.line(modified, start_pt, mid_pt, 255, thickness)
     cv2.line(modified, mid_pt, end_pt, 255, thickness)
 
-  return modified if modified is not None else binary_image
+  return modified
 
 
 def find_best_contour(contours: List[np.ndarray], camera_x: int, camera_y: int,
