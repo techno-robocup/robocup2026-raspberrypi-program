@@ -507,6 +507,78 @@ def _draw_checkpoint_debug(image: np.ndarray, checkpoint_x: int,
               cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
 
 
+def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
+  """Modify binary image to show only the desired path at green mark intersections.
+
+  When green marks with directional black lines are detected, this function
+  erases the intersection area and draws a line in the desired turn direction.
+  The normal line-following algorithm then naturally steers the robot through
+  the turn.
+
+  Turn direction logic (matches execute_green_mark_turn):
+  - Left black line detected  -> turn right -> draw line to the right
+  - Right black line detected -> turn left  -> draw line to the left
+  - Both left and right       -> 180 turn   -> draw line to the left
+
+  Returns:
+    Modified binary image (copy) or the original if no modification needed.
+  """
+  if not green_marks or not green_black_detected:
+    return binary_image
+
+  h, w = binary_image.shape[:2]
+  modified = None  # Lazy copy
+
+  for mark, detection in zip(green_marks, green_black_detected):
+    center_x, center_y, mark_w, mark_h = mark
+
+    # Same filtering as execute_green_mark_turn:
+    # Skip marks with a bottom line or without a top line
+    if detection[0] == 1:
+      continue
+    if detection[1] == 0:
+      continue
+
+    has_left = detection[2] == 1
+    has_right = detection[3] == 1
+
+    if not has_left and not has_right:
+      continue
+
+    if modified is None:
+      modified = binary_image.copy()
+
+    # Erase a region around the green mark to remove the intersection
+    margin = int(max(mark_w, mark_h) * 1.5)
+    ey1 = max(0, center_y - margin)
+    ey2 = min(h, center_y + margin)
+    ex1 = max(0, center_x - margin)
+    ex2 = min(w, center_x + margin)
+    modified[ey1:ey2, ex1:ex2] = 0
+
+    # Draw a thick white line in the desired turn direction.
+    # The line connects from below the erased area (incoming line)
+    # through the mark center to the turn direction.
+    thickness = max(mark_w // 2, 8)
+    start_pt = (center_x, ey2)
+    mid_pt = (center_x, center_y)
+
+    if has_left and has_right:
+      # 180 turn: draw line going far to the left
+      end_pt = (0, center_y)
+    elif has_left:
+      # Turn right: draw line extending to the right
+      end_pt = (min(w, center_x + margin * 3), center_y)
+    else:
+      # Turn left: draw line extending to the left
+      end_pt = (max(0, center_x - margin * 3), center_y)
+
+    cv2.line(modified, start_pt, mid_pt, 255, thickness)
+    cv2.line(modified, mid_pt, end_pt, 255, thickness)
+
+  return modified if modified is not None else binary_image
+
+
 def find_best_contour(contours: List[np.ndarray], camera_x: int, camera_y: int,
                       last_center: int) -> Optional[np.ndarray]:
   """
@@ -754,7 +826,10 @@ def _skeletonize_line(binary_image: np.ndarray) -> np.ndarray:
 
 
 def _get_line_direction_and_project(
-    skeleton: np.ndarray, start_x: int, start_y: int, projection_length: int = 150
+    skeleton: np.ndarray,
+    start_x: int,
+    start_y: int,
+    projection_length: int = 150
 ) -> Tuple[Optional[float], List[Tuple[int, int]]]:
   """Get line direction at (start_x, start_y) from the skeleton, then project forward.
 
@@ -909,6 +984,15 @@ def Linetrace_Camera_Pre_callback(request):
       skeleton = _skeletonize_line(binary_image)
       detect_green_marks(image, skeleton)
 
+      # Modify binary image to show only the desired path at green
+      # mark intersections. The normal line-following algorithm will
+      # then naturally steer the robot through the turn.
+      binary_image = _apply_green_turn_to_binary(binary_image)
+
+      if not robot.linetrace_stop and green_marks:
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_green_turn.jpg",
+                    binary_image)
+
       contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE,
                                      cv2.CHAIN_APPROX_SIMPLE)
 
@@ -953,8 +1037,9 @@ def Linetrace_Camera_Pre_callback(request):
         if skeleton_angle is not None:
           robot.write_line_skeleton_angle(skeleton_angle)
         if green_marks:
-          ahead_results = _check_green_along_projection(
-              green_marks, projected_points, tolerance=30)
+          ahead_results = _check_green_along_projection(green_marks,
+                                                        projected_points,
+                                                        tolerance=30)
           if ahead_results:
             robot.write_green_ahead(True)
             robot.write_green_ahead_distance(ahead_results[0][1])
@@ -980,8 +1065,9 @@ def Linetrace_Camera_Pre_callback(request):
                    (255, 0, 255), 2)
         # Highlight green marks along path
         if green_marks:
-          ahead_results = _check_green_along_projection(
-              green_marks, projected_points, tolerance=30)
+          ahead_results = _check_green_along_projection(green_marks,
+                                                        projected_points,
+                                                        tolerance=30)
           for mark, dist in ahead_results:
             mcx, mcy, mw, mh = mark
             cv2.circle(debug_image, (mcx, mcy), 12, (0, 255, 255), 3)
@@ -990,9 +1076,8 @@ def Linetrace_Camera_Pre_callback(request):
         # Show angle text
         if skeleton_angle is not None:
           cv2.putText(debug_image,
-                      f"angle:{math.degrees(skeleton_angle):.1f}deg",
-                      (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                      (255, 0, 255), 1)
+                      f"angle:{math.degrees(skeleton_angle):.1f}deg", (10, 20),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
 
       if not robot.linetrace_stop:
         cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)

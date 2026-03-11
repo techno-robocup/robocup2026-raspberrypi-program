@@ -1168,7 +1168,9 @@ def handle_before_search() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         break
-      if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+      if (robot.linetrace_slope
+          is not None) and (robot.line_area
+                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
         hasFoundExit = 1
         robot.set_speed(1350, 1350)
         sleep_sec(2)
@@ -1257,7 +1259,7 @@ def handle_exit() -> None:
       result = r_wall_follow_ccw()
     if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
       logger.info("Line detected, exit rescue mode")
-      robot.set_speed(1600,1600)
+      robot.set_speed(1600, 1600)
       sleep_sec(1.0)
       robot.set_speed(1500, 1500)
       robot.send_speed()
@@ -1423,8 +1425,16 @@ if __name__ == "__main__":
         # Check for green mark intersections before normal line following
         logger.info(ultrasonic_info)
         if should_process_green_mark():
-          execute_green_mark_turn()
-          reset_pid_state()
+          # Green turn is handled by camera binary image modification.
+          # The modified binary shows only the desired path, so normal
+          # line-following PID naturally steers through the turn.
+          # Slow down for precise turning.
+          motorl, motorr = calculate_motor_speeds()
+          slowdown = consts.GREEN_AHEAD_SLOWDOWN_SPEED
+          motorl = min(motorl, slowdown)
+          motorr = min(motorr, slowdown)
+          robot.set_speed(motorl, motorr)
+          logger.info("Green turn — camera steering active, slowing down")
         elif robot.green_ahead:
           # Green mark detected ahead along line direction — slow down to prepare
           motorl, motorr = calculate_motor_speeds()
