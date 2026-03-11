@@ -532,13 +532,9 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
   for mark, detection in zip(green_marks, green_black_detected):
     center_x, center_y, mark_w, mark_h = mark
 
-    # Same filtering as execute_green_mark_turn:
-    # Skip marks with a bottom line or without a top line
-    if detection[0] == 1:
-      continue
-    if detection[1] == 0:
-      continue
-
+    # Only require left and/or right lines to determine turn direction.
+    # The approaching line may come from the top or bottom depending on
+    # the tile layout, so we do not filter on detection[0]/detection[1].
     has_left = detection[2] == 1
     has_right = detection[3] == 1
 

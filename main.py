@@ -114,9 +114,8 @@ def should_process_green_mark() -> bool:
   Determine if we should process green marks for intersection turning.
 
   Returns True if:
-  - Green marks are detected with black lines (not just top/bottom)
-  - At least one mark is in the bottom 1/3 of the image
-  - Either left or right black line is detected (or both)
+  - Green marks are detected with left and/or right black lines
+  - At least one mark is in the bottom portion of the image
   """
   green_marks = robot.green_marks
   green_black_detected = robot.green_black_detected
@@ -130,13 +129,9 @@ def should_process_green_mark() -> bool:
   has_right = False
 
   for detection in green_black_detected:
-    # Skip if only top/bottom detected (likely not an intersection)
-    if detection[0] == 1:  # Has bottom line
-      continue
-    if detection[1] == 0:  # No top line
-      continue
-
-    # Check for left/right black lines
+    # Only require left/right lines to determine turn direction.
+    # The approaching line may come from the top or bottom depending
+    # on the tile layout, so we do not filter on bottom/top.
     if detection[2] == 1:  # Has left line
       has_left = True
     if detection[3] == 1:  # Has right line
@@ -175,12 +170,9 @@ def execute_green_mark_turn() -> bool:
   has_right = False
 
   for detection in green_black_detected:
-    # Skip marks with only top/bottom lines
-    if detection[0] == 1:
-      continue
-    if detection[1] == 0:
-      continue
-
+    # Only require left/right lines to determine turn direction.
+    # The approaching line may come from the top or bottom depending
+    # on the tile layout, so we do not filter on bottom/top.
     if detection[2] == 1:  # Left black line
       has_left = True
     if detection[3] == 1:  # Right black line
