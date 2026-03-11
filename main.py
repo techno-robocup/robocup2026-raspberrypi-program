@@ -1262,6 +1262,7 @@ def handle_exit() -> None:
       sleep_sec(consts.TURN_90_TIME)
       robot.set_speed(1500, 1500)
       robot.send_speed()
+      robot.set_speed(1650, 1650)
       while True:
         robot.update_button_stat()
         if robot.robot_stop:
@@ -1269,7 +1270,6 @@ def handle_exit() -> None:
           robot.send_speed()
           break
 
-        robot.set_speed(1650, 1650)
         robot.send_speed()
 
         if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
