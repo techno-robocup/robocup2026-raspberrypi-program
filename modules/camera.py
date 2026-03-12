@@ -611,7 +611,8 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     # approach line center (line_cx).  This ensures the actual
     # intersection area is fully contained so that zeroing skeleton
     # pixels inside the zone properly disconnects all branches.
-    pad = max(mark_w, mark_h, 15)
+    min_junction_pad = 15  # minimum padding to cover thin marks
+    pad = max(mark_w, mark_h, min_junction_pad)
     jz_left = min(center_x - mark_w // 2, line_cx) - pad
     jz_right = max(center_x + mark_w // 2, line_cx) + pad
     jz_x1 = max(0, jz_left)
@@ -639,10 +640,11 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
     # Build an erase mask from the unwanted skeleton branches.
     erase_mask = np.zeros((h, w), dtype=np.uint8)
+    min_branch_area = 5  # minimum skeleton pixels to count as a real branch
 
     for label_id in range(1, num_labels):
       comp_area = stats[label_id, cv2.CC_STAT_AREA]
-      if comp_area < 5:
+      if comp_area < min_branch_area:
         continue  # skip tiny noise fragments
 
       # Find the entry point of this branch: the component pixel
@@ -686,7 +688,8 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
     # Dilate the erase mask so it covers the full width of the
     # binary lines, not just the 1-pixel skeleton.
-    dilate_radius = max(mark_w // 2, 15)
+    min_dilate_radius = 15  # ensures adequate coverage for typical line widths
+    dilate_radius = max(mark_w // 2, min_dilate_radius)
     dilate_kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE, (dilate_radius * 2 + 1, dilate_radius * 2 + 1))
     erase_mask = cv2.dilate(erase_mask, dilate_kernel, iterations=1)
