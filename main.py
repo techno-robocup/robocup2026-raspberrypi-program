@@ -341,6 +341,9 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   # Only trigger when area is small AND x-offset is significant or line is wide (indicating a gap or veering off)
   should_recover = (area_condition and x_offset_condition) or (area_condition
                                                                and line_is_wide)
+  is_vertical = abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
+  if is_vertical:
+    should_recover = False
 
   if should_recover:
     logger.info(
