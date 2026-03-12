@@ -1183,7 +1183,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
   result = r_wall_follow_ccw()
-  if result > OPEN_THRESHOLD:
+  if result:
     hasFoundExit += 1
     robot.set_speed(1650, 1650)
     prev_time = time.time()
