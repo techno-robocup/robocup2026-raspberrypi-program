@@ -638,8 +638,9 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
         modified[0:center_y, :] = 0
       continue
 
-    # Build an erase mask from the unwanted skeleton branches.
+    # Build erase and keep masks from skeleton branches.
     erase_mask = np.zeros((h, w), dtype=np.uint8)
+    keep_mask = np.zeros((h, w), dtype=np.uint8)
     min_branch_area = 5  # minimum skeleton pixels to count as a real branch
 
     for label_id in range(1, num_labels):
@@ -672,27 +673,57 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
       if should_erase:
         erase_mask[labels == label_id] = 255
+      else:
+        keep_mask[labels == label_id] = 255
 
     # Also erase the unwanted portion of the junction zone itself so
     # that connecting pixels inside the zone are removed too.
+    # At the same time, add the kept-side skeleton pixels inside the
+    # junction zone to the keep mask (they were zeroed out for
+    # connected component analysis and need explicit protection).
     if turn_dir == 'r':
       jz_erase_x2 = min(jz_x2, line_cx)
       if jz_erase_x2 > jz_x1:
         erase_mask[jz_y1:jz_y2, jz_x1:jz_erase_x2] = 255
+      keep_mask[jz_y1:jz_y2, line_cx:jz_x2] = np.maximum(
+          keep_mask[jz_y1:jz_y2, line_cx:jz_x2], skeleton[jz_y1:jz_y2,
+                                                          line_cx:jz_x2])
     elif turn_dir == 'l':
       jz_erase_x1 = max(jz_x1, line_cx)
       if jz_erase_x1 < jz_x2:
         erase_mask[jz_y1:jz_y2, jz_erase_x1:jz_x2] = 255
+      keep_mask[jz_y1:jz_y2, jz_x1:line_cx] = np.maximum(
+          keep_mask[jz_y1:jz_y2, jz_x1:line_cx], skeleton[jz_y1:jz_y2,
+                                                          jz_x1:line_cx])
     else:  # 'u'
       erase_mask[jz_y1:center_y, jz_x1:jz_x2] = 255
+    # Always protect the approach line skeleton inside the junction zone
+    keep_mask[center_y:jz_y2,
+              jz_x1:jz_x2] = np.maximum(keep_mask[center_y:jz_y2, jz_x1:jz_x2],
+                                        skeleton[center_y:jz_y2, jz_x1:jz_x2])
 
-    # Dilate the erase mask so it covers the full width of the
-    # binary lines, not just the 1-pixel skeleton.
-    min_dilate_radius = 15  # ensures adequate coverage for typical line widths
-    dilate_radius = max(mark_w // 2, min_dilate_radius)
+    # Measure actual binary line width at the approach line for
+    # dilation sizing instead of using mark width.
+    line_half_width = 0
+    for dy in [mark_h + 5, mark_h * 2, mark_h * 3]:
+      measure_y = min(h - 1, center_y + dy)
+      row = binary_image[measure_y, :]
+      white_px = np.where(row > 0)[0]
+      if len(white_px) >= 2:
+        line_half_width = (int(white_px[-1]) - int(white_px[0])) // 2
+        break
+
+    # Dilate the erase mask to cover the full binary line width.
+    dilate_radius = max(line_half_width + 3, 8)
     dilate_kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE, (dilate_radius * 2 + 1, dilate_radius * 2 + 1))
     erase_mask = cv2.dilate(erase_mask, dilate_kernel, iterations=1)
+
+    # Dilate the keep mask by the same amount to create a protection
+    # zone that prevents the erase mask from bleeding into the
+    # approach line or the desired turn branch.
+    keep_mask = cv2.dilate(keep_mask, dilate_kernel, iterations=1)
+    erase_mask[keep_mask > 0] = 0
 
     modified[erase_mask > 0] = 0
 
