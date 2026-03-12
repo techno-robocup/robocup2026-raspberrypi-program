@@ -529,18 +529,18 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
 
 
 def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
-  """Modify binary image to show only the desired path at green mark intersections.
+  """Modify binary image by erasing the unwanted branch at green mark intersections.
 
-  When green marks with directional black lines are detected, this function
-  erases the intersection area and draws a line in the desired turn direction.
-  The normal line-following algorithm then naturally steers the robot through
-  the turn.
+  Instead of drawing artificial lines, this preserves the existing lines on
+  the desired turn side and erases the lines on the opposite side.  The
+  normal line-following algorithm then naturally steers the robot along the
+  real curved line through the turn.
 
   Turn direction is determined by the green mark's position relative to the
   approaching line (the line below the mark):
-  - Mark to the RIGHT of the line -> turn right -> draw line to the right
-  - Mark to the LEFT of the line  -> turn left  -> draw line to the left
-  - Marks on BOTH sides           -> 180 turn   -> draw line to the left
+  - Mark to the RIGHT of the line -> turn right -> erase left branch
+  - Mark to the LEFT of the line  -> turn left  -> erase right branch
+  - Marks on BOTH sides           -> 180 turn   -> erase both branches above
 
   Returns:
     Modified binary image (copy) or the original if no modification needed.
@@ -595,39 +595,35 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
   else:
     turn_dir = 'l'
 
-  # Second pass: modify the binary image
+  # Second pass: erase the unwanted branch from the binary image.
+  # The approach line is below the green mark (larger y = closer to
+  # the robot).  Branches diverge above the mark (smaller y).
+  # We erase from the top of the image down through the junction
+  # area on the unwanted side, using the approach line center as
+  # the dividing boundary.
   modified = binary_image.copy()
 
   for mark, detection in actionable:
     center_x, center_y, mark_w, mark_h = mark
 
-    # Erase a region around the green mark to remove the intersection
-    margin = int(max(mark_w, mark_h) * 1.5)
-    ey1 = max(0, center_y - margin)
-    ey2 = min(h, center_y + margin)
-    ex1 = max(0, center_x - margin)
-    ex2 = min(w, center_x + margin)
-    modified[ey1:ey2, ex1:ex2] = 0
+    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
+    if line_cx is None:
+      line_cx = center_x  # fallback to mark center
 
-    # Draw a thick white line in the desired turn direction.
-    # The line connects from below the erased area (incoming line)
-    # through the mark center to the turn direction.
-    thickness = max(mark_w // 2, 8)
-    start_pt = (center_x, ey2)
-    mid_pt = (center_x, center_y)
+    # Erase from the top of the image down through the junction.
+    # Go slightly below the mark center so the branch pixels near
+    # the junction are also caught.
+    erase_bottom = min(h, center_y + mark_h)
 
-    if turn_dir == 'u':
-      # 180 turn: draw line going far to the left
-      end_pt = (0, center_y)
-    elif turn_dir == 'r':
-      # Turn right: draw line extending to the right
-      end_pt = (min(w, center_x + margin * 3), center_y)
-    else:
-      # Turn left: draw line extending to the left
-      end_pt = (max(0, center_x - margin * 3), center_y)
-
-    cv2.line(modified, start_pt, mid_pt, 255, thickness)
-    cv2.line(modified, mid_pt, end_pt, 255, thickness)
+    if turn_dir == 'r':
+      # Turn right: keep right branch, erase left branch
+      modified[0:erase_bottom, 0:line_cx] = 0
+    elif turn_dir == 'l':
+      # Turn left: keep left branch, erase right branch
+      modified[0:erase_bottom, line_cx:w] = 0
+    else:  # 'u'
+      # U-turn: erase both branches above the junction
+      modified[0:center_y, :] = 0
 
   return modified
 
