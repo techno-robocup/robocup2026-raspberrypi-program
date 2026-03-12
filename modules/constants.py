@@ -70,7 +70,7 @@ BLACK_WHITE_THRESHOLD = 120
 BALL_CATCH_SIZE = 1900000
 BALL_CATCH_MIN_SIZE = 1600000
 LINETRACE_CAMERA_LORES_HEIGHT = 324  # 2592 / 8
-LINETRACE_CAMERA_LORES_WIDTH = 576   # 4608 / 8
+LINETRACE_CAMERA_LORES_WIDTH = 576  # 4608 / 8
 LINETRACE_CROP_WIDTH_RATIO = 0.6
 
 # FROM THIS LINE, DO NOT REWRITE
@@ -116,7 +116,7 @@ upper_red1 = np.array([179, 255, 255])
 lower_red2 = np.array([0, 130, 100])
 upper_red2 = np.array([20, 255, 255])
 
-GREEN_AHEAD_SLOWDOWN_SPEED = 1580  # Motor speed cap when green mark predicted ahead
+GREEN_AHEAD_SLOWDOWN_SPEED = 1550  # Motor speed cap when green mark predicted ahead
 GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 
 # Numbers defined on turning around(rotation)

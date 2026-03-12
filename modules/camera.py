@@ -507,6 +507,127 @@ def _draw_checkpoint_debug(image: np.ndarray, checkpoint_x: int,
               cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
 
 
+def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
+                            mark_h: int) -> Optional[int]:
+  """Find the x-center of the approaching line below a green mark.
+
+  Scans the binary image at a row well below the green mark where the
+  line is expected to be clean (not part of the intersection blob).
+
+  Returns:
+    The x-coordinate of the line center, or None if no line found.
+  """
+  h, w = binary_image.shape[:2]
+  # Try several rows below the mark to find a clean line
+  for offset in [mark_h * 3, mark_h * 4, mark_h * 2]:
+    check_y = min(h - 1, mark_center_y + max(offset, 30))
+    row = binary_image[check_y, :]
+    white_pixels = np.where(row > 0)[0]
+    if len(white_pixels) > 0:
+      return int(np.mean(white_pixels))
+  return None
+
+
+def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
+  """Modify binary image by erasing the unwanted branch at green mark intersections.
+
+  Instead of drawing artificial lines, this preserves the existing lines on
+  the desired turn side and erases the lines on the opposite side.  The
+  normal line-following algorithm then naturally steers the robot along the
+  real curved line through the turn.
+
+  Turn direction is determined by the green mark's position relative to the
+  approaching line (the line below the mark):
+  - Mark to the RIGHT of the line -> turn right -> erase left branch
+  - Mark to the LEFT of the line  -> turn left  -> erase right branch
+  - Marks on BOTH sides           -> 180 turn   -> erase both branches above
+
+  Returns:
+    Modified binary image (copy) or the original if no modification needed.
+  """
+  if not green_marks or not green_black_detected:
+    return binary_image
+
+  h, w = binary_image.shape[:2]
+
+  # First pass: determine turn direction for each mark based on its
+  # position relative to the approaching line.
+  any_right = False
+  any_left = False
+  actionable = []  # (mark, detection) pairs that have left/right lines
+
+  for mark, detection in zip(green_marks, green_black_detected):
+    center_x, center_y, mark_w, mark_h = mark
+
+    has_left = detection[2] == 1
+    has_right = detection[3] == 1
+
+    if not has_left and not has_right:
+      continue
+
+    actionable.append((mark, detection))
+
+    # Determine which side of the line the green mark is on by
+    # finding the line center below the mark.
+    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
+    if line_cx is not None:
+      tolerance = max(mark_w // 3, 5)
+      if center_x > line_cx + tolerance:
+        any_right = True
+      elif center_x < line_cx - tolerance:
+        any_left = True
+    else:
+      # Fallback: use skeleton-based detection when the line
+      # below the mark cannot be found.
+      if has_left and not has_right:
+        any_right = True
+      elif has_right and not has_left:
+        any_left = True
+
+  if not actionable or (not any_right and not any_left):
+    return binary_image
+
+  # Decide overall turn direction
+  if any_right and any_left:
+    turn_dir = 'u'  # 180 turn
+  elif any_right:
+    turn_dir = 'r'
+  else:
+    turn_dir = 'l'
+
+  # Second pass: erase the unwanted branch from the binary image.
+  # The approach line is below the green mark (larger y = closer to
+  # the robot).  Branches diverge above the mark (smaller y).
+  # We erase from the top of the image down through the junction
+  # area on the unwanted side, using the approach line center as
+  # the dividing boundary.
+  modified = binary_image.copy()
+
+  for mark, detection in actionable:
+    center_x, center_y, mark_w, mark_h = mark
+
+    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
+    if line_cx is None:
+      line_cx = center_x  # fallback to mark center
+
+    # Erase from the top of the image down through the junction.
+    # Go slightly below the mark center so the branch pixels near
+    # the junction are also caught.
+    erase_bottom = min(h, center_y + mark_h)
+
+    if turn_dir == 'r':
+      # Turn right: keep right branch, erase left branch
+      modified[0:erase_bottom, 0:line_cx] = 0
+    elif turn_dir == 'l':
+      # Turn left: keep left branch, erase right branch
+      modified[0:erase_bottom, line_cx:w] = 0
+    else:  # 'u'
+      # U-turn: erase both branches above the junction
+      modified[0:center_y, :] = 0
+
+  return modified
+
+
 def find_best_contour(contours: List[np.ndarray], camera_x: int, camera_y: int,
                       last_center: int) -> Optional[np.ndarray]:
   """
@@ -754,7 +875,10 @@ def _skeletonize_line(binary_image: np.ndarray) -> np.ndarray:
 
 
 def _get_line_direction_and_project(
-    skeleton: np.ndarray, start_x: int, start_y: int, projection_length: int = 150
+    skeleton: np.ndarray,
+    start_x: int,
+    start_y: int,
+    projection_length: int = 150
 ) -> Tuple[Optional[float], List[Tuple[int, int]]]:
   """Get line direction at (start_x, start_y) from the skeleton, then project forward.
 
@@ -909,6 +1033,15 @@ def Linetrace_Camera_Pre_callback(request):
       skeleton = _skeletonize_line(binary_image)
       detect_green_marks(image, skeleton)
 
+      # Modify binary image to show only the desired path at green
+      # mark intersections. The normal line-following algorithm will
+      # then naturally steer the robot through the turn.
+      binary_image = _apply_green_turn_to_binary(binary_image)
+
+      if not robot.linetrace_stop and green_marks:
+        cv2.imwrite(f"bin/{current_time:.3f}_linetrace_green_turn.jpg",
+                    binary_image)
+
       contours, _ = cv2.findContours(binary_image, cv2.RETR_TREE,
                                      cv2.CHAIN_APPROX_SIMPLE)
 
@@ -953,8 +1086,9 @@ def Linetrace_Camera_Pre_callback(request):
         if skeleton_angle is not None:
           robot.write_line_skeleton_angle(skeleton_angle)
         if green_marks:
-          ahead_results = _check_green_along_projection(
-              green_marks, projected_points, tolerance=30)
+          ahead_results = _check_green_along_projection(green_marks,
+                                                        projected_points,
+                                                        tolerance=30)
           if ahead_results:
             robot.write_green_ahead(True)
             robot.write_green_ahead_distance(ahead_results[0][1])
@@ -980,8 +1114,9 @@ def Linetrace_Camera_Pre_callback(request):
                    (255, 0, 255), 2)
         # Highlight green marks along path
         if green_marks:
-          ahead_results = _check_green_along_projection(
-              green_marks, projected_points, tolerance=30)
+          ahead_results = _check_green_along_projection(green_marks,
+                                                        projected_points,
+                                                        tolerance=30)
           for mark, dist in ahead_results:
             mcx, mcy, mw, mh = mark
             cv2.circle(debug_image, (mcx, mcy), 12, (0, 255, 255), 3)
@@ -990,9 +1125,8 @@ def Linetrace_Camera_Pre_callback(request):
         # Show angle text
         if skeleton_angle is not None:
           cv2.putText(debug_image,
-                      f"angle:{math.degrees(skeleton_angle):.1f}deg",
-                      (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                      (255, 0, 255), 1)
+                      f"angle:{math.degrees(skeleton_angle):.1f}deg", (10, 20),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
 
       if not robot.linetrace_stop:
         cv2.imwrite(f"bin/{current_time:.3f}_tracking.jpg", debug_image)

@@ -25,12 +25,12 @@ uart_dev = modules.robot.uart_io()
 uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1680
+BASE_SPEED = 1650
 assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 100
+KP = 150
 KI = 2
 KD = 20
 DP = 200
@@ -114,9 +114,8 @@ def should_process_green_mark() -> bool:
   Determine if we should process green marks for intersection turning.
 
   Returns True if:
-  - Green marks are detected with black lines (not just top/bottom)
-  - At least one mark is in the bottom 1/3 of the image
-  - Either left or right black line is detected (or both)
+  - Green marks are detected with left and/or right black lines
+  - At least one mark is in the bottom portion of the image
   """
   green_marks = robot.green_marks
   green_black_detected = robot.green_black_detected
@@ -130,13 +129,9 @@ def should_process_green_mark() -> bool:
   has_right = False
 
   for detection in green_black_detected:
-    # Skip if only top/bottom detected (likely not an intersection)
-    if detection[0] == 1:  # Has bottom line
-      continue
-    if detection[1] == 0:  # No top line
-      continue
-
-    # Check for left/right black lines
+    # Only require left/right lines to determine turn direction.
+    # The approaching line may come from the top or bottom depending
+    # on the tile layout, so we do not filter on bottom/top.
     if detection[2] == 1:  # Has left line
       has_left = True
     if detection[3] == 1:  # Has right line
@@ -175,12 +170,9 @@ def execute_green_mark_turn() -> bool:
   has_right = False
 
   for detection in green_black_detected:
-    # Skip marks with only top/bottom lines
-    if detection[0] == 1:
-      continue
-    if detection[1] == 0:
-      continue
-
+    # Only require left/right lines to determine turn direction.
+    # The approaching line may come from the top or bottom depending
+    # on the tile layout, so we do not filter on bottom/top.
     if detection[2] == 1:  # Left black line
       has_left = True
     if detection[3] == 1:  # Right black line
@@ -504,7 +496,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
                      gyro_roll is not None and gyro_pitch is not None else None)
   gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 1.0
 
-  logger.info(
+  logger.debug(
       f"Angle info: yaw={robot.yaw} roll={robot.roll}, pitch={robot.pitch}, calculated={gyro_calculated}, multiplier={gyro_multiplier:.2f}"
   )
 
@@ -1138,58 +1130,74 @@ def find_cage() -> Optional[int]:
 
   return None
 
-def recover_rescue_area() -> None:
-  robot.set_speed(1350, 1350)
-  sleep_sec(2)
-  robot.set_speed(1250, 1750)
-  sleep_sec(consts.TURN_90_TIME)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-  robot.set_speed(1650, 1650)
-  sleep_sec(2)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-
-def forward_block_with_monitor() -> None:
-  global hasFoundExit
-  robot.set_speed(1650, 1650)
-  prev_time = time.time()
-  while time.time() - prev_time < 2.0:
-    robot.update_button_stat()
-    robot.send_speed()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Sleep interrupted by button")
-      return
-    if robot.ultrasonic[1] < 13.0:
-      return
-    if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-      hasFoundExit = 1
-      recover_rescue_area()
-      return
 
 def handle_before_search() -> None:
   global hasFoundExit
-  # init
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-  robot.set_speed(1350, 1350)
-  sleep_sec(4.0)
-  robot.set_speed(1750, 1250)
-  sleep_sec(consts.TURN_90_TIME)
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
-  # init
-  forward_block_with_monitor()
+  if hasFoundExit == -1:
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1350, 1350)
+    sleep_sec(4.0)
+    robot.set_speed(1750, 1250)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1650, 1650)
+    prev_time = time.time()
+    while time.time() - prev_time < 2.0:
+      robot.update_button_stat()
+      robot.send_speed()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.info("Sleep interrupted by button")
+        break
+      if robot.ultrasonic[1] < 13.0:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        break
+      if (robot.linetrace_slope
+          is not None) and (robot.line_area
+                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+        hasFoundExit = 1
+        robot.set_speed(1350, 1350)
+        sleep_sec(2)
+        robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1650, 1650)
+        sleep_sec(2)
+        break
+    robot.send_speed()
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    hasFoundExit = 0
   result = r_wall_follow_ccw()
-  if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-    hasFoundExit = 1
-    recover_rescue_area()
-    return
-  if result:
-    hasFoundExit = 1
-    forward_block_with_monitor()
+  if result > OPEN_THRESHOLD:
+    hasFoundExit += 1
+    robot.set_speed(1650, 1650)
+    prev_time = time.time()
+    while time.time() - prev_time < 2.0:
+      robot.update_button_stat()
+      robot.send_speed()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.info("Sleep interrupted by button")
+        return
+      if robot.ultrasonic[1] < 13.0:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1750, 1250)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        return
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
@@ -1243,7 +1251,7 @@ def handle_exit() -> None:
       result = r_wall_follow_ccw()
     if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
       logger.info("Line detected, exit rescue mode")
-      robot.set_speed(1600,1600)
+      robot.set_speed(1600, 1600)
       sleep_sec(1.0)
       robot.set_speed(1500, 1500)
       robot.send_speed()
@@ -1412,8 +1420,16 @@ if __name__ == "__main__":
         # Check for green mark intersections before normal line following
         logger.info(ultrasonic_info)
         if should_process_green_mark():
-          execute_green_mark_turn()
-          reset_pid_state()
+          # Green turn is handled by camera binary image modification.
+          # The modified binary shows only the desired path, so normal
+          # line-following PID naturally steers through the turn.
+          # Slow down for precise turning.
+          motorl, motorr = calculate_motor_speeds()
+          slowdown = consts.GREEN_AHEAD_SLOWDOWN_SPEED
+          motorl = min(motorl, slowdown)
+          motorr = min(motorr, slowdown)
+          robot.set_speed(motorl, motorr)
+          logger.info("Green turn — camera steering active, slowing down")
         elif robot.green_ahead:
           # Green mark detected ahead along line direction — slow down to prepare
           motorl, motorr = calculate_motor_speeds()
