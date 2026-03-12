@@ -25,12 +25,12 @@ uart_dev = modules.robot.uart_io()
 uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1680
+BASE_SPEED = 1650
 assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 100
+KP = 150
 KI = 2
 KD = 20
 DP = 200
@@ -496,7 +496,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
                      gyro_roll is not None and gyro_pitch is not None else None)
   gyro_multiplier = 1.0 if gyro_calculated is None or gyro_calculated < 15 else 1.0
 
-  logger.info(
+  logger.debug(
       f"Angle info: yaw={robot.yaw} roll={robot.roll}, pitch={robot.pitch}, calculated={gyro_calculated}, multiplier={gyro_multiplier:.2f}"
   )
 

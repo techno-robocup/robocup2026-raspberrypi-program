@@ -116,7 +116,7 @@ upper_red1 = np.array([179, 255, 255])
 lower_red2 = np.array([0, 130, 100])
 upper_red2 = np.array([20, 255, 255])
 
-GREEN_AHEAD_SLOWDOWN_SPEED = 1580  # Motor speed cap when green mark predicted ahead
+GREEN_AHEAD_SLOWDOWN_SPEED = 1550  # Motor speed cap when green mark predicted ahead
 GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 
 # Numbers defined on turning around(rotation)
