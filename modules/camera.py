@@ -685,22 +685,19 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
       jz_erase_x2 = min(jz_x2, line_cx)
       if jz_erase_x2 > jz_x1:
         erase_mask[jz_y1:jz_y2, jz_x1:jz_erase_x2] = 255
-      keep_mask[jz_y1:jz_y2, line_cx:jz_x2] = np.maximum(
-          keep_mask[jz_y1:jz_y2, line_cx:jz_x2], skeleton[jz_y1:jz_y2,
-                                                          line_cx:jz_x2])
+      keep_mask[jz_y1:jz_y2, line_cx:jz_x2] = skeleton[jz_y1:jz_y2,
+                                                       line_cx:jz_x2]
     elif turn_dir == 'l':
       jz_erase_x1 = max(jz_x1, line_cx)
       if jz_erase_x1 < jz_x2:
         erase_mask[jz_y1:jz_y2, jz_erase_x1:jz_x2] = 255
-      keep_mask[jz_y1:jz_y2, jz_x1:line_cx] = np.maximum(
-          keep_mask[jz_y1:jz_y2, jz_x1:line_cx], skeleton[jz_y1:jz_y2,
-                                                          jz_x1:line_cx])
+      keep_mask[jz_y1:jz_y2, jz_x1:line_cx] = skeleton[jz_y1:jz_y2,
+                                                       jz_x1:line_cx]
     else:  # 'u'
       erase_mask[jz_y1:center_y, jz_x1:jz_x2] = 255
     # Always protect the approach line skeleton inside the junction zone
-    keep_mask[center_y:jz_y2,
-              jz_x1:jz_x2] = np.maximum(keep_mask[center_y:jz_y2, jz_x1:jz_x2],
-                                        skeleton[center_y:jz_y2, jz_x1:jz_x2])
+    keep_mask[center_y:jz_y2, jz_x1:jz_x2] = skeleton[center_y:jz_y2,
+                                                      jz_x1:jz_x2]
 
     # Measure actual binary line width at the approach line for
     # dilation sizing instead of using mark width.
