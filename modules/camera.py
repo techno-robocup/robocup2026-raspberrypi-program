@@ -528,13 +528,14 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
   return None
 
 
-def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
+def _apply_green_turn_to_binary(binary_image: np.ndarray,
+                                skeleton: np.ndarray) -> np.ndarray:
   """Modify binary image by erasing the unwanted branch at green mark intersections.
 
-  Instead of drawing artificial lines, this preserves the existing lines on
-  the desired turn side and erases the lines on the opposite side.  The
-  normal line-following algorithm then naturally steers the robot along the
-  real curved line through the turn.
+  Uses the skeleton to identify individual branches radiating from the green
+  mark, then erases only the unwanted branch(es) while preserving the
+  desired turn path.  This is more precise than rectangular erasure because
+  the cut region follows the actual line geometry.
 
   Turn direction is determined by the green mark's position relative to the
   approaching line (the line below the mark):
@@ -595,35 +596,81 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray) -> np.ndarray:
   else:
     turn_dir = 'l'
 
-  # Second pass: erase the unwanted branch from the binary image.
-  # The approach line is below the green mark (larger y = closer to
-  # the robot).  Branches diverge above the mark (smaller y).
-  # We erase from the top of the image down through the junction
-  # area on the unwanted side, using the approach line center as
-  # the dividing boundary.
+  # Second pass: use skeleton branches to erase only the unwanted path.
+  # 1. Mask out the green mark area on the skeleton to disconnect branches.
+  # 2. Find connected components of the remaining skeleton.
+  # 3. Identify the approach branch (below the mark) to always keep.
+  # 4. Erase branches on the unwanted side by dilating their skeleton
+  #    pixels and zeroing the corresponding binary image region.
   modified = binary_image.copy()
+  erase_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25))
 
   for mark, detection in actionable:
     center_x, center_y, mark_w, mark_h = mark
 
-    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
-    if line_cx is None:
-      line_cx = center_x  # fallback to mark center
+    # Block out the green mark region on the skeleton to split branches
+    skel_cut = skeleton.copy()
+    pad = max(mark_w, mark_h) // 2 + 5
+    cut_y1 = max(0, center_y - pad)
+    cut_y2 = min(h, center_y + pad)
+    cut_x1 = max(0, center_x - pad)
+    cut_x2 = min(w, center_x + pad)
+    skel_cut[cut_y1:cut_y2, cut_x1:cut_x2] = 0
 
-    # Erase from the top of the image down through the junction.
-    # Go slightly below the mark center so the branch pixels near
-    # the junction are also caught.
-    erase_bottom = min(h, center_y + mark_h)
+    # Find connected components of the disconnected skeleton
+    num_labels, labels = cv2.connectedComponents(skel_cut)
 
-    if turn_dir == 'r':
-      # Turn right: keep right branch, erase left branch
-      modified[0:erase_bottom, 0:line_cx] = 0
-    elif turn_dir == 'l':
-      # Turn left: keep left branch, erase right branch
-      modified[0:erase_bottom, line_cx:w] = 0
-    else:  # 'u'
-      # U-turn: erase both branches above the junction
-      modified[0:center_y, :] = 0
+    if num_labels <= 1:
+      continue  # no branches found
+
+    # Identify the approach branch: the component whose pixels extend
+    # furthest below the mark (closest to the robot).
+    approach_label = -1
+    best_max_y = -1
+    for label in range(1, num_labels):
+      ys = np.where(labels == label)[0]
+      if len(ys) < 3:
+        continue
+      max_y = int(ys.max())
+      if max_y > center_y + pad and max_y > best_max_y:
+        best_max_y = max_y
+        approach_label = label
+
+    # Evaluate each non-approach branch and erase unwanted ones
+    for label in range(1, num_labels):
+      if label == approach_label:
+        continue
+
+      component_ys, component_xs = np.where(labels == label)
+      if len(component_xs) < 3:
+        continue
+
+      mean_x = float(np.mean(component_xs))
+      mean_y = float(np.mean(component_ys))
+
+      should_erase = False
+      if turn_dir == 'r' and mean_x < center_x:
+        # Left branch — erase it (we want to turn right)
+        should_erase = True
+      elif turn_dir == 'l' and mean_x > center_x:
+        # Right branch — erase it (we want to turn left)
+        should_erase = True
+      elif turn_dir == 'u' and mean_y < center_y:
+        # Branch going forward — erase it (we want U-turn)
+        should_erase = True
+
+      if should_erase:
+        # Create a mask from this skeleton branch and dilate it to
+        # cover the full line width in the binary image.
+        branch_mask = np.zeros((h, w), dtype=np.uint8)
+        branch_mask[component_ys, component_xs] = 255
+        branch_mask = cv2.dilate(branch_mask, erase_kernel, iterations=1)
+        modified[branch_mask > 0] = 0
+
+    # The junction blob (fat intersection area) is left intact so
+    # that the approach line and the desired branch remain connected
+    # as one contour.  The dilated skeleton erasure above already
+    # removes the thin unwanted branch lines, which is sufficient.
 
   return modified
 
@@ -1036,7 +1083,7 @@ def Linetrace_Camera_Pre_callback(request):
       # Modify binary image to show only the desired path at green
       # mark intersections. The normal line-following algorithm will
       # then naturally steer the robot through the turn.
-      binary_image = _apply_green_turn_to_binary(binary_image)
+      binary_image = _apply_green_turn_to_binary(binary_image, skeleton)
 
       if not robot.linetrace_stop and green_marks:
         cv2.imwrite(f"bin/{current_time:.3f}_linetrace_green_turn.jpg",
