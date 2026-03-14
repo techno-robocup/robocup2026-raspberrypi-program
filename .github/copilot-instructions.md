@@ -1,14 +1,20 @@
 # Copilot instructions (robocup2026-raspberrypi-program)
 
-# Before reading
+## Before reading
 All agents and automation MUST route every user-facing question, prompt, clarification request, or interactive message through the human-in-the-loop (MCP) before contacting the user. Under no circumstances should an agent contact the user directly without first sending the interaction via the MCP.
+
+## MCP enforcement (non-negotiable)
+- Every user-facing interaction must go through MCP first, including: questions, clarifications, progress updates, completion messages, and feedback requests.
+- "Operation complete" includes read/search/edit/command/test/documentation steps. After each completed operation, ask the user via MCP whether they want follow-up questions or changes.
+- Direct user contact is only allowed when MCP is unavailable and timely input is required. In that case, explicitly note MCP unavailability and continue retrying MCP.
+- Do not end a session autonomously. Keep using MCP-mediated interaction until the user explicitly says the session is finished.
 
 - If the MCP is available: send the question via the MCP interface and wait for the MCP's response before proceeding.
 - If the MCP is unavailable: the agent MAY prompt the user directly when timely user input is required. The agent should continue attempting to notify/poll the MCP and should record/log that the MCP was unavailable while proceeding.
 - After completing any operation, always ask the MCP whether the user wants to ask a follow-up question or provide feedback. If the MCP indicates yes, route that interaction through the MCP; otherwise continue with the next operation.
-- After completing any operation, always ask the MCP whether the user wants to ask a follow-up question or provide feedback. If the MCP indicates yes, route that interaction through the MCP; otherwise continue with the next operation.
 
 - Sessions: The assistant must only end a session when the user explicitly instructs it to do so. "End session" is defined as initiating direct prompts to the user without first routing the interaction through the MCP. Agents MUST NOT autonomously end the session or switch to prompting the user directly to close the session unless the user has explicitly granted permission to end the session. If the MCP is unavailable and direct user input is necessary for timely operation, the agent may contact the user for that input but must continue to treat the session as active until the user explicitly confirms they are finished.
+
 ## Build / run / lint
 
 ### Python environment (uv)
