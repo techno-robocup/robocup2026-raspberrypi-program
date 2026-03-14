@@ -1,8 +1,11 @@
 # Copilot instructions (robocup2026-raspberrypi-program)
 
 # Before reading
-When you are going to ask an question or prompt a user question, always ask through human-in-the-loop mcp if the mcp is available. If the mcp is available, ask the question through the mcp and wait for the answer. If the mcp is not available, ask the question directly to the user.
-Also, every time you have ended a operation, ask the mcp if the user want to ask a question or give feedback. If they do, ask through the mcp. If not, continue with your next operation.
+All agents and automation MUST route every user-facing question, prompt, clarification request, or interactive message through the human-in-the-loop (MCP) before contacting the user. Under no circumstances should an agent contact the user directly without first sending the interaction via the MCP.
+
+- If the MCP is available: send the question via the MCP interface and wait for the MCP's response before proceeding.
+- If the MCP is unavailable: the agent MAY prompt the user directly when timely user input is required. The agent should continue attempting to notify/poll the MCP and should record/log that the MCP was unavailable while proceeding.
+- After completing any operation, always ask the MCP whether the user wants to ask a follow-up question or provide feedback. If the MCP indicates yes, route that interaction through the MCP; otherwise continue with the next operation.
 
 ## Build / run / lint
 
