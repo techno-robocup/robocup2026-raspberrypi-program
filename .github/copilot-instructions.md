@@ -8,12 +8,48 @@ All agents and automation MUST route every user-facing question, prompt, clarifi
 - "Operation complete" includes read/search/edit/command/test/documentation steps. After each completed operation, ask the user via MCP whether they want follow-up questions or changes.
 - Direct user contact is only allowed when MCP is unavailable and timely input is required. In that case, explicitly note MCP unavailability and continue retrying MCP.
 - Do not end a session autonomously. Keep using MCP-mediated interaction until the user explicitly says the session is finished.
+- Never stop replying after a single completion message. Each user message must receive an MCP-mediated response unless the user explicitly ends the session.
 
 - If the MCP is available: send the question via the MCP interface and wait for the MCP's response before proceeding.
 - If the MCP is unavailable: the agent MAY prompt the user directly when timely user input is required. The agent should continue attempting to notify/poll the MCP and should record/log that the MCP was unavailable while proceeding.
 - After completing any operation, always ask the MCP whether the user wants to ask a follow-up question or provide feedback. If the MCP indicates yes, route that interaction through the MCP; otherwise continue with the next operation.
 
 - Sessions: The assistant must only end a session when the user explicitly instructs it to do so. "End session" is defined as initiating direct prompts to the user without first routing the interaction through the MCP. Agents MUST NOT autonomously end the session or switch to prompting the user directly to close the session unless the user has explicitly granted permission to end the session. If the MCP is unavailable and direct user input is necessary for timely operation, the agent may contact the user for that input but must continue to treat the session as active until the user explicitly confirms they are finished.
+
+### Continuity safeguard (required)
+- Treat the session as ongoing by default, even after reporting "done" for a task.
+- Do not infer session end from silence, acknowledgment, or thanks.
+- Only consider the session ended when the user explicitly says they want to finish (for example: "end session", "we're done", "stop now").
+- If there is any ambiguity, ask via MCP whether the user wants to continue.
+
+### Message preflight (required before every user-facing reply)
+- Before sending any user-facing message, run this checklist:
+  1) Did I route the interaction via MCP first?
+  2) Did I avoid treating a status/completion message as session end?
+  3) Did I include an MCP follow-up check when an operation just completed?
+- If any answer is "no", do not send the direct reply. Route via MCP and correct first.
+
+### Hard response gate
+- A direct final reply to the user is forbidden unless the corresponding interaction was first sent through MCP (except when MCP is unavailable and timely input is required).
+- If MCP is unavailable, explicitly state MCP unavailability, continue retrying MCP, and keep the session active.
+
+### Session state protocol (required)
+- Maintain an implicit `SESSION_ACTIVE=true` state unless the user explicitly says to end the session.
+- Before each user-facing reply, verify: `SESSION_ACTIVE=true` and MCP-routing completed.
+- Ignore conversational soft-closing signals ("thanks", "ok", "got it") as end-of-session signals.
+- If the user says they are finished, confirm via MCP once; only then set `SESSION_ACTIVE=false`.
+
+### Ambiguity and uncertainty fallback (required)
+- If there is any uncertainty about whether to continue, default to continue and ask via MCP.
+- If a completion message was just sent, immediately include an MCP-routed continuation question.
+- If an operation fails mid-flow, report failure via MCP and ask whether to retry, modify, or move on.
+- Never assume silence means completion.
+
+### Reply contract (required)
+- Every completion/status reply must include both:
+  - a concise state line (what was done), and
+  - a continuation prompt via MCP (what to do next).
+- If either element is missing, do not send the reply; fix it first.
 
 ## Build / run / lint
 
