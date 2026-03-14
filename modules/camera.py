@@ -596,81 +596,31 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   else:
     turn_dir = 'l'
 
-  # Second pass: use skeleton branches to erase only the unwanted path.
-  # 1. Mask out the green mark area on the skeleton to disconnect branches.
-  # 2. Find connected components of the remaining skeleton.
-  # 3. Identify the approach branch (below the mark) to always keep.
-  # 4. Erase branches on the unwanted side by dilating their skeleton
-  #    pixels and zeroing the corresponding binary image region.
+  # Second pass: erase the unwanted side above the green mark.
+  # - Y boundary: center_y (green mark position) — only erase above
+  #   so the approach line below is never touched.
+  # - X boundary: line_cx (the actual line center below the mark) —
+  #   NOT center_x, because the mark is off to the side of the line.
+  #   Using the line center keeps the junction intact on the desired side.
   modified = binary_image.copy()
-  erase_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25))
 
   for mark, detection in actionable:
     center_x, center_y, mark_w, mark_h = mark
 
-    # Block out the green mark region on the skeleton to split branches
-    skel_cut = skeleton.copy()
-    pad = max(mark_w, mark_h) // 2 + 5
-    cut_y1 = max(0, center_y - pad)
-    cut_y2 = min(h, center_y + pad)
-    cut_x1 = max(0, center_x - pad)
-    cut_x2 = min(w, center_x + pad)
-    skel_cut[cut_y1:cut_y2, cut_x1:cut_x2] = 0
+    # Find the line center below the mark for the x-divider
+    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
+    if line_cx is None:
+      line_cx = w // 2  # fallback to image center
 
-    # Find connected components of the disconnected skeleton
-    num_labels, labels = cv2.connectedComponents(skel_cut)
-
-    if num_labels <= 1:
-      continue  # no branches found
-
-    # Identify the approach branch: the component whose pixels extend
-    # furthest below the mark (closest to the robot).
-    approach_label = -1
-    best_max_y = -1
-    for label in range(1, num_labels):
-      ys = np.where(labels == label)[0]
-      if len(ys) < 3:
-        continue
-      max_y = int(ys.max())
-      if max_y > center_y + pad and max_y > best_max_y:
-        best_max_y = max_y
-        approach_label = label
-
-    # Evaluate each non-approach branch and erase unwanted ones
-    for label in range(1, num_labels):
-      if label == approach_label:
-        continue
-
-      component_ys, component_xs = np.where(labels == label)
-      if len(component_xs) < 3:
-        continue
-
-      mean_x = float(np.mean(component_xs))
-      mean_y = float(np.mean(component_ys))
-
-      should_erase = False
-      if turn_dir == 'r' and mean_x < center_x:
-        # Left branch — erase it (we want to turn right)
-        should_erase = True
-      elif turn_dir == 'l' and mean_x > center_x:
-        # Right branch — erase it (we want to turn left)
-        should_erase = True
-      elif turn_dir == 'u' and mean_y < center_y:
-        # Branch going forward — erase it (we want U-turn)
-        should_erase = True
-
-      if should_erase:
-        # Create a mask from this skeleton branch and dilate it to
-        # cover the full line width in the binary image.
-        branch_mask = np.zeros((h, w), dtype=np.uint8)
-        branch_mask[component_ys, component_xs] = 255
-        branch_mask = cv2.dilate(branch_mask, erase_kernel, iterations=1)
-        modified[branch_mask > 0] = 0
-
-    # The junction blob (fat intersection area) is left intact so
-    # that the approach line and the desired branch remain connected
-    # as one contour.  The dilated skeleton erasure above already
-    # removes the thin unwanted branch lines, which is sufficient.
+    if turn_dir == 'r':
+      # Turn right: erase left side above the mark
+      modified[0:center_y, 0:line_cx] = 0
+    elif turn_dir == 'l':
+      # Turn left: erase right side above the mark
+      modified[0:center_y, line_cx:w] = 0
+    else:  # 'u'
+      # U-turn: erase everything above the mark
+      modified[0:center_y, :] = 0
 
   return modified
 

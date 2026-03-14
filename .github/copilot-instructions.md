@@ -2,6 +2,7 @@
 
 # Before reading
 When you are going to ask an question or prompt a user question, always ask through human-in-the-loop mcp if the mcp is available. If the mcp is available, ask the question through the mcp and wait for the answer. If the mcp is not available, ask the question directly to the user.
+Also, every time you have ended a operation, ask the mcp if the user want to ask a question or give feedback. If they do, ask through the mcp. If not, continue with your next operation.
 
 ## Build / run / lint
 
