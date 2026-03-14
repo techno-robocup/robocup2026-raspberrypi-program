@@ -1,5 +1,8 @@
 # Copilot instructions (robocup2026-raspberrypi-program)
 
+# Before reading
+When you are going to ask an question or prompt a user question, always ask through human-in-the-loop mcp if the mcp is available. If the mcp is available, ask the question through the mcp and wait for the answer. If the mcp is not available, ask the question directly to the user.
+
 ## Build / run / lint
 
 ### Python environment (uv)
