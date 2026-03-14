@@ -263,6 +263,76 @@ green_marks: List[Tuple[int, int, int, int]] = []
 green_black_detected: List[np.ndarray] = []
 green_contours: List[np.ndarray] = []
 
+class _GreenTurnTracker:
+  """Multi-frame state tracker for green-mark turn maneuvers.
+
+  Instead of deciding turn direction from a single frame, this accumulates
+  direction votes across frames and maintains state so that:
+  - Individual frame misdetections are outvoted by correct detections.
+  - Once direction is committed (enough agreeing votes), it never flips.
+  - Detection drop-outs (mark near frame edge, blur, etc.) are bridged
+    by a grace period that keeps the last-known erasure active.
+
+  Lifecycle:
+    IDLE  ->  (actionable green mark detected)  ->  ACTIVE
+    ACTIVE -> (mark disappears for GRACE_FRAMES) -> IDLE
+  While ACTIVE, direction may be uncommitted (best-guess from majority
+  vote) or committed (locked after VOTE_THRESHOLD agreeing votes).
+  """
+
+  VOTE_THRESHOLD = 2   # Agreeing votes needed to lock direction
+  GRACE_FRAMES = 10    # Keep erasing after marks disappear
+
+  def __init__(self):
+    self.reset()
+
+  def reset(self):
+    self.active = False
+    self.left_votes = 0
+    self.right_votes = 0
+    self.committed_dir: Optional[str] = None  # 'l', 'r', 'u'
+    self.line_cx: Optional[int] = None
+    self.last_center_y: Optional[int] = None
+    self.last_mark_h: Optional[int] = None
+    self.miss_count = 0  # consecutive frames without ANY green marks
+
+  def vote(self, direction: str):
+    if direction == 'l':
+      self.left_votes += 1
+    elif direction == 'r':
+      self.right_votes += 1
+    elif direction == 'u':
+      self.left_votes += 1
+      self.right_votes += 1
+
+  def try_commit(self):
+    """Lock direction once a clear majority reaches the threshold."""
+    if self.committed_dir:
+      return
+    if (self.left_votes >= self.VOTE_THRESHOLD
+        and self.right_votes >= self.VOTE_THRESHOLD):
+      self.committed_dir = 'u'
+    elif self.left_votes >= self.VOTE_THRESHOLD:
+      self.committed_dir = 'l'
+    elif self.right_votes >= self.VOTE_THRESHOLD:
+      self.committed_dir = 'r'
+
+  @property
+  def effective_dir(self) -> Optional[str]:
+    """Best current direction: committed if available, else majority vote."""
+    if self.committed_dir:
+      return self.committed_dir
+    if self.left_votes > self.right_votes:
+      return 'l'
+    if self.right_votes > self.left_votes:
+      return 'r'
+    if self.left_votes > 0:  # equal non-zero → U-turn
+      return 'u'
+    return None
+
+
+_green_tracker = _GreenTurnTracker()
+
 red_contours: List[np.ndarray] = []
 
 
@@ -530,97 +600,155 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
 
 def _apply_green_turn_to_binary(binary_image: np.ndarray,
                                 skeleton: np.ndarray) -> np.ndarray:
-  """Modify binary image by erasing the unwanted branch at green mark intersections.
+  """Modify binary image to guide the robot through a green-mark turn.
 
-  Uses the skeleton to identify individual branches radiating from the green
-  mark, then erases only the unwanted branch(es) while preserving the
-  desired turn path.  This is more precise than rectangular erasure because
-  the cut region follows the actual line geometry.
-
-  Turn direction is determined by the green mark's position relative to the
+  Uses _green_tracker to accumulate direction evidence across frames.
+  Direction is determined by the green mark's position relative to the
   approaching line (the line below the mark):
   - Mark to the RIGHT of the line -> turn right -> erase left branch
   - Mark to the LEFT of the line  -> turn left  -> erase right branch
-  - Marks on BOTH sides           -> 180 turn   -> erase both branches above
+  - Marks on BOTH sides           -> 180 turn   -> erase above
 
   Returns:
     Modified binary image (copy) or the original if no modification needed.
   """
-  if not green_marks or not green_black_detected:
-    return binary_image
-
+  tracker = _green_tracker
+  has_marks = bool(green_marks) and bool(green_black_detected)
   h, w = binary_image.shape[:2]
 
-  # First pass: determine turn direction for each mark based on its
-  # position relative to the approaching line.
-  any_right = False
-  any_left = False
-  actionable = []  # (mark, detection) pairs that have left/right lines
+  # ------------------------------------------------------------------
+  # 1. Handle frames where NO green marks are visible at all.
+  # ------------------------------------------------------------------
+  if not has_marks:
+    tracker.miss_count += 1
+    if tracker.active and tracker.miss_count <= tracker.GRACE_FRAMES:
+      # Grace period: keep the last-known erasure so the robot does not
+      # snap back to straight during a brief detection gap.
+      if tracker.effective_dir is not None and tracker.line_cx is not None:
+        return _erase_for_turn(binary_image, tracker.effective_dir,
+                               tracker.line_cx,
+                               tracker.last_center_y,
+                               tracker.last_mark_h)
+    if tracker.miss_count > tracker.GRACE_FRAMES:
+      tracker.reset()
+    return binary_image
 
+  # ------------------------------------------------------------------
+  # 2. Green marks ARE visible.  Reset the miss counter and update the
+  #    tracker with position info from the closest mark (highest center_y
+  #    = nearest the robot, since the camera is flipped 180 deg).
+  # ------------------------------------------------------------------
+  tracker.miss_count = 0
+
+  # Pick the closest mark (largest center_y)
+  closest_mark = max(green_marks, key=lambda m: m[1])
+  tracker.last_center_y = closest_mark[1]
+  tracker.last_mark_h = closest_mark[3]
+
+  # Refresh line_cx from the closest mark
+  lcx = _find_line_center_below(binary_image,
+                                closest_mark[1], closest_mark[3])
+  if lcx is not None:
+    tracker.line_cx = lcx
+
+  # ------------------------------------------------------------------
+  # 3. For every actionable mark (has skeleton lines left or right),
+  #    cast a direction vote.
+  # ------------------------------------------------------------------
   for mark, detection in zip(green_marks, green_black_detected):
     center_x, center_y, mark_w, mark_h = mark
-
     has_left = detection[2] == 1
     has_right = detection[3] == 1
 
     if not has_left and not has_right:
       continue
 
-    actionable.append((mark, detection))
+    # This frame has at least one actionable mark → activate the tracker.
+    tracker.active = True
 
-    # Determine which side of the line the green mark is on by
-    # finding the line center below the mark.
+    # Determine which side of the line the mark sits on.
     line_cx = _find_line_center_below(binary_image, center_y, mark_h)
     if line_cx is not None:
+      tracker.line_cx = line_cx
       tolerance = max(mark_w // 3, 5)
       if center_x > line_cx + tolerance:
-        any_right = True
+        tracker.vote('r')
       elif center_x < line_cx - tolerance:
-        any_left = True
+        tracker.vote('l')
     else:
-      # Fallback: use skeleton-based detection when the line
-      # below the mark cannot be found.
+      # Fallback when the approach line cannot be found below the mark.
       if has_left and not has_right:
-        any_right = True
+        tracker.vote('r')
       elif has_right and not has_left:
-        any_left = True
+        tracker.vote('l')
 
-  if not actionable or (not any_right and not any_left):
+  # ------------------------------------------------------------------
+  # 4. If tracker is not yet active (marks visible but none were ever
+  #    actionable), nothing to do.
+  # ------------------------------------------------------------------
+  if not tracker.active:
     return binary_image
 
-  # Decide overall turn direction
-  if any_right and any_left:
-    turn_dir = 'u'  # 180 turn
-  elif any_right:
-    turn_dir = 'r'
-  else:
-    turn_dir = 'l'
+  # ------------------------------------------------------------------
+  # 5. Active encounter: try to lock direction, then apply erasure.
+  # ------------------------------------------------------------------
+  tracker.try_commit()
 
-  # Second pass: erase the unwanted side above the green mark.
-  # - Y boundary: center_y (green mark position) — only erase above
-  #   so the approach line below is never touched.
-  # - X boundary: line_cx (the actual line center below the mark) —
-  #   NOT center_x, because the mark is off to the side of the line.
-  #   Using the line center keeps the junction intact on the desired side.
+  turn_dir = tracker.effective_dir
+  if turn_dir is None or tracker.line_cx is None:
+    return binary_image
+
+  return _erase_for_turn(binary_image, turn_dir,
+                         tracker.line_cx,
+                         tracker.last_center_y,
+                         tracker.last_mark_h)
+
+
+def _erase_for_turn(binary_image: np.ndarray, turn_dir: str,
+                    line_cx: int,
+                    center_y: Optional[int],
+                    mark_h: Optional[int]) -> np.ndarray:
+  """Apply two-zone erasure to guide the line tracker into a turn.
+
+  Zone 1 — above center_y (the junction):
+    Erase the unwanted side plus a strip around line_cx.  The strip
+    removes the straight continuation (which shares the same x as the
+    approach line) while the desired branch — already diverged to its
+    side — is preserved.
+
+  Zone 2 — center_y to erase_y:
+    Erase only the unwanted side with a narrow buffer around line_cx
+    to preserve the approach line.
+
+  The result is an L-shaped path: the desired branch above connects
+  to the approach line below, guiding the contour tracker into the turn.
+  """
+  h, w = binary_image.shape[:2]
   modified = binary_image.copy()
 
-  for mark, detection in actionable:
-    center_x, center_y, mark_w, mark_h = mark
+  if center_y is None:
+    center_y = h // 2
+  if mark_h is None:
+    mark_h = 20
 
-    # Find the line center below the mark for the x-divider
-    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
-    if line_cx is None:
-      line_cx = w // 2  # fallback to image center
+  erase_y = min(h, center_y + mark_h * 3)
+  line_buffer = 15
+  # Wider buffer above to fully erase the straight continuation
+  # (morphological close makes lines ~40px wide, so ±25 covers it)
+  above_buffer = 25
 
-    if turn_dir == 'r':
-      # Turn right: erase left side above the mark
-      modified[0:center_y, 0:line_cx] = 0
-    elif turn_dir == 'l':
-      # Turn left: erase right side above the mark
-      modified[0:center_y, line_cx:w] = 0
-    else:  # 'u'
-      # U-turn: erase everything above the mark
-      modified[0:center_y, :] = 0
+  if turn_dir == 'r':
+    # Above: erase left side + center strip, preserve right branch
+    modified[0:center_y, 0:min(w, line_cx + above_buffer)] = 0
+    # Below: erase left side, preserve approach line + right
+    modified[center_y:erase_y, 0:max(0, line_cx - line_buffer)] = 0
+  elif turn_dir == 'l':
+    # Above: erase right side + center strip, preserve left branch
+    modified[0:center_y, max(0, line_cx - above_buffer):w] = 0
+    # Below: erase right side, preserve approach line + left
+    modified[center_y:erase_y, line_cx + line_buffer:w] = 0
+  else:  # 'u'
+    modified[0:center_y, :] = 0
 
   return modified
 
@@ -1035,7 +1163,7 @@ def Linetrace_Camera_Pre_callback(request):
       # then naturally steer the robot through the turn.
       binary_image = _apply_green_turn_to_binary(binary_image, skeleton)
 
-      if not robot.linetrace_stop and green_marks:
+      if not robot.linetrace_stop and (green_marks or _green_tracker.active):
         cv2.imwrite(f"bin/{current_time:.3f}_linetrace_green_turn.jpg",
                     binary_image)
 
