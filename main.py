@@ -1177,30 +1177,22 @@ def handle_before_search() -> None:
       robot.set_speed(1650, 1650)
       sleep_sec(2)
       break
-    robot.send_speed()
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
   result = r_wall_follow_ccw()
   if result:
-    hasFoundExit += 1
+    hasFoundExit = 1
     robot.set_speed(1650, 1650)
-    prev_time = time.time()
-    while time.time() - prev_time < 2.0:
-      robot.update_button_stat()
-      robot.send_speed()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        logger.info("Sleep interrupted by button")
-        return
-      if robot.ultrasonic[1] < 13.0:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1750, 1250)
-        sleep_sec(consts.TURN_90_TIME)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        return
+    sleep_sec(2.0)
+  if (robot.linetrace_slope is not None) and (robot.line_area
+                                              >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+    hasFoundExit = 1
+    robot.set_speed(1400, 1400)
+    sleep_sec(1)
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1650, 1650)
+    sleep_sec(2)
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
