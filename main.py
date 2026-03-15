@@ -346,7 +346,7 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
       (area_condition and x_offset_condition) or
       (area_condition and line_is_wide))
 
-  is_vertical = (not area_condition) and abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
+  is_vertical = abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
   if is_vertical:
     should_recover = False
 
