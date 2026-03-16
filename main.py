@@ -1204,9 +1204,9 @@ def find_cage() -> Optional[int]:
   ]
 
   for box in boxes:
-    logger.info(f"detected class {consts.TargetList(cls)}")
     try:
       cls = int(box.cls[0])
+      logger.info(f"detected class {consts.TargetList(cls)}")
       if cls not in cage_classes:
         continue
       _, y_center, w, h = map(float, box.xywh[0])
