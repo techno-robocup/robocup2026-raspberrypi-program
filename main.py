@@ -454,7 +454,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   robot.write_last_slope_get_time(time.time())
 
   is_centered = abs(robot.line_center_x -
-                    (consts.Linetrace_Camera_Size[0] // 2)) < 100
+                    (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 100
 
   is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 4
 
