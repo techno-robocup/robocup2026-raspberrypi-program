@@ -1164,7 +1164,7 @@ def handle_before_search() -> None:
   robot.send_speed()
   robot.set_speed(1650, 1650)
   prev_time = time.time()
-  while time.time() - prev_time < 2.0:
+  while time.time() - prev_time < 2.5:
     robot.update_button_stat()
     robot.send_speed()
     if robot.robot_stop:
@@ -1199,7 +1199,7 @@ def handle_before_search() -> None:
   if result:
     hasFoundExit = 1
     robot.set_speed(1650, 1650)
-    sleep_sec(2.0)
+    sleep_sec(2.5)
   if (robot.linetrace_slope
       is not None) and (robot.line_area
                         >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
