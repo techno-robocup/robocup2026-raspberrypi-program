@@ -30,8 +30,8 @@ assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 210
-KI = 600
+KP = 170
+KI = 300
 KD = 20
 DP = 200
 INTEGRAL_MAX = 20  # Anti-windup: max |accumulated integral error| in radians*sec
@@ -531,9 +531,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   decel_speed = clamp(int(adjusted_base_speed -
                           abs(local_angle_error)**7 * DP), 1500, 2000)
   motor_l = clamp(
-      int(decel_speed - steering * gyro_multiplier * l_multi), 1500, MAX_SPEED)
+      int(decel_speed - steering * gyro_multiplier * l_multi), MIN_SPEED, MAX_SPEED)
   motor_r = clamp(
-      int(decel_speed + steering * gyro_multiplier * r_multi), 1500, MAX_SPEED)
+      int(decel_speed + steering * gyro_multiplier * r_multi), MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
