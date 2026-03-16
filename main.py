@@ -31,7 +31,7 @@ assert 1500 < BASE_SPEED < 2000
 MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 210
-KI = 18
+KI = 600
 KD = 20
 DP = 200
 INTEGRAL_MAX = 20  # Anti-windup: max |accumulated integral error| in radians*sec
