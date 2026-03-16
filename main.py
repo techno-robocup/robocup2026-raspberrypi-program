@@ -333,7 +333,7 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   # Check if x-offset is significant
   x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.1
 
-  is_line_at_the_bottom = line_center_y > consts.Linetrace_Camera_Size[1] / 2
+  is_line_at_the_bottom = line_center_y > consts.LINETRACE_CAMERA_LORES_HEIGHT / 2
 
   area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
   x_offset_condition = x_offset_significant
@@ -454,9 +454,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   robot.write_last_slope_get_time(time.time())
 
   is_centered = abs(robot.line_center_x -
-                    (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 100
+                    (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60
 
-  is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 4
+  is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 3
 
   if is_centered and is_short_line:
     _pid_prev_error = 0.0
