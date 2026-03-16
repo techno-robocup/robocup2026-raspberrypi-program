@@ -464,6 +464,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # Integral term with anti-windup
   _pid_integral += local_angle_error * dt
   _pid_integral = max(-INTEGRAL_MAX, min(INTEGRAL_MAX, _pid_integral))
+  logger.info(f"PID integral: {_pid_integral:.6f}")
 
   # Derivative term (rate of error change)
   derivative = ((local_angle_error - _pid_prev_error) / dt) if dt > 0 else 0.0
@@ -1420,7 +1421,7 @@ if __name__ == "__main__":
       if not robot.linetrace_stop:
         ultrasonic_info = robot.avg_ultrasonic
         # Check for green mark intersections before normal line following
-        logger.info(ultrasonic_info)
+        # logger.info(ultrasonic_info)
         if should_process_green_mark():
           # Green turn is handled by camera binary image modification.
           # The modified binary shows only the desired path, so normal
