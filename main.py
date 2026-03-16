@@ -1182,7 +1182,7 @@ def handle_before_search() -> None:
       break
     if (robot.linetrace_slope
         is not None) and (robot.line_area
-                          >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+                          >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
       hasFoundExit = 1
       robot.set_speed(1350, 1350)
       sleep_sec(2)
@@ -1202,7 +1202,7 @@ def handle_before_search() -> None:
     sleep_sec(2.5)
   if (robot.linetrace_slope
       is not None) and (robot.line_area
-                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
     hasFoundExit = 1
     robot.set_speed(1400, 1400)
     sleep_sec(1)
@@ -1261,7 +1261,7 @@ def handle_exit() -> None:
       result = l_wall_follow_ccw()
     else:
       result = r_wall_follow_ccw()
-    if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+    if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2:
       logger.info("Line detected, exit rescue mode")
       robot.set_speed(1600, 1600)
       sleep_sec(1.0)
@@ -1292,7 +1292,7 @@ def handle_exit() -> None:
 
         robot.send_speed()
 
-        if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA:
+        if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2:
           logger.info("Line detected, exit rescue mode")
           robot.set_speed(1600, 1600)
           sleep_sec(1.0)
