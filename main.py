@@ -449,11 +449,6 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     _pid_integral = 0.0
     _pid_prev_time = None
     return BASE_SPEED, BASE_SPEED
-  if (robot.line_center_y < consts.Linetrace_Camera_Size[1] // 4) and (robot.line_center_x - consts.Linetrace_Camera_Size[0]) < 160:
-    _pid_prev_error = 0.0
-    _pid_integral = 0.0
-    _pid_prev_time = None
-    return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
   assert is_valid_number(slope), str(slope)
