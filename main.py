@@ -451,6 +451,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
+  if robot.line_center_y > (consts.Linetrace_Camera_Size[1] // 4) and abs(robot.line_center_x - consts.Linetrace_Camera_Size[0]) < 400:
+    _pid_prev_error = 0.0
+    _pid_integral = 0.0
+    _pid_prev_time = None
+    return BASE_SPEED, BASE_SPEED
+
   assert is_valid_number(slope), str(slope)
   angle = math.atan(slope)
   if angle < 0:
