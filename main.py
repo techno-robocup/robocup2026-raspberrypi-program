@@ -409,8 +409,8 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
       f"Area Cond: {area_condition}, X-Offset Cond: {x_offset_condition}, Is Vertical: {is_vertical}, At Bottom: {is_line_at_the_bottom}"
   )
 
-  # if is_vertical:
-  #   should_recover = False
+  if is_vertical:
+    should_recover = False
 
   if should_recover:
     logger.info(
