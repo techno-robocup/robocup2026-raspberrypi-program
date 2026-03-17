@@ -360,7 +360,7 @@ def execute_green_uturn() -> bool:
         break
 
     # Spin left (arbitrary direction for 180°)
-    robot.set_speed(consts.LEVEL_TURN_SPEED_S, consts.LEVEL_TURN_SPEED_F)
+    robot.set_speed(1750, 1250)
     robot.send_speed()
 
   robot.set_speed(1500, 1500)
