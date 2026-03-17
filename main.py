@@ -1271,6 +1271,11 @@ def find_cage() -> Optional[int]:
 
 def handle_before_search() -> None:
   global hasFoundExit
+  run_yolo()
+  cage_class = find_cage()
+  if cage_class is not None:
+    logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
+    robot.write_target_before_exit(cage_class)
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1290,7 +1295,12 @@ def handle_before_search() -> None:
         robot.send_speed()
         logger.info("Sleep interrupted by button")
         break
-      if robot.ultrasonic[1] < 13.0:
+      if robot.ultrasonic[1] < FRONT_FLAG_DIST:
+        run_yolo()
+        cage_class = find_cage()
+        if cage_class is not None:
+          logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
+          robot.write_target_before_exit(cage_class)
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.set_speed(1250, 1750)
@@ -1329,12 +1339,6 @@ def handle_before_search() -> None:
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1650, 1650)
     sleep_sec(2)
-  run_yolo()
-  cage_class = find_cage()
-  if cage_class is not None:
-    logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
-    robot.write_target_before_exit(cage_class)
-
 
 def handle_not_found() -> None:
   change_position()
@@ -1524,8 +1528,6 @@ if __name__ == "__main__":
     if robot.robot_stop:
       is_stopping_by_button()
     elif robot.is_rescue_flag:
-      run_yolo()
-      find_best_target()
       try:
         logger.info(
             f"Searching for target: {consts.TargetList(robot.rescue_target).name} (id={robot.rescue_target})"
@@ -1534,6 +1536,9 @@ if __name__ == "__main__":
         logger.info(f"Searching for target id: {robot.rescue_target}")
       if robot.target_before_exit == -1:
         handle_before_search()
+      else:
+        run_yolo()
+        find_best_target()
       elif not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                             (robot.rescue_size is None)):
         logger.debug("not fund")
