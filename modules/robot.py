@@ -350,6 +350,7 @@ class Robot:
     self.__green_ahead: bool = False
     self.__green_ahead_distance: float = 0.0
     self.__line_skeleton_angle: float = 0.0
+    self.__green_turn_direction: Optional[str] = None  # 'l', 'r', 'u', None
 
     # Start cameras
     self.__Linetrace_Camera.start_cam()
@@ -1008,6 +1009,15 @@ class Robot:
   def line_skeleton_angle(self) -> float:
     with self.__green_marks_lock.gen_rlock():
       return self.__line_skeleton_angle
+
+  def write_green_turn_direction(self, direction: Optional[str]) -> None:
+    with self.__green_marks_lock.gen_wlock():
+      self.__green_turn_direction = direction
+
+  @property
+  def green_turn_direction(self) -> Optional[str]:
+    with self.__green_marks_lock.gen_rlock():
+      return self.__green_turn_direction
 
 
 robot = Robot()

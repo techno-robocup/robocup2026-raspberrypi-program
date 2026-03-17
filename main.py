@@ -301,6 +301,63 @@ def execute_green_mark_turn() -> bool:
   return True  # Completed successfully
 
 
+def execute_green_uturn() -> bool:
+  """Execute a 180° U-turn (green marks on both sides = dead end).
+
+  Drives forward briefly to center on the intersection, then spins
+  180° using fixed motor speeds until the black line is detected again.
+
+  Returns True if completed, False if interrupted by button.
+  """
+  logger.info("Starting 180° U-turn")
+
+  # Drive forward a bit to center on the intersection
+  robot.set_speed(1550, 1550)
+  robot.send_speed()
+  sleep_sec(0.5, robot.send_speed)
+
+  # Stop before turning
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  sleep_sec(0.2, robot.send_speed)
+
+  # Spin in place (left motor backward, right motor forward)
+  max_turn_time = consts.MAX_TURN_180_TIME
+  started_turning = time.time()
+  black_check_enabled = False
+
+  while True:
+    robot.update_button_stat()
+    if robot.robot_stop:
+      robot.set_speed(1500, 1500)
+      robot.send_speed()
+      return False
+
+    if time.time() - started_turning > max_turn_time:
+      logger.warning(f"U-turn timeout after {max_turn_time:.1f}s")
+      break
+
+    # Enable black line check after passing through the initial dead zone
+    past_dead_zone = (time.time() - started_turning
+                      > consts.GREEN_GYRO_PASS_TIME)
+    if past_dead_zone and not black_check_enabled:
+      black_check_enabled = True
+      logger.info("U-turn: black check enabled")
+
+    if black_check_enabled and robot.top_checkpoint_black:
+      logger.info("U-turn: black line found — stopping")
+      break
+
+    # Spin left (arbitrary direction for 180°)
+    robot.set_speed(consts.LEVEL_TURN_SPEED_S, consts.LEVEL_TURN_SPEED_F)
+    robot.send_speed()
+
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.write_last_slope_get_time(time.time())
+  return True
+
+
 def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   """
   Check if line recovery should be executed.
@@ -1433,7 +1490,14 @@ if __name__ == "__main__":
         ultrasonic_info = robot.avg_ultrasonic
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
-        if should_process_green_mark():
+        if robot.green_turn_direction == 'u':
+          # U-turn: marks on both sides → dead end → physical 180° turn
+          logger.info("Green U-turn detected — executing 180° turn")
+          execute_green_uturn()
+          from modules.camera import reset_green_tracker
+          reset_green_tracker()
+          robot.write_green_turn_direction(None)
+        elif should_process_green_mark():
           # Green turn is handled by camera binary image modification.
           # The modified binary shows only the desired path, so normal
           # line-following PID naturally steers through the turn.

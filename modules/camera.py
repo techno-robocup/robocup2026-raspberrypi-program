@@ -283,6 +283,7 @@ class _GreenTurnTracker:
 
   VOTE_THRESHOLD = 2  # Agreeing votes needed to lock direction
   GRACE_FRAMES = 10  # Keep erasing after marks disappear
+  MIN_SEEN_FRAMES = 5  # Frames with marks before committing
 
   def __init__(self):
     self.reset()
@@ -296,6 +297,7 @@ class _GreenTurnTracker:
     self.last_center_y: Optional[int] = None
     self.last_mark_h: Optional[int] = None
     self.miss_count = 0  # consecutive frames without ANY green marks
+    self.seen_frames = 0  # frames with green marks visible
 
   def vote(self, direction: str):
     if direction == 'l':
@@ -307,8 +309,16 @@ class _GreenTurnTracker:
       self.right_votes += 1
 
   def try_commit(self):
-    """Lock direction once a clear majority reaches the threshold."""
+    """Lock direction once enough evidence has been gathered.
+
+    Waits at least MIN_SEEN_FRAMES before committing so that both
+    marks of a U-turn tile have time to enter the camera view.
+    Without this delay the first-visible mark would lock the direction
+    before the second mark appears.
+    """
     if self.committed_dir:
+      return
+    if self.seen_frames < self.MIN_SEEN_FRAMES:
       return
     both = (self.left_votes >= self.VOTE_THRESHOLD
             and self.right_votes >= self.VOTE_THRESHOLD)
@@ -334,6 +344,12 @@ class _GreenTurnTracker:
 
 
 _green_tracker = _GreenTurnTracker()
+
+
+def reset_green_tracker() -> None:
+  """Reset the green turn tracker (called by main.py after a U-turn)."""
+  _green_tracker.reset()
+
 
 red_contours: List[np.ndarray] = []
 
@@ -672,12 +688,13 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     if tracker.active and tracker.miss_count <= tracker.GRACE_FRAMES:
       # Grace period: keep the last-known erasure so the robot does not
       # snap back to straight during a brief detection gap.
-      if tracker.effective_dir is not None and tracker.line_cx is not None:
-        return _erase_for_turn(binary_image, tracker.effective_dir,
-                               tracker.line_cx, tracker.last_center_y,
-                               tracker.last_mark_h)
+      edir = tracker.effective_dir
+      if edir is not None and edir != 'u' and tracker.line_cx is not None:
+        return _erase_for_turn(binary_image, edir, tracker.line_cx,
+                               tracker.last_center_y, tracker.last_mark_h)
     if tracker.miss_count > tracker.GRACE_FRAMES:
       tracker.reset()
+      robot.write_green_turn_direction(None)
     return binary_image
 
   # ------------------------------------------------------------------
@@ -686,16 +703,21 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   #    = nearest the robot, since the camera is flipped 180 deg).
   # ------------------------------------------------------------------
   tracker.miss_count = 0
+  tracker.seen_frames += 1
 
   # Pick the closest mark (largest center_y = nearest the robot)
   closest_mark = max(green_marks, key=lambda m: m[1])
   tracker.last_center_y = closest_mark[1]
   tracker.last_mark_h = closest_mark[3]
 
-  # Refresh line_cx from the closest mark
-  lcx = _find_line_center_below(binary_image, closest_mark[1], closest_mark[3])
-  if lcx is not None:
-    tracker.line_cx = lcx
+  # Refresh line_cx from the closest mark, but only before the direction
+  # is committed.  After commit, line_cx is frozen so intersection branch
+  # contamination in later frames does not drift the erasure.
+  if not tracker.committed_dir:
+    lcx = _find_line_center_below(binary_image, closest_mark[1],
+                                  closest_mark[3])
+    if lcx is not None:
+      tracker.line_cx = lcx
 
   # ------------------------------------------------------------------
   # 3. For every actionable mark (has skeleton lines left or right),
@@ -723,7 +745,8 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     # Mark to the right → turn right, mark to the left → turn left.
     line_cx = _find_line_center_below(binary_image, center_y, mark_h)
     if line_cx is not None:
-      tracker.line_cx = line_cx
+      if not tracker.committed_dir:
+        tracker.line_cx = line_cx
       tolerance = max(mark_w // 3, 5)
       if center_x > line_cx + tolerance:
         tracker.vote('r')
@@ -741,6 +764,7 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   #    actionable), nothing to do.
   # ------------------------------------------------------------------
   if not tracker.active:
+    robot.write_green_turn_direction(None)
     return binary_image
 
   # ------------------------------------------------------------------
@@ -750,6 +774,15 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
   turn_dir = tracker.effective_dir
   if turn_dir is None or tracker.line_cx is None:
+    robot.write_green_turn_direction(None)
+    return binary_image
+
+  # Publish the direction so main.py can act on it (especially 'u').
+  robot.write_green_turn_direction(turn_dir)
+
+  # U-turn is handled by main.py with a physical motor turn,
+  # not by binary image modification.  Return unmodified image.
+  if turn_dir == 'u':
     return binary_image
 
   modified = _erase_for_turn(binary_image, turn_dir, tracker.line_cx,
@@ -774,13 +807,13 @@ def _erase_for_turn(binary_image: np.ndarray, turn_dir: str, line_cx: int,
                     mark_h: Optional[int]) -> np.ndarray:
   """Erase the unwanted side of an intersection to guide the robot into a turn.
 
-  Two independent erasure operations:
-    1. Side erasure — remove the entire unwanted half (left for right-turn,
-       right for left-turn) from row 0 down to erase_y, preserving only a
-       narrow strip around the approach line (line_cx).
-    2. Straight erasure — remove the straight continuation above center_y.
-       This strip shares the same x as the approach line, so it is only
-       erased above the mark where the desired branch has already diverged.
+  Two-zone erasure based on center_y (the transition row):
+    - Above center_y (intersection area): aggressively erase from the
+      approach line toward the unwanted side.  This fully removes the
+      straight continuation (which is wide after morphological close)
+      while preserving the desired branch on the opposite side.
+    - Below center_y (approach area): erase only the far unwanted side,
+      keeping the approach line so the robot can smoothly enter the turn.
 
   The result is an L-shaped path: the desired branch connects to the
   approach line, guiding the contour tracker into the turn.
@@ -794,28 +827,28 @@ def _erase_for_turn(binary_image: np.ndarray, turn_dir: str, line_cx: int,
     mark_h = 20
 
   # Clamp center_y to 40-60% of image height.
-  # Min 40%: ensures the straight-continuation erasure reaches the
-  #   intersection area even when the mark is far away (top of image).
-  # Max 60%: prevents erasing too much of the approach line when the
-  #   mark is near the bottom.
   center_y = max(center_y, h * 2 // 5)
   center_y = min(center_y, h * 3 // 5)
 
+  # line_buffer: margin around line_cx to preserve approach line below
+  # center_y.  approach_margin: how far past line_cx to erase above
+  # center_y to fully cover the wide straight continuation (~60-80px
+  # after morphological close).
   line_buffer = 15
-  above_buffer = 25
+  approach_margin = 45
 
   if turn_dir == 'r':
-    # 1. Erase left side for full image height (preserves approach line)
-    modified[:, 0:max(0, line_cx - line_buffer)] = 0
-    # 2. Erase straight continuation above center_y
-    modified[0:center_y,
-             max(0, line_cx - line_buffer):min(w, line_cx + above_buffer)] = 0
+    # Above center_y: erase from left edge up to line_cx + approach_margin.
+    # Removes left branch + straight continuation; keeps right branch.
+    modified[0:center_y, 0:min(w, line_cx + approach_margin)] = 0
+    # Below center_y: erase far left side only (preserves approach line).
+    modified[center_y:h, 0:max(0, line_cx - line_buffer)] = 0
   elif turn_dir == 'l':
-    # 1. Erase right side for full image height (preserves approach line)
-    modified[:, min(w, line_cx + line_buffer):w] = 0
-    # 2. Erase straight continuation above center_y
-    modified[0:center_y,
-             max(0, line_cx - above_buffer):min(w, line_cx + line_buffer)] = 0
+    # Above center_y: erase from line_cx - approach_margin to right edge.
+    # Removes right branch + straight continuation; keeps left branch.
+    modified[0:center_y, max(0, line_cx - approach_margin):w] = 0
+    # Below center_y: erase far right side only (preserves approach line).
+    modified[center_y:h, min(w, line_cx + line_buffer):w] = 0
   else:  # 'u'
     modified[0:center_y, :] = 0
 
