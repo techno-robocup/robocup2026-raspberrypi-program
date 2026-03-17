@@ -1619,6 +1619,9 @@ if __name__ == "__main__":
             execute_line_recovery()
             reset_pid_state()
             _is_in_gap = True
+            robot.set_speed(1500, 1500)
+            robot.send_speed()
+            sleep_sec(0.1)
             approached_exact_angle()
           else:
             motorl, motorr = calculate_motor_speeds()
