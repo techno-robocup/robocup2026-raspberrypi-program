@@ -321,10 +321,15 @@ def execute_green_uturn() -> bool:
   robot.send_speed()
   sleep_sec(0.2, robot.send_speed)
 
-  # Spin in place (left motor backward, right motor forward)
+  # Spin in place (left motor backward, right motor forward).
+  # The robot must detect the black line TWICE: the first crossing is
+  # the original approach line, the second is the line it needs to
+  # follow back (180° from the start).
   max_turn_time = consts.MAX_TURN_180_TIME
   started_turning = time.time()
   black_check_enabled = False
+  black_crosses = 0
+  was_on_black = False
 
   while True:
     robot.update_button_stat()
@@ -344,9 +349,15 @@ def execute_green_uturn() -> bool:
       black_check_enabled = True
       logger.info("U-turn: black check enabled")
 
-    if black_check_enabled and robot.top_checkpoint_black:
-      logger.info("U-turn: black line found — stopping")
-      break
+    if black_check_enabled:
+      on_black = robot.top_checkpoint_black
+      if on_black and not was_on_black:
+        black_crosses += 1
+        logger.info(f"U-turn: black line crossing #{black_crosses}")
+      was_on_black = on_black
+      if black_crosses >= 2:
+        logger.info("U-turn: second black line found — stopping")
+        break
 
     # Spin left (arbitrary direction for 180°)
     robot.set_speed(consts.LEVEL_TURN_SPEED_S, consts.LEVEL_TURN_SPEED_F)

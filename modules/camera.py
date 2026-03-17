@@ -284,6 +284,7 @@ class _GreenTurnTracker:
   VOTE_THRESHOLD = 2  # Agreeing votes needed to lock direction
   GRACE_FRAMES = 10  # Keep erasing after marks disappear
   MIN_SEEN_FRAMES = 5  # Frames with marks before committing
+  MAX_WAIT_FRAMES = 20  # Max frames to wait when marks seen on both sides
 
   def __init__(self):
     self.reset()
@@ -298,6 +299,8 @@ class _GreenTurnTracker:
     self.last_mark_h: Optional[int] = None
     self.miss_count = 0  # consecutive frames without ANY green marks
     self.seen_frames = 0  # frames with green marks visible
+    self.marks_seen_left = False  # mark detected left of center
+    self.marks_seen_right = False  # mark detected right of center
 
   def vote(self, direction: str):
     if direction == 'l':
@@ -311,10 +314,11 @@ class _GreenTurnTracker:
   def try_commit(self):
     """Lock direction once enough evidence has been gathered.
 
-    Waits at least MIN_SEEN_FRAMES before committing so that both
-    marks of a U-turn tile have time to enter the camera view.
-    Without this delay the first-visible mark would lock the direction
-    before the second mark appears.
+    When marks have been detected on both sides of the image (possible
+    U-turn), the tracker delays committing to a single direction until
+    MAX_WAIT_FRAMES, giving the slower mark time to pass the
+    approach-side check and accumulate votes.  For single-side marks
+    (regular left/right turn) it commits after MIN_SEEN_FRAMES.
     """
     if self.committed_dir:
       return
@@ -324,7 +328,21 @@ class _GreenTurnTracker:
             and self.right_votes >= self.VOTE_THRESHOLD)
     if both:
       self.committed_dir = 'u'
-    elif self.left_votes >= self.VOTE_THRESHOLD:
+      return
+    # Marks detected on both sides → possible U-turn.
+    # Wait for both to pass approach check, or until timeout.
+    if self.marks_seen_left and self.marks_seen_right:
+      if self.seen_frames < self.MAX_WAIT_FRAMES:
+        return  # Keep waiting for second side to reach threshold
+      # Timeout: commit based on majority, or 'u' if tied.
+      if self.left_votes > self.right_votes:
+        self.committed_dir = 'l'
+      elif self.right_votes > self.left_votes:
+        self.committed_dir = 'r'
+      else:
+        self.committed_dir = 'u'
+      return
+    if self.left_votes >= self.VOTE_THRESHOLD:
       self.committed_dir = 'l'
     elif self.right_votes >= self.VOTE_THRESHOLD:
       self.committed_dir = 'r'
@@ -731,6 +749,16 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     if not has_left and not has_right:
       continue
 
+    # Track which sides have marks (even before approach-side check)
+    # so try_commit knows when to wait for a potential U-turn.
+    # Use the approach line center (tracker.line_cx) when available,
+    # otherwise fall back to image center.
+    ref_cx = tracker.line_cx if tracker.line_cx is not None else w // 2
+    if center_x < ref_cx:
+      tracker.marks_seen_left = True
+    else:
+      tracker.marks_seen_right = True
+
     # Per RoboCup rule 3.6.6, the mark must be on the approach side
     # (below the horizontal side lines).  If the mark is above the
     # side lines (past the intersection), ignore it — go straight.
@@ -747,17 +775,15 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     if line_cx is not None:
       if not tracker.committed_dir:
         tracker.line_cx = line_cx
-      tolerance = max(mark_w // 3, 5)
-      if center_x > line_cx + tolerance:
-        tracker.vote('r')
-      elif center_x < line_cx - tolerance:
-        tracker.vote('l')
+      ref = line_cx
     else:
-      # Fallback when the approach line cannot be found below the mark.
-      if has_left and not has_right:
-        tracker.vote('l')
-      elif has_right and not has_left:
-        tracker.vote('r')
+      # Approach line not found below this mark — use best known ref.
+      ref = tracker.line_cx if tracker.line_cx is not None else w // 2
+    tolerance = max(mark_w // 3, 5)
+    if center_x > ref + tolerance:
+      tracker.vote('r')
+    elif center_x < ref - tolerance:
+      tracker.vote('l')
 
   # ------------------------------------------------------------------
   # 4. If tracker is not yet active (marks visible but none were ever
