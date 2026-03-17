@@ -512,7 +512,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   - angle < π/2: line tilts right, turn right
   - angle > π/2: line tilts left, turn left
   """
-  global _pid_prev_error, _pid_integral, _pid_prev_time
+  global _pid_prev_error, _pid_integral, _pid_prev_time, _is_in_gap, _is_approached_line
 
   if slope is None:  # When the were no args
     slope = robot.linetrace_slope
@@ -545,7 +545,6 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
 
   # Gap recovery complete: line reacquired after angle correction → clear gap state
   if _is_in_gap and _is_approached_line:
-    global _is_in_gap, _is_approached_line
     _is_in_gap = False
     _is_approached_line = False
 
