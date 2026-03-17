@@ -409,10 +409,17 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   # Trigger recovery if the line area is wide even though the offset is small
   line_is_wide = robot.line_width > consts.LINETRACE_CAMERA_LORES_WIDTH / 16
 
+  angle = robot.line_skeleton_angle
+
+  if angle is not None and is_valid_number(angle):
+    angle_deg = math.degrees(angle)
+
+  angle_error = abs(90 - abs(angle_deg)) > 35
+
   # Only trigger when area is small AND x-offset is significant or line is wide (indicating a gap or veering off)
-  should_recover = is_line_at_the_bottom and (area_condition
-                                              and x_offset_condition and
-                                              (not line_is_wide))
+  should_recover = is_line_at_the_bottom and (
+      area_condition and (x_offset_condition or angle_error) and
+      (not line_is_wide))
 
   is_vertical = abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
 
