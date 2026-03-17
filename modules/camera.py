@@ -738,7 +738,25 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
       tracker.line_cx = lcx
 
   # ------------------------------------------------------------------
-  # 3. For every actionable mark (has skeleton lines left or right),
+  # 3. Pre-scan: detect marks on both sides IN THE SAME FRAME.
+  #    A single mark drifting across ref_cx must NOT trigger U-turn.
+  # ------------------------------------------------------------------
+  ref_cx = tracker.line_cx if tracker.line_cx is not None else w // 2
+  frame_has_left = False
+  frame_has_right = False
+  for mark, detection in zip(green_marks, green_black_detected):
+    if detection[2] != 1 and detection[3] != 1:
+      continue
+    if mark[0] < ref_cx:
+      frame_has_left = True
+    else:
+      frame_has_right = True
+  if frame_has_left and frame_has_right:
+    tracker.marks_seen_left = True
+    tracker.marks_seen_right = True
+
+  # ------------------------------------------------------------------
+  # 4. For every actionable mark (has skeleton lines left or right),
   #    cast a direction vote.
   # ------------------------------------------------------------------
   for mark, detection in zip(green_marks, green_black_detected):
@@ -748,16 +766,6 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
     if not has_left and not has_right:
       continue
-
-    # Track which sides have marks (even before approach-side check)
-    # so try_commit knows when to wait for a potential U-turn.
-    # Use the approach line center (tracker.line_cx) when available,
-    # otherwise fall back to image center.
-    ref_cx = tracker.line_cx if tracker.line_cx is not None else w // 2
-    if center_x < ref_cx:
-      tracker.marks_seen_left = True
-    else:
-      tracker.marks_seen_right = True
 
     # Per RoboCup rule 3.6.6, the mark must be on the approach side
     # (below the horizontal side lines).  If the mark is above the
