@@ -263,6 +263,7 @@ green_marks: List[Tuple[int, int, int, int]] = []
 green_black_detected: List[np.ndarray] = []
 green_contours: List[np.ndarray] = []
 
+
 class _GreenTurnTracker:
   """Multi-frame state tracker for green-mark turn maneuvers.
 
@@ -280,8 +281,8 @@ class _GreenTurnTracker:
   vote) or committed (locked after VOTE_THRESHOLD agreeing votes).
   """
 
-  VOTE_THRESHOLD = 2   # Agreeing votes needed to lock direction
-  GRACE_FRAMES = 10    # Keep erasing after marks disappear
+  VOTE_THRESHOLD = 2  # Agreeing votes needed to lock direction
+  GRACE_FRAMES = 10  # Keep erasing after marks disappear
 
   def __init__(self):
     self.reset()
@@ -309,8 +310,9 @@ class _GreenTurnTracker:
     """Lock direction once a clear majority reaches the threshold."""
     if self.committed_dir:
       return
-    if (self.left_votes >= self.VOTE_THRESHOLD
-        and self.right_votes >= self.VOTE_THRESHOLD):
+    both = (self.left_votes >= self.VOTE_THRESHOLD
+            and self.right_votes >= self.VOTE_THRESHOLD)
+    if both:
       self.committed_dir = 'u'
     elif self.left_votes >= self.VOTE_THRESHOLD:
       self.committed_dir = 'l'
@@ -581,21 +583,64 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
                             mark_h: int) -> Optional[int]:
   """Find the x-center of the approaching line below a green mark.
 
-  Scans the binary image at a row well below the green mark where the
-  line is expected to be clean (not part of the intersection blob).
+  Scans the binary image at the bottom portion of the image where the
+  approach line is clean (not contaminated by intersection branches).
 
   Returns:
     The x-coordinate of the line center, or None if no line found.
   """
   h, w = binary_image.shape[:2]
-  # Try several rows below the mark to find a clean line
-  for offset in [mark_h * 3, mark_h * 4, mark_h * 2]:
-    check_y = min(h - 1, mark_center_y + max(offset, 30))
+  # Scan at fixed positions in the bottom third of the image.
+  # This avoids contamination from intersection branches which
+  # appear in the upper/middle rows and would bias np.mean.
+  for check_y in [h * 3 // 4, h * 7 // 8, h - 5]:
+    check_y = min(h - 1, check_y)
     row = binary_image[check_y, :]
     white_pixels = np.where(row > 0)[0]
     if len(white_pixels) > 0:
       return int(np.mean(white_pixels))
   return None
+
+
+def _is_mark_on_approach_side(skeleton: np.ndarray, center_x: int,
+                              center_y: int, mark_w: int, mark_h: int) -> bool:
+  """Check if the green mark is below the side lines (on the approach side).
+
+  Per RoboCup rules (3.6.6), intersection markers are placed just before
+  the intersection.  The mark must be below the horizontal side lines
+  (closer to the robot) to trigger a turn.  If the mark is above the
+  side lines (past the intersection from the approach direction), the
+  robot should ignore it and continue straight.
+
+  Returns True if the mark is on the approach side (below the side lines).
+  """
+  h, w = skeleton.shape[:2]
+
+  # Search for horizontal skeleton lines (side branches) in a strip
+  # BELOW the mark (higher y = closer to the robot).
+  search_y_start = center_y + mark_h // 2
+  search_y_end = min(h, center_y + mark_h * 3)
+
+  if search_y_start >= search_y_end:
+    return True  # Mark is near the bottom edge; assume approach side.
+
+  # Check to the LEFT of the mark for skeleton pixels below it.
+  left_x2 = max(0, center_x - mark_w // 2)
+  left_x1 = max(0, left_x2 - mark_w)
+  if left_x1 < left_x2:
+    roi = skeleton[search_y_start:search_y_end, left_x1:left_x2]
+    if cv2.countNonZero(roi) >= 3:
+      return False  # Side line below mark → mark is above the intersection.
+
+  # Check to the RIGHT of the mark for skeleton pixels below it.
+  right_x1 = min(w, center_x + mark_w // 2)
+  right_x2 = min(w, right_x1 + mark_w)
+  if right_x1 < right_x2:
+    roi = skeleton[search_y_start:search_y_end, right_x1:right_x2]
+    if cv2.countNonZero(roi) >= 3:
+      return False  # Side line below mark → mark is above the intersection.
+
+  return True  # No side line below → mark is on the approach side.
 
 
 def _apply_green_turn_to_binary(binary_image: np.ndarray,
@@ -604,10 +649,13 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
   Uses _green_tracker to accumulate direction evidence across frames.
   Direction is determined by the green mark's position relative to the
-  approaching line (the line below the mark):
+  approaching line (the line below the mark).  The mark must also be
+  on the approach side (below the side lines) per RoboCup rule 3.6.6.
+
   - Mark to the RIGHT of the line -> turn right -> erase left branch
   - Mark to the LEFT of the line  -> turn left  -> erase right branch
   - Marks on BOTH sides           -> 180 turn   -> erase above
+  - Mark above the side lines     -> ignore     -> go straight
 
   Returns:
     Modified binary image (copy) or the original if no modification needed.
@@ -626,8 +674,7 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
       # snap back to straight during a brief detection gap.
       if tracker.effective_dir is not None and tracker.line_cx is not None:
         return _erase_for_turn(binary_image, tracker.effective_dir,
-                               tracker.line_cx,
-                               tracker.last_center_y,
+                               tracker.line_cx, tracker.last_center_y,
                                tracker.last_mark_h)
     if tracker.miss_count > tracker.GRACE_FRAMES:
       tracker.reset()
@@ -640,14 +687,13 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   # ------------------------------------------------------------------
   tracker.miss_count = 0
 
-  # Pick the closest mark (largest center_y)
+  # Pick the closest mark (largest center_y = nearest the robot)
   closest_mark = max(green_marks, key=lambda m: m[1])
   tracker.last_center_y = closest_mark[1]
   tracker.last_mark_h = closest_mark[3]
 
   # Refresh line_cx from the closest mark
-  lcx = _find_line_center_below(binary_image,
-                                closest_mark[1], closest_mark[3])
+  lcx = _find_line_center_below(binary_image, closest_mark[1], closest_mark[3])
   if lcx is not None:
     tracker.line_cx = lcx
 
@@ -663,10 +709,18 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     if not has_left and not has_right:
       continue
 
+    # Per RoboCup rule 3.6.6, the mark must be on the approach side
+    # (below the horizontal side lines).  If the mark is above the
+    # side lines (past the intersection), ignore it — go straight.
+    if not _is_mark_on_approach_side(skeleton, center_x, center_y, mark_w,
+                                     mark_h):
+      continue
+
     # This frame has at least one actionable mark → activate the tracker.
     tracker.active = True
 
-    # Determine which side of the line the mark sits on.
+    # Determine which side of the approach line the mark sits on.
+    # Mark to the right → turn right, mark to the left → turn left.
     line_cx = _find_line_center_below(binary_image, center_y, mark_h)
     if line_cx is not None:
       tracker.line_cx = line_cx
@@ -678,9 +732,9 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     else:
       # Fallback when the approach line cannot be found below the mark.
       if has_left and not has_right:
-        tracker.vote('r')
-      elif has_right and not has_left:
         tracker.vote('l')
+      elif has_right and not has_left:
+        tracker.vote('r')
 
   # ------------------------------------------------------------------
   # 4. If tracker is not yet active (marks visible but none were ever
@@ -698,30 +752,38 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   if turn_dir is None or tracker.line_cx is None:
     return binary_image
 
-  return _erase_for_turn(binary_image, turn_dir,
-                         tracker.line_cx,
-                         tracker.last_center_y,
-                         tracker.last_mark_h)
+  modified = _erase_for_turn(binary_image, turn_dir, tracker.line_cx,
+                             tracker.last_center_y, tracker.last_mark_h)
+
+  # Mask out green mark areas so their blobs don't create competing
+  # contours (green tape is dark in grayscale → white in binary).
+  margin = 10
+  for mark in green_marks:
+    mx, my, mw, mh = mark
+    x1 = max(0, mx - mw // 2 - margin)
+    y1 = max(0, my - mh // 2 - margin)
+    x2 = min(w, mx + mw // 2 + margin)
+    y2 = min(h, my + mh // 2 + margin)
+    modified[y1:y2, x1:x2] = 0
+
+  return modified
 
 
-def _erase_for_turn(binary_image: np.ndarray, turn_dir: str,
-                    line_cx: int,
+def _erase_for_turn(binary_image: np.ndarray, turn_dir: str, line_cx: int,
                     center_y: Optional[int],
                     mark_h: Optional[int]) -> np.ndarray:
-  """Apply two-zone erasure to guide the line tracker into a turn.
+  """Erase the unwanted side of an intersection to guide the robot into a turn.
 
-  Zone 1 — above center_y (the junction):
-    Erase the unwanted side plus a strip around line_cx.  The strip
-    removes the straight continuation (which shares the same x as the
-    approach line) while the desired branch — already diverged to its
-    side — is preserved.
+  Two independent erasure operations:
+    1. Side erasure — remove the entire unwanted half (left for right-turn,
+       right for left-turn) from row 0 down to erase_y, preserving only a
+       narrow strip around the approach line (line_cx).
+    2. Straight erasure — remove the straight continuation above center_y.
+       This strip shares the same x as the approach line, so it is only
+       erased above the mark where the desired branch has already diverged.
 
-  Zone 2 — center_y to erase_y:
-    Erase only the unwanted side with a narrow buffer around line_cx
-    to preserve the approach line.
-
-  The result is an L-shaped path: the desired branch above connects
-  to the approach line below, guiding the contour tracker into the turn.
+  The result is an L-shaped path: the desired branch connects to the
+  approach line, guiding the contour tracker into the turn.
   """
   h, w = binary_image.shape[:2]
   modified = binary_image.copy()
@@ -731,22 +793,29 @@ def _erase_for_turn(binary_image: np.ndarray, turn_dir: str,
   if mark_h is None:
     mark_h = 20
 
-  erase_y = min(h, center_y + mark_h * 3)
+  # Clamp center_y to 40-60% of image height.
+  # Min 40%: ensures the straight-continuation erasure reaches the
+  #   intersection area even when the mark is far away (top of image).
+  # Max 60%: prevents erasing too much of the approach line when the
+  #   mark is near the bottom.
+  center_y = max(center_y, h * 2 // 5)
+  center_y = min(center_y, h * 3 // 5)
+
   line_buffer = 15
-  # Wider buffer above to fully erase the straight continuation
-  # (morphological close makes lines ~40px wide, so ±25 covers it)
   above_buffer = 25
 
   if turn_dir == 'r':
-    # Above: erase left side + center strip, preserve right branch
-    modified[0:center_y, 0:min(w, line_cx + above_buffer)] = 0
-    # Below: erase left side, preserve approach line + right
-    modified[center_y:erase_y, 0:max(0, line_cx - line_buffer)] = 0
+    # 1. Erase left side for full image height (preserves approach line)
+    modified[:, 0:max(0, line_cx - line_buffer)] = 0
+    # 2. Erase straight continuation above center_y
+    modified[0:center_y,
+             max(0, line_cx - line_buffer):min(w, line_cx + above_buffer)] = 0
   elif turn_dir == 'l':
-    # Above: erase right side + center strip, preserve left branch
-    modified[0:center_y, max(0, line_cx - above_buffer):w] = 0
-    # Below: erase right side, preserve approach line + left
-    modified[center_y:erase_y, line_cx + line_buffer:w] = 0
+    # 1. Erase right side for full image height (preserves approach line)
+    modified[:, min(w, line_cx + line_buffer):w] = 0
+    # 2. Erase straight continuation above center_y
+    modified[0:center_y,
+             max(0, line_cx - above_buffer):min(w, line_cx + line_buffer)] = 0
   else:  # 'u'
     modified[0:center_y, :] = 0
 

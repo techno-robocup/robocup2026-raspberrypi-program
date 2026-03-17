@@ -348,7 +348,9 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
 
   is_vertical = abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
 
-  logger.info(f"Area Cond: {area_condition}, X-Offset Cond: {x_offset_condition}, Is Vertical: {is_vertical}, At Bottom: {is_line_at_the_bottom}")
+  logger.info(
+      f"Area Cond: {area_condition}, X-Offset Cond: {x_offset_condition}, Is Vertical: {is_vertical}, At Bottom: {is_line_at_the_bottom}"
+  )
 
   # if is_vertical:
   #   should_recover = False
@@ -451,7 +453,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
-  is_centered = abs(robot.line_center_x - (consts.Linetrace_Camera_Size[0] // 2)) < 100
+  is_centered = abs(robot.line_center_x -
+                    (consts.Linetrace_Camera_Size[0] // 2)) < 100
 
   is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 4
 
@@ -541,12 +544,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       l_multi = 0.5
       r_multi = 0.5
 
-  decel_speed = clamp(int(adjusted_base_speed -
-                          abs(local_angle_error)**7 * DP), 1500, 2000)
-  motor_l = clamp(
-      int(decel_speed - steering * gyro_multiplier * l_multi), MIN_SPEED, MAX_SPEED)
-  motor_r = clamp(
-      int(decel_speed + steering * gyro_multiplier * r_multi), MIN_SPEED, MAX_SPEED)
+  decel_speed = clamp(int(adjusted_base_speed - abs(local_angle_error)**7 * DP),
+                      1500, 2000)
+  motor_l = clamp(int(decel_speed - steering * gyro_multiplier * l_multi),
+                  MIN_SPEED, MAX_SPEED)
+  motor_r = clamp(int(decel_speed + steering * gyro_multiplier * r_multi),
+                  MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
 
@@ -1197,8 +1200,9 @@ def handle_before_search() -> None:
     hasFoundExit = 1
     robot.set_speed(1650, 1650)
     sleep_sec(2.0)
-  if (robot.linetrace_slope is not None) and (robot.line_area
-                                              >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+  if (robot.linetrace_slope
+      is not None) and (robot.line_area
+                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
     hasFoundExit = 1
     robot.set_speed(1400, 1400)
     sleep_sec(1)
