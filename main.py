@@ -1443,8 +1443,7 @@ def handle_ball() -> None:
   if last_offset_flag and last_dist_flag and (not last_near_flag):  # Catch
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    cnt_time = time.time()
-    while cnt_time < robot.rescue_saved_time:
+    while time.time() < robot.rescue_saved_time:
       robot.update_button_stat()
       if robot.robot_stop:
         robot.set_speed(1500, 1500)

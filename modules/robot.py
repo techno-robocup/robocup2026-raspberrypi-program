@@ -703,7 +703,7 @@ class Robot:
       self.__is_rescue_flag = flag
 
   def write_rescue_entered_angle(self, angle: int) -> None:
-    with self.__rescue_lock:
+    with self.__rescue_lock.gen_wlock:
       self.__rescue_entered_angle = angle
 
   def write_rescue_offset(self, angle: Optional[float]) -> None:
