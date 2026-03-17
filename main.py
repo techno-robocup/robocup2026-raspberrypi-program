@@ -652,8 +652,8 @@ def approached_exact_angle() -> None:
     if abs(angle_deg - 90) < 5:
       return
     else:
-      turn_duration = consts.TURN_90_TIME * (abs(angle_deg - 90) / 90)
-      if angle_deg < 90:
+      turn_duration = consts.TURN_90_TIME * (abs(abs(angle_deg) - 90) / 90)
+      if 90 - abs(angle_deg) > 0:
         robot.set_speed(1600, 1400)
         sleep_sec(turn_duration)
       else:
