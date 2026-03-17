@@ -448,7 +448,11 @@ def execute_line_recovery() -> bool:
   last_gap_recovery_time = time.time()  # Set cooldown start
 
   start_time = time.time()
+  recovery_timeout = 3.0  # Max seconds to back up before giving up
   while robot.line_area is None or robot.line_area <= consts.LINE_RECOVERY_AREA_THRESHOLD * 5:
+    if time.time() - start_time > recovery_timeout:
+      logger.warning("Line recovery timeout — giving up")
+      break
     robot.update_button_stat()
     if robot.robot_stop:
       robot.set_speed(1500, 1500)
@@ -487,6 +491,10 @@ def get_current_angle_error() -> Optional[float]:
   return angle - (math.pi / 2)
 
 
+_is_in_gap = False
+_is_approached_line = False
+
+
 def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   """
   Calculate left and right motor speeds based on line slope and area.
@@ -515,6 +523,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       robot.write_line_area(0)
       return 1500, 1500
     # Reset PID state when line is lost
+    if _is_in_gap:
+      global _is_approached_line
+      _is_approached_line = True
     _pid_prev_error = 0.0
     _pid_integral = 0.0
     _pid_prev_time = None
@@ -525,6 +536,18 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
                     (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60
 
   is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 3
+
+  if _is_in_gap and (not _is_approached_line):
+    _pid_prev_error = 0.0
+    _pid_integral = 0.0
+    _pid_prev_time = None
+    return BASE_SPEED, BASE_SPEED
+
+  # Gap recovery complete: line reacquired after angle correction → clear gap state
+  if _is_in_gap and _is_approached_line:
+    global _is_in_gap, _is_approached_line
+    _is_in_gap = False
+    _is_approached_line = False
 
   if is_centered and is_short_line:
     _pid_prev_error = 0.0
@@ -620,6 +643,25 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
                   MIN_SPEED, MAX_SPEED)
 
   return motor_l, motor_r
+
+
+def approached_exact_angle() -> None:
+  angle = robot.line_skeleton_angle
+
+  if angle is not None and is_valid_number(angle):
+    angle_deg = math.degrees(angle)
+    if abs(angle_deg - 90) < 5:
+      return
+    else:
+      turn_duration = consts.TURN_90_TIME * (abs(angle_deg - 90) / 90)
+      if angle_deg < 90:
+        robot.set_speed(1750, 1250)
+        sleep_sec(turn_duration)
+      else:
+        robot.set_speed(1250, 1750)
+        sleep_sec(turn_duration)
+      robot.set_speed(1500, 1500)
+      return
 
 
 def signal_handler(sig, frame):
@@ -1431,7 +1473,9 @@ def reset_pid_state() -> None:
 
 
 def is_stopping_by_button() -> None:
-  global hasFoundExit
+  global hasFoundExit, _is_in_gap, _is_approached_line
+  _is_in_gap = False
+  _is_approached_line = False
   if robot.target_before_exit == -1:
     hasFoundExit = -1
   robot.set_speed(1500, 1500)
@@ -1568,6 +1612,8 @@ if __name__ == "__main__":
               line_area):
             execute_line_recovery()
             reset_pid_state()
+            _is_in_gap = True
+            approached_exact_angle()
           else:
             motorl, motorr = calculate_motor_speeds()
             robot.set_speed(motorl, motorr)
