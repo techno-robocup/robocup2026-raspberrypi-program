@@ -1539,7 +1539,7 @@ if __name__ == "__main__":
       else:
         run_yolo()
         find_best_target()
-      elif not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
+      if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
                                             (robot.rescue_size is None)):
         logger.debug("not fund")
         handle_not_found()
