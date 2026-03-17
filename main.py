@@ -1243,10 +1243,11 @@ hasFoundExit = -1
 def find_cage() -> Optional[int]:
   boxes = robot.rescue_boxes
   if boxes is None or len(boxes) == 0:
+    logger.info("Target not found")
     return None
 
   min_area = consts.IMAGE_SZ * 0.4
-  min_y = RESCUE_IMAGE_HEIGHT * 0.55
+  min_y = RESCUE_IMAGE_HEIGHT * 0.5
   cage_classes = [
       consts.TargetList.GREEN_CAGE.value, consts.TargetList.RED_CAGE.value
   ]
@@ -1259,6 +1260,7 @@ def find_cage() -> Optional[int]:
         continue
       _, y_center, w, h = map(float, box.xywh[0])
       area = w * h
+      logger.info(f"area: {area} cy: {y_center}")
     except Exception as e:
       logger.exception(f"Error processing cage detection: {e}")
       continue
@@ -1276,6 +1278,9 @@ def handle_before_search() -> None:
   if cage_class is not None:
     logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    return
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1299,7 +1304,8 @@ def handle_before_search() -> None:
         run_yolo()
         cage_class = find_cage()
         if cage_class is not None:
-          logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
+          logger.info(
+              f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
           robot.write_target_before_exit(cage_class)
         robot.set_speed(1500, 1500)
         robot.send_speed()
@@ -1540,7 +1546,7 @@ if __name__ == "__main__":
         run_yolo()
         find_best_target()
       if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
-                                            (robot.rescue_size is None)):
+                                          (robot.rescue_size is None)):
         logger.debug("not fund")
         handle_not_found()
       elif robot.rescue_target == consts.TargetList.EXIT.value:
