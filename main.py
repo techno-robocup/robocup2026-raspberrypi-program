@@ -411,6 +411,7 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
 
   angle = robot.line_skeleton_angle
 
+  angle_deg = 90.0
   if angle is not None and is_valid_number(angle):
     angle_deg = math.degrees(angle)
 
@@ -421,7 +422,7 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
       area_condition and (x_offset_condition or angle_error) and
       (not line_is_wide))
 
-  is_vertical = abs(math.degrees(robot.line_skeleton_angle) + 90) < 5
+  is_vertical = angle is not None and is_valid_number(angle) and abs(math.degrees(angle) + 90) < 5
 
   logger.info(
       f"Area Cond: {area_condition}, X-Offset Cond: {x_offset_condition}, Is Vertical: {is_vertical}, At Bottom: {is_line_at_the_bottom}"
