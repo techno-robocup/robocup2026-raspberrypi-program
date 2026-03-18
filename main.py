@@ -1532,6 +1532,7 @@ if __name__ == "__main__":
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
+    ultrasonic_info = robot.avg_ultrasonic
     if robot.robot_stop:
       is_stopping_by_button()
     elif robot.is_rescue_flag:
@@ -1562,7 +1563,6 @@ if __name__ == "__main__":
     else:
       if not robot.linetrace_stop:
         logger.info(f"{robot.sum_accel}")
-        ultrasonic_info = robot.avg_ultrasonic
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
         if robot.green_turn_direction == 'u':
