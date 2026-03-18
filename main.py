@@ -1346,6 +1346,7 @@ def handle_before_search() -> None:
     robot.set_speed(1650, 1650)
     sleep_sec(2)
 
+
 def handle_not_found() -> None:
   change_position()
   # Only call set_target() if searching for balls (rotation-based logic).
