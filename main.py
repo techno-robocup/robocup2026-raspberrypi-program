@@ -368,73 +368,40 @@ def execute_green_uturn() -> bool:
   robot.write_last_slope_get_time(time.time())
   return True
 
-
 def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
-  """
-  Check if line recovery should be executed.
-
-  Recovery triggers when:
-  1. Line area is below threshold (robot losing sight of line / gap)
-  2. Line center x is too far from image center (robot veering off)
-  3. Always respects cooldown to prevent rapid repeated recoveries
-
-  Args:
-    arg_line_area: Current detected line area in pixels
-
-  Returns:
-    True if recovery should be executed
-  """
   if arg_line_area is None or not is_valid_number(arg_line_area):
     return False
 
-  # Check cooldown to prevent rapid re-triggering during recovery
   if time.time() - last_gap_recovery_time < GAP_RECOVERY_COOLDOWN:
     return False
 
-  # Get line center x-coordinate and check offset from image center
-  line_center_x = robot.line_center_x
   line_center_y = robot.line_center_y
-  image_center_x = consts.LINETRACE_CAMERA_LORES_WIDTH // 2
-  x_offset = abs(line_center_x -
-                 image_center_x) if line_center_x is not None else 0
-
-  # Check if x-offset is significant
-  x_offset_significant = x_offset > consts.LINETRACE_CAMERA_LORES_WIDTH * 0.1
-
-  is_line_at_the_bottom = line_center_y > consts.LINETRACE_CAMERA_LORES_HEIGHT / 2
-
-  area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
-  x_offset_condition = x_offset_significant
-
-  # Trigger recovery if the line area is wide even though the offset is small
-  line_is_wide = robot.line_width > consts.LINETRACE_CAMERA_LORES_WIDTH / 16
-
   angle = robot.line_skeleton_angle
 
-  angle_deg = 90.0
+  is_line_at_the_bottom = line_center_y > (consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
+
+  area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
+
+  angle_deg = 0.0
   if angle is not None and is_valid_number(angle):
-    angle_deg = math.degrees(angle)
+      angle_deg = math.degrees(angle)
 
   angle_error = abs(90 - abs(angle_deg)) > 35
-
-  # Only trigger when area is small AND x-offset is significant or line is wide (indicating a gap or veering off)
-  should_recover = is_line_at_the_bottom and (
-      area_condition and (x_offset_condition or angle_error) and
-      (not line_is_wide))
-
-  is_vertical = angle is not None and is_valid_number(angle) and abs(math.degrees(angle) + 90) < 5
-
-  logger.info(
-      f"Area Cond: {area_condition}, X-Offset Cond: {x_offset_condition}, Is Vertical: {is_vertical}, At Bottom: {is_line_at_the_bottom}"
+  is_vertical = abs(90 - abs(angle_deg)) < 5
+  should_recover = (
+      is_line_at_the_bottom and
+      area_condition and
+      angle_error and
+      (not is_vertical)
   )
 
-  if is_vertical:
-    should_recover = False
+  logger.info(
+      f"Recovery Check -> Bottom: {is_line_at_the_bottom}, Small Area: {area_condition}, "
+      f"Angle Error: {angle_error}, Deg: {angle_deg:.1f}"
+  )
 
   if should_recover:
-    logger.info(
-        f"Line recovery triggered: Low area ({arg_line_area:.1f} < {consts.LINE_RECOVERY_AREA_THRESHOLD}) AND large x-offset ({x_offset:.1f}px, center at {line_center_x})"
-    )
+      logger.info("Line recovery triggered: Line is bottom, small, and tilted.")
 
   return should_recover
 
