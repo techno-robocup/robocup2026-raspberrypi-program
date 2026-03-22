@@ -1199,9 +1199,9 @@ def r_wall_follow_ccw() -> bool:
     turn = BASE_TURN * -1
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
-  # logger.info(f"motor speed L{left_speed} R{right_speed}")
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
+  logger.info(f"motor speed L{left_speed} R{right_speed}")
   robot.send_speed()
 
   return False
@@ -1300,6 +1300,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     hasFoundExit += 1
+  #PIN:
   result = r_wall_follow_ccw()
   if result:
     hasFoundExit = 1
