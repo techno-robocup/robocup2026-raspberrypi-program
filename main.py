@@ -1240,61 +1240,82 @@ def find_cage() -> Optional[int]:
 
   return None
 
-class SearchState:
-    INITIAL_BACK = 0
-    INITIAL_TURN = 1
-    INITIAL_DRIVE = 2
-    WALL_FOLLOWING = 3
-
-search_mode = SearchState.INITIAL_BACK
-state_start_time = 0
 
 def handle_before_search() -> None:
-  global hasFoundExit, search_mode, state_start_time
+  global hasFoundExit
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
-    logger.info(f"Cage found: {consts.TargetList(cage_class).name}")
+    logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
     robot.set_speed(1500, 1500)
+    robot.send_speed()
     return
-
-  now = time.time()
-  if state_start_time == 0:
-    state_start_time = now
   if hasFoundExit == -1:
-    if search_mode == SearchState.INITIAL_BACK:
-      robot.set_speed(1350, 1350)
-      if now - state_start_time > 4.0:
-        search_mode = SearchState.INITIAL_TURN
-        state_start_time = now
-    elif search_mode == SearchState.INITIAL_TURN:
-      robot.set_speed(1750, 1250)
-      if now - state_start_time > consts.TURN_90_TIME:
-        search_mode = SearchState.INITIAL_DRIVE
-        state_start_time = now
-    elif search_mode == SearchState.INITIAL_DRIVE:
-      robot.set_speed(1650, 1650)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1350, 1350)
+    sleep_sec(4.0)
+    robot.set_speed(1750, 1250)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    robot.set_speed(1650, 1650)
+    prev_time = time.time()
+    while time.time() - prev_time < 2.5:
+      robot.update_button_stat()
+      robot.send_speed()
+      if robot.robot_stop:
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        logger.info("Sleep interrupted by button")
+        break
       if robot.ultrasonic[1] < FRONT_FLAG_DIST:
-        hasFoundExit = 0
-        search_mode = SearchState.WALL_FOLLOWING
-      elif (robot.linetrace_slope is not None and
-            robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
-        hasFoundExit = 1
-        search_mode = SearchState.WALL_FOLLOWING
-      if now - state_start_time > 2.5:
-        hasFoundExit = 0
-        search_mode = SearchState.WALL_FOLLOWING
-
-    else:
-      found_opening = r_wall_follow_ccw()
-      if found_opening:
-        hasFoundExit = 1
-        robot.set_speed(1650, 1650)
-      if (robot.linetrace_slope is not None and
-          robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
-        hasFoundExit = 1
+        run_yolo()
+        cage_class = find_cage()
+        if cage_class is not None:
+          logger.info(
+              f"Exit:{hasFoundExit} Cage:{consts.TargetList(cage_class).name}")
+          robot.write_target_before_exit(cage_class)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
         robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        break
+      if (robot.linetrace_slope
+          is not None) and (robot.line_area
+                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+        hasFoundExit = 1
+        robot.set_speed(1350, 1350)
+        sleep_sec(2)
+        robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.set_speed(1650, 1650)
+        sleep_sec(2)
+        break
+    robot.set_speed(1500, 1500)
+    robot.send_speed()
+    hasFoundExit += 1
+  result = r_wall_follow_ccw()
+  if result:
+    hasFoundExit = 1
+    robot.set_speed(1650, 1650)
+    sleep_sec(2.5)
+  if (robot.linetrace_slope
+      is not None) and (robot.line_area
+                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+    hasFoundExit = 1
+    robot.set_speed(1400, 1400)
+    sleep_sec(1)
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1650, 1650)
+    sleep_sec(2)
+
 
 def handle_not_found() -> None:
   change_position()
