@@ -1241,10 +1241,10 @@ def find_cage() -> Optional[int]:
   return None
 
 class SearchState:
-    INITIAL_BACK = 0
-    INITIAL_TURN = 1
-    INITIAL_DRIVE = 2
-    WALL_FOLLOWING = 3
+  INITIAL_BACK = 0
+  INITIAL_TURN = 1
+  INITIAL_DRIVE = 2
+  WALL_FOLLOWING = 3
 
 search_mode = SearchState.INITIAL_BACK
 state_start_time = 0
@@ -1257,44 +1257,57 @@ def handle_before_search() -> None:
     logger.info(f"Cage found: {consts.TargetList(cage_class).name}")
     robot.write_target_before_exit(cage_class)
     robot.set_speed(1500, 1500)
+    state_start_time = 0
     return
-
   now = time.time()
-  if state_start_time == 0:
-    state_start_time = now
   if hasFoundExit == -1:
+    if state_start_time == 0:
+      state_start_time = now
+      search_mode = SearchState.INITIAL_BACK
+      logger.info("Search phase started: Initial backing...")
+
     if search_mode == SearchState.INITIAL_BACK:
       robot.set_speed(1350, 1350)
       if now - state_start_time > 4.0:
+        logger.info("Backing done, starting 90 deg turn")
         search_mode = SearchState.INITIAL_TURN
         state_start_time = now
+        
     elif search_mode == SearchState.INITIAL_TURN:
       robot.set_speed(1750, 1250)
       if now - state_start_time > consts.TURN_90_TIME:
+        logger.info("Turn done, starting drive search")
         search_mode = SearchState.INITIAL_DRIVE
         state_start_time = now
+        
     elif search_mode == SearchState.INITIAL_DRIVE:
       robot.set_speed(1650, 1650)
       if robot.ultrasonic[1] < FRONT_FLAG_DIST:
+        logger.info("Object found, switching to wall follow")
         hasFoundExit = 0
         search_mode = SearchState.WALL_FOLLOWING
+        state_start_time = now
       elif (robot.linetrace_slope is not None and
             robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+        logger.info("Line found, switching to wall follow")
         hasFoundExit = 1
         search_mode = SearchState.WALL_FOLLOWING
-      if now - state_start_time > 2.5:
+        state_start_time = now
+      elif now - state_start_time > 2.5:
+        logger.info("Drive timeout, switching to wall follow")
         hasFoundExit = 0
         search_mode = SearchState.WALL_FOLLOWING
+        state_start_time = now
 
-    else:
-      found_opening = r_wall_follow_ccw()
-      if found_opening:
-        hasFoundExit = 1
-        robot.set_speed(1650, 1650)
-      if (robot.linetrace_slope is not None and
-          robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
-        hasFoundExit = 1
-        robot.set_speed(1250, 1750)
+  else:
+    found_opening = r_wall_follow_ccw()
+    if found_opening:
+      hasFoundExit = 1
+      robot.set_speed(1650, 1650)
+    if (robot.linetrace_slope is not None and 
+        robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+      hasFoundExit = 1
+      robot.set_speed(1250, 1750)
 
 def handle_not_found() -> None:
   change_position()
