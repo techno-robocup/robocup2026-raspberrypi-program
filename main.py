@@ -1594,8 +1594,9 @@ if __name__ == "__main__":
           angle_error = get_current_angle_error()
           line_area = robot.line_area
 
-          if angle_error is not None and should_execute_line_recovery(
-              line_area):
+          if False:
+          # if angle_error is not None and should_execute_line_recovery(
+              # line_area):
             execute_line_recovery()
             reset_pid_state()
             _is_in_gap = True
