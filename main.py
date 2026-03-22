@@ -1273,7 +1273,7 @@ def handle_before_search() -> None:
         cage_class = find_cage()
         if cage_class is not None:
           logger.info(
-              f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
+              f"Exit:{hasFoundExit} Cage:{consts.TargetList(cage_class).name}")
           robot.write_target_before_exit(cage_class)
         robot.set_speed(1500, 1500)
         robot.send_speed()
