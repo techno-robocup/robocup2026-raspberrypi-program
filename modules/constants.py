@@ -35,7 +35,8 @@ Rescue_Camera_Controls: Final[dict] = {
 }
 Rescue_Camera_Size: Final[tuple] = (4608, 2592)
 Rescue_Camera_Formats: Final[str] = "RGB888"
-Rescue_Camera_lores: Final[tuple] = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
+Rescue_Camera_lores: Final[tuple] = (Rescue_Camera_Size[0],
+                                     Rescue_Camera_Size[1])
 Rescue_Camera_precallback: Final[callable] = Rescue_Camera_precallback_func
 IMAGE_SZ: Final[int] = Rescue_Camera_Size[0] * Rescue_Camera_Size[
     1]  # Total pixels in rescue image
@@ -65,7 +66,8 @@ Linetrace_Camera_Size: Final[tuple] = (4608, 2592)
 Linetrace_Camera_Formats: Final[str] = "RGB888"
 Linetrace_Camera_lores: Final[tuple] = (Linetrace_Camera_Size[0] // 8,
                                         Linetrace_Camera_Size[1] // 8)
-Linetrace_Camera_precallback: Final[callable] = Linetrace_Camera_precallback_func
+Linetrace_Camera_precallback: Final[
+    callable] = Linetrace_Camera_precallback_func
 
 BLACK_WHITE_THRESHOLD: Final[int] = 100
 BALL_CATCH_SIZE: Final[int] = 1900000
@@ -79,10 +81,13 @@ MIN_BLACK_LINE_AREA: Final[int] = 900  # BE CAREFUL WHEN REWRITING THIS VALUE
 # END OF REWRITING PROHIBITION
 
 # Line recovery constants - for backing up when losing the line
-LINE_RECOVERY_AREA_THRESHOLD: Final[int] = 6000  # Trigger recovery when line area drops below this
-LINE_RECOVERY_ANGLE_THRESHOLD: Final[float] = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
+LINE_RECOVERY_AREA_THRESHOLD: Final[
+    int] = 6000  # Trigger recovery when line area drops below this
+LINE_RECOVERY_ANGLE_THRESHOLD: Final[
+    float] = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
 LINE_RECOVERY_BACKUP_TIME: Final[float] = 1.0  # Seconds to back up
-LINE_RECOVERY_BACKUP_SPEED: Final[int] = 1300  # Motor speed for backing up (< 1500 = reverse)
+LINE_RECOVERY_BACKUP_SPEED: Final[
+    int] = 1300  # Motor speed for backing up (< 1500 = reverse)
 MIN_GREEN_AREA: Final[int] = 200
 MIN_RED_AREA: Final[int] = 9000
 MIN_OBJECT_AVOIDANCE_LINE_AREA: Final[int] = 5000
@@ -93,7 +98,8 @@ TURN_18_TIME: Final[float] = 0.32
 # Green mark intersection turning times (seconds)
 GREEN_MARK_APPROACH_TIME: Final[float] = 0.3
 GREEN_MARK_TURN_180_TIME: Final[float] = 3.5
-GREEN_MARK_Y_THRESHOLD_RATIO: Final[float] = 2 / 3  # Mark must be in bottom third
+GREEN_MARK_Y_THRESHOLD_RATIO: Final[
+    float] = 2 / 3  # Mark must be in bottom third
 
 # Maximum timeout for line-based turns (safety fallback)
 # These two number below are hard-coded to a big number, because we are not using it due to the new gyro sensors
@@ -117,8 +123,10 @@ upper_red1: Final[np.ndarray] = np.array([179, 255, 255])
 lower_red2: Final[np.ndarray] = np.array([0, 130, 100])
 upper_red2: Final[np.ndarray] = np.array([20, 255, 255])
 
-GREEN_AHEAD_SLOWDOWN_SPEED: Final[int] = 1550  # Motor speed cap when green mark predicted ahead
-GREEN_GYRO_PASS_TIME: Final[float] = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
+GREEN_AHEAD_SLOWDOWN_SPEED: Final[
+    int] = 1550  # Motor speed cap when green mark predicted ahead
+GREEN_GYRO_PASS_TIME: Final[
+    float] = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 
 # Numbers defined on turning around(rotation)
 # These numbers are designed to be able to rotate
