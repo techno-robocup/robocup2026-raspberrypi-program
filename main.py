@@ -35,8 +35,8 @@ KI = 300
 KD = 30
 DP = 200
 INTEGRAL_MAX = 2  # Anti-windup: max |accumulated integral error| in radians*sec
-BOP = 0.045  # Ball Offset P
-BSP = 0.5  # Ball Size P
+BOP = 0.043 # Ball Offset P
+BSP = 0.4  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
 EOP = 0.03  # Exit Offset P
@@ -1036,7 +1036,7 @@ def calculate_ball() -> tuple[int, int]:
     return 1500, 1500
   if not robot.ball_catch_dist_flag:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(40.0, min(dist_term, 200)))
+    dist_term = int(max(30.0, min(dist_term, 200)))
   if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
     diff_angle = 0
     dist_term = -100
