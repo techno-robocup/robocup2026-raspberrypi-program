@@ -726,26 +726,11 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     clean_skeleton[y1:y2, x1:x2] = 0
 
   # ------------------------------------------------------------------
-  # 4. Dead-end check: marks on both sides, check for branches.
-  # ------------------------------------------------------------------
-  if left_marks and right_marks and not tracker.committed_dir:
-    left_has_branch = any(
-        _has_branch_in_direction(clean_skeleton, m[0], m[1], m[2], m[3], 'l')
-        for m in left_marks)
-    right_has_branch = any(
-        _has_branch_in_direction(clean_skeleton, m[0], m[1], m[2], m[3], 'r')
-        for m in right_marks)
-    if left_has_branch and right_has_branch:
-      # Cross intersection with marks on both sides → U-turn.
-      tracker.commit_uturn()
-      tracker.active = True
-    elif not left_has_branch and not right_has_branch:
-      # Dead end: marks on both sides, no branches → U-turn.
-      tracker.commit_uturn()
-      tracker.active = True
-
-  # ------------------------------------------------------------------
-  # 5. Branch-verified voting (only if not yet committed).
+  # 4. Branch-verified voting.
+  #    U-turns are handled naturally: if both sides accumulate enough
+  #    verified votes, try_commit() commits 'u'.  No special dead-end
+  #    check is needed — it would bypass per-mark branch verification
+  #    and cause false U-turns when a spurious mark is present.
   # ------------------------------------------------------------------
   if not tracker.committed_dir:
     for mark in left_marks:

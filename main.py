@@ -507,10 +507,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
-  is_centered = abs(robot.line_center_x -
-                    (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60
+  is_centered = (robot.line_center_x is not None and
+                 abs(robot.line_center_x -
+                     (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60)
 
-  is_short_line = robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 3
+  is_short_line = (robot.line_area is not None and
+                   robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 3)
 
   if _is_in_gap and (not _is_approached_line):
     _pid_prev_error = 0.0
