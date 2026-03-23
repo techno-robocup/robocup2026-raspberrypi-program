@@ -743,6 +743,7 @@ def draw_ball_debug(image) -> None:
   cx = int(RESCUE_CX)
   y_2_3 = int(BALL_Y_2_3)
   y_5_6 = int(BALL_Y_5_6)
+  cv2.putText(f"near:{robot.ball_near_flag} offset:{robot.ball_catch_offset_flag} dist:{robot.ball_catch_dist_flag}")
   cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), hline_color, 2)
   cv2.line(image, (0, y_5_6), (RESCUE_IMAGE_WIDTH, y_5_6), hline_color, 2)
   cv2.line(image, (cx, 0), (cx, RESCUE_IMAGE_HEIGHT), center_color, 1)
