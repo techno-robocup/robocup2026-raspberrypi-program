@@ -681,28 +681,25 @@ def sleep_sec(sec: float, function=None) -> int:
   return 0
 
 
-def update_ball_flags(dist: float, y_center: float, w: float,
+def update_ball_flags(dist_offset: float, y_center: float, w: float,
                       size: float) -> None:
   is_bottom_third = (size > consts.BALL_CATCH_MIN_SIZE and y_center
                      > BALL_Y_2_3) or (size > consts.BALL_CATCH_SIZE * 1.1)
   is_bottom_sixth = y_center > BALL_Y_5_6
 
-  if dist is not None:
+  if dist_offset is not None:
+    ball_x_center = dist_offset + RESCUE_CX
     half_w = w / 2
-    # margin = w * 0.2
-    margin = w * 0.05
-
-    ball_left = dist - half_w + RESCUE_CX + margin
-    ball_right = dist + half_w + RESCUE_CX - margin
-
-    includes_center = ball_left <= RESCUE_CX <= ball_right
+    margin = w * 0.1
+    ball_left_bound = ball_x_center - half_w + margin
+    ball_right_bound = ball_x_center + half_w - margin
+    includes_center = ball_left_bound <= RESCUE_CX <= ball_right_bound
   else:
     includes_center = False
 
   robot.write_ball_near_flag(is_bottom_sixth)
   robot.write_ball_catch_dist_flag(is_bottom_third)
   robot.write_ball_catch_offset_flag(includes_center)
-
 
 def update_best_box(
     xywh,
