@@ -1165,11 +1165,11 @@ def r_wall_follow_ccw() -> bool:
         front_dist = new_front
         break
 
-  if r_dist is not None and r_dist > consts.OPEN_THRESHOLD:
+  if r_dist is not None and r_dist > consts.OPEN_THRESHOLD or r_dist == 0:
     logger.info("Wall opening detected (Right) - Exiting control")
     return True
 
-  if r_dist is None or r_dist <= 0:
+  if r_dist is None or r_dist < 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The side ultrasonic sensor is not responding.")
