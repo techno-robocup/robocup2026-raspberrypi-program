@@ -1297,7 +1297,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     hasFoundExit += 1
-  #PIN:
+  # PIN:
   result = r_wall_follow_ccw()
   if result:
     hasFoundExit = 1
