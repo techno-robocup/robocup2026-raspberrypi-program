@@ -1089,28 +1089,30 @@ def calculate_cage() -> tuple[int, int]:
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 def l_wall_follow_ccw() -> bool:
-  """
-  Follow the wall counter-clockwise using ultrasonic[1].
-  Returns True if an opening is detected.
-  """
   ultrasonic = robot.ultrasonic
   l_dist = ultrasonic[0]
   front_dist = ultrasonic[1]
-  r_dist = ultrasonic[2]
-  logger.info(f"l {l_dist} front {front_dist} ,r {r_dist}")
   if front_dist is None or front_dist <= 0:
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    logger.info("The front ultrasonic sensor is not responding")
-    return False
+    logger.warning("Front sensor not responding - Jiggling (Left Follow)...")
+    while True:
+      robot.set_speed(1580, 1580)
+      if sleep_sec(0.2) == 1: return False
+      robot.set_speed(1420, 1420)
+      if sleep_sec(0.2) == 1: return False
+      new_front = robot.ultrasonic[1]
+      if new_front is not None and new_front > 0:
+        logger.info(f"Front sensor recovered: {new_front}")
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        break
+      logger.info("Still no response from front sensor...")
   if l_dist is None or l_dist <= 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    logger.info("The side ultrasonic sensor is not responding.")
+    logger.info("The left ultrasonic sensor is not responding.")
     return False
-
   if l_dist > consts.OPEN_THRESHOLD:
-    logger.info("Wall opening detected")
+    logger.info("Wall opening detected (Left)")
     return True
   elif front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
@@ -1119,35 +1121,43 @@ def l_wall_follow_ccw() -> bool:
     robot.send_speed()
     return False
 
-  turn = 0
-  if l_dist < consts.TARGET_MIN:
-    turn = consts.BASE_TURN
-  left_speed = BASE_SPEED + turn
-  right_speed = BASE_SPEED - turn
-  right_speed += 30 if turn != 0 else 0
-  # logger.info(f"motor speed L{left_speed} R{right_speed}")
+  target_dist = (consts.TARGET_MIN + consts.TARGET_MAX) / 2.0
+  error = l_dist - target_dist
+  kp = 10.0
+  turn = int(error * kp)
+  max_turn = consts.BASE_TURN
+  turn = max(-max_turn, min(max_turn, turn))
+  left_speed = BASE_SPEED - turn
+  right_speed = BASE_SPEED + turn
+  if turn > 0:
+    right_speed += 20
+
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
+  logger.info(f"L-Dist: {l_dist:.1f}, Turn: {turn}, L:{left_speed} R:{right_speed}")
   robot.send_speed()
 
   return False
 
 
 def r_wall_follow_ccw() -> bool:
-  """
-  Follow the wall clockwise using ultrasonic[1].
-  Returns True if an opening is detected.
-  """
   ultrasonic = robot.ultrasonic
-  r_dist = ultrasonic[2]
   front_dist = ultrasonic[1]
-  l_dist = ultrasonic[0]
-  logger.info(f"l {l_dist} front {front_dist} ,r {r_dist}")
+  r_dist = ultrasonic[2]
   if front_dist is None or front_dist <= 0:
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    logger.info("The front ultrasonic sensor is not responding")
-    return False
+    logger.warning("Front sensor not responding - Jiggling...")
+    while True:
+      robot.set_speed(1580, 1580)
+      if sleep_sec(0.2) == 1: return False
+      robot.set_speed(1420, 1420)
+      if sleep_sec(0.2) == 1: return False
+      new_front = robot.ultrasonic[1]
+      if new_front is not None and new_front > 0:
+        logger.info(f"Front sensor recovered: {new_front}")
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        break
+
   if r_dist is None or r_dist <= 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1163,16 +1173,19 @@ def r_wall_follow_ccw() -> bool:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
-
-  turn = 0
-  if r_dist < consts.TARGET_MIN:
-    turn = consts.BASE_TURN * -1
+  target_dist = (consts.TARGET_MIN + consts.TARGET_MAX) / 2.0
+  error = r_dist - target_dist
+  kp = 10.0
+  turn = int(error * kp)
+  max_turn = consts.BASE_TURN
+  turn = max(-max_turn, min(max_turn, turn))
   left_speed = BASE_SPEED + turn
-  left_speed += 30 if turn != 0 else 0
   right_speed = BASE_SPEED - turn
+  if turn > 0:
+    left_speed += 20
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
-  logger.info(f"motor speed L{left_speed} R{right_speed}")
+  logger.info(f"Dist: {r_dist:.1f}, Turn: {turn}, L:{left_speed} R:{right_speed}")
   robot.send_speed()
 
   return False
