@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Final, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -267,96 +267,65 @@ green_contours: List[np.ndarray] = []
 class _GreenTurnTracker:
   """Multi-frame state tracker for green-mark turn maneuvers.
 
-  Instead of deciding turn direction from a single frame, this accumulates
-  direction votes across frames and maintains state so that:
-  - Individual frame misdetections are outvoted by correct detections.
-  - Once direction is committed (enough agreeing votes), it never flips.
-  - Detection drop-outs (mark near frame edge, blur, etc.) are bridged
-    by a grace period that keeps the last-known erasure active.
+  Accumulates branch-verified direction votes across frames.
+  Once committed, the direction is locked and cannot change.
+  A grace period keeps the last erasure active through brief
+  detection drop-outs.
 
   Lifecycle:
-    IDLE  ->  (actionable green mark detected)  ->  ACTIVE
-    ACTIVE -> (mark disappears for GRACE_FRAMES) -> IDLE
-  While ACTIVE, direction may be uncommitted (best-guess from majority
-  vote) or committed (locked after VOTE_THRESHOLD agreeing votes).
+    IDLE  ->  (branch-verified mark detected)  ->  ACTIVE
+    ACTIVE -> (marks disappear for GRACE_FRAMES) -> IDLE
   """
 
-  VOTE_THRESHOLD = 2  # Agreeing votes needed to lock direction
-  GRACE_FRAMES = 10  # Keep erasing after marks disappear
-  MIN_SEEN_FRAMES = 5  # Frames with marks before committing
-  MAX_WAIT_FRAMES = 20  # Max frames to wait when marks seen on both sides
+  VOTE_THRESHOLD: Final[int] = 3
+  GRACE_FRAMES: Final[int] = 10
 
   def __init__(self):
     self.reset()
 
   def reset(self):
     self.active = False
-    self.left_votes = 0
-    self.right_votes = 0
+    self.votes = {'l': 0, 'r': 0}
     self.committed_dir: Optional[str] = None  # 'l', 'r', 'u'
     self.line_cx: Optional[int] = None
     self.last_center_y: Optional[int] = None
     self.last_mark_h: Optional[int] = None
-    self.miss_count = 0  # consecutive frames without ANY green marks
-    self.seen_frames = 0  # frames with green marks visible
-    self.marks_seen_left = False  # mark detected left of center
-    self.marks_seen_right = False  # mark detected right of center
+    self.miss_count = 0
 
   def vote(self, direction: str):
-    if direction == 'l':
-      self.left_votes += 1
-    elif direction == 'r':
-      self.right_votes += 1
-    elif direction == 'u':
-      self.left_votes += 1
-      self.right_votes += 1
-
-  def try_commit(self):
-    """Lock direction once enough evidence has been gathered.
-
-    When marks have been detected on both sides of the image (possible
-    U-turn), the tracker delays committing to a single direction until
-    MAX_WAIT_FRAMES, giving the slower mark time to pass the
-    approach-side check and accumulate votes.  For single-side marks
-    (regular left/right turn) it commits after MIN_SEEN_FRAMES.
-    """
+    """Record a branch-verified vote. Ignored after commit."""
     if self.committed_dir:
       return
-    if self.seen_frames < self.MIN_SEEN_FRAMES:
-      return
-    both = (self.left_votes >= self.VOTE_THRESHOLD
-            and self.right_votes >= self.VOTE_THRESHOLD)
-    if both:
+    self.votes[direction] = self.votes.get(direction, 0) + 1
+
+  def commit_uturn(self):
+    """Commit to U-turn immediately."""
+    if not self.committed_dir:
       self.committed_dir = 'u'
+
+  def try_commit(self):
+    """Lock direction once enough votes accumulated."""
+    if self.committed_dir:
       return
-    # Marks detected on both sides → possible U-turn.
-    # Wait for both to pass approach check, or until timeout.
-    if self.marks_seen_left and self.marks_seen_right:
-      if self.seen_frames < self.MAX_WAIT_FRAMES:
-        return  # Keep waiting for second side to reach threshold
-      # Timeout: commit based on majority, or 'u' if tied.
-      if self.left_votes > self.right_votes:
-        self.committed_dir = 'l'
-      elif self.right_votes > self.left_votes:
-        self.committed_dir = 'r'
-      else:
-        self.committed_dir = 'u'
-      return
-    if self.left_votes >= self.VOTE_THRESHOLD:
+    l, r = self.votes['l'], self.votes['r']
+    if l >= self.VOTE_THRESHOLD and r >= self.VOTE_THRESHOLD:
+      self.committed_dir = 'u'
+    elif l >= self.VOTE_THRESHOLD:
       self.committed_dir = 'l'
-    elif self.right_votes >= self.VOTE_THRESHOLD:
+    elif r >= self.VOTE_THRESHOLD:
       self.committed_dir = 'r'
 
   @property
   def effective_dir(self) -> Optional[str]:
-    """Best current direction: committed if available, else majority vote."""
+    """Committed direction, or best guess from majority vote."""
     if self.committed_dir:
       return self.committed_dir
-    if self.left_votes > self.right_votes:
+    l, r = self.votes['l'], self.votes['r']
+    if l > r:
       return 'l'
-    if self.right_votes > self.left_votes:
+    if r > l:
       return 'r'
-    if self.left_votes > 0:  # equal non-zero → U-turn
+    if l > 0:
       return 'u'
     return None
 
@@ -636,60 +605,56 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
   return None
 
 
-def _is_mark_on_approach_side(skeleton: np.ndarray, center_x: int,
-                              center_y: int, mark_w: int, mark_h: int) -> bool:
-  """Check if the green mark is below the side lines (on the approach side).
+def _has_branch_in_direction(skeleton: np.ndarray, center_x: int,
+                             center_y: int, mark_w: int, mark_h: int,
+                             direction: str) -> bool:
+  """Check if a skeleton branch exists in the given direction.
 
-  Per RoboCup rules (3.6.6), intersection markers are placed just before
-  the intersection.  The mark must be below the horizontal side lines
-  (closer to the robot) to trigger a turn.  If the mark is above the
-  side lines (past the intersection from the approach direction), the
-  robot should ignore it and continue straight.
+  A mark can only vote for direction D if a real branch exists in
+  direction D at the intersection.  This prevents spurious marks
+  (e.g. visible through a T-junction) from voting for a non-existent
+  branch.
 
-  Returns True if the mark is on the approach side (below the side lines).
+  Searches ABOVE the mark (lower y, toward the intersection) on the
+  mark's own outward side.  For a left mark, searches left of the
+  mark center; for a right mark, searches right.  This avoids false
+  positives from the approach line (which sits between left and right
+  marks) even when the line curves.
+
+  Returns True if enough skeleton pixels are found to confirm a branch.
   """
   h, w = skeleton.shape[:2]
+  MIN_BRANCH_PIXELS = 8
 
-  # Search for horizontal skeleton lines (side branches) in a strip
-  # BELOW the mark (higher y = closer to the robot).
-  search_y_start = center_y + mark_h // 2
-  search_y_end = min(h, center_y + mark_h * 3)
+  y_top = max(0, center_y - mark_h * 5)
+  y_bottom = max(0, center_y - mark_h // 2)
+  if y_top >= y_bottom:
+    return False
 
-  if search_y_start >= search_y_end:
-    return True  # Mark is near the bottom edge; assume approach side.
+  search_extent = max(mark_w * 5, 80)
 
-  # Check to the LEFT of the mark for skeleton pixels below it.
-  left_x2 = max(0, center_x - mark_w // 2)
-  left_x1 = max(0, left_x2 - mark_w)
-  if left_x1 < left_x2:
-    roi = skeleton[search_y_start:search_y_end, left_x1:left_x2]
-    if cv2.countNonZero(roi) >= 3:
-      return False  # Side line below mark → mark is above the intersection.
+  if direction == 'l':
+    x_left = max(0, center_x - search_extent)
+    x_right = center_x
+  else:
+    x_left = center_x
+    x_right = min(w, center_x + search_extent)
 
-  # Check to the RIGHT of the mark for skeleton pixels below it.
-  right_x1 = min(w, center_x + mark_w // 2)
-  right_x2 = min(w, right_x1 + mark_w)
-  if right_x1 < right_x2:
-    roi = skeleton[search_y_start:search_y_end, right_x1:right_x2]
-    if cv2.countNonZero(roi) >= 3:
-      return False  # Side line below mark → mark is above the intersection.
+  if x_left >= x_right:
+    return False
 
-  return True  # No side line below → mark is on the approach side.
+  roi = skeleton[y_top:y_bottom, x_left:x_right]
+  return cv2.countNonZero(roi) >= MIN_BRANCH_PIXELS
 
 
 def _apply_green_turn_to_binary(binary_image: np.ndarray,
                                 skeleton: np.ndarray) -> np.ndarray:
   """Modify binary image to guide the robot through a green-mark turn.
 
-  Uses _green_tracker to accumulate direction evidence across frames.
-  Direction is determined by the green mark's position relative to the
-  approaching line (the line below the mark).  The mark must also be
-  on the approach side (below the side lines) per RoboCup rule 3.6.6.
-
-  - Mark to the RIGHT of the line -> turn right -> erase left branch
-  - Mark to the LEFT of the line  -> turn left  -> erase right branch
-  - Marks on BOTH sides           -> 180 turn   -> erase above
-  - Mark above the side lines     -> ignore     -> go straight
+  Uses branch-verified voting: a mark can only vote for direction D
+  if a skeleton branch actually exists in direction D above the mark.
+  This prevents spurious marks (e.g. visible through a T-junction)
+  from voting for non-existent branches.
 
   Returns:
     Modified binary image (copy) or the original if no modification needed.
@@ -699,13 +664,11 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   h, w = binary_image.shape[:2]
 
   # ------------------------------------------------------------------
-  # 1. Handle frames where NO green marks are visible at all.
+  # 1. No marks visible — grace period or reset.
   # ------------------------------------------------------------------
   if not has_marks:
     tracker.miss_count += 1
     if tracker.active and tracker.miss_count <= tracker.GRACE_FRAMES:
-      # Grace period: keep the last-known erasure so the robot does not
-      # snap back to straight during a brief detection gap.
       edir = tracker.effective_dir
       if edir is not None and edir != 'u' and tracker.line_cx is not None:
         return _erase_for_turn(binary_image, edir, tracker.line_cx,
@@ -716,114 +679,110 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     return binary_image
 
   # ------------------------------------------------------------------
-  # 2. Green marks ARE visible.  Reset the miss counter and update the
-  #    tracker with position info from the closest mark (highest center_y
-  #    = nearest the robot, since the camera is flipped 180 deg).
+  # 2. Marks visible — update tracker position and line reference.
   # ------------------------------------------------------------------
   tracker.miss_count = 0
-  tracker.seen_frames += 1
 
-  # Pick the closest mark (largest center_y = nearest the robot)
   closest_mark = max(green_marks, key=lambda m: m[1])
   tracker.last_center_y = closest_mark[1]
   tracker.last_mark_h = closest_mark[3]
 
-  # Refresh line_cx from the closest mark, but only before the direction
-  # is committed.  After commit, line_cx is frozen so intersection branch
-  # contamination in later frames does not drift the erasure.
   if not tracker.committed_dir:
     lcx = _find_line_center_below(binary_image, closest_mark[1],
                                   closest_mark[3])
     if lcx is not None:
       tracker.line_cx = lcx
 
-  # ------------------------------------------------------------------
-  # 3. Pre-scan: detect marks on both sides IN THE SAME FRAME.
-  #    A single mark drifting across ref_cx must NOT trigger U-turn.
-  # ------------------------------------------------------------------
   ref_cx = tracker.line_cx if tracker.line_cx is not None else w // 2
-  frame_has_left = False
-  frame_has_right = False
+
+  # ------------------------------------------------------------------
+  # 3. Classify marks into left / right relative to approach line.
+  # ------------------------------------------------------------------
+  SIDE_TOLERANCE = 5
+  left_marks: list = []
+  right_marks: list = []
+
   for mark, detection in zip(green_marks, green_black_detected):
     if detection[2] != 1 and detection[3] != 1:
-      continue
-    if mark[0] < ref_cx:
-      frame_has_left = True
-    else:
-      frame_has_right = True
-  if frame_has_left and frame_has_right:
-    tracker.marks_seen_left = True
-    tracker.marks_seen_right = True
+      continue  # no adjacent skeleton lines — not actionable
+    cx = mark[0]
+    if cx < ref_cx - SIDE_TOLERANCE:
+      left_marks.append(mark)
+    elif cx > ref_cx + SIDE_TOLERANCE:
+      right_marks.append(mark)
+
+  # Create a clean skeleton with green mark blobs removed so that
+  # _has_branch_in_direction does not mistake a mark's own blob
+  # (green tape → dark in grayscale → white in binary → skeleton
+  # pixels) for a real intersection branch.
+  clean_skeleton = skeleton.copy()
+  mark_margin = 15
+  for mark in green_marks:
+    mx, my, mw, mh = mark
+    x1 = max(0, mx - mw // 2 - mark_margin)
+    y1 = max(0, my - mh // 2 - mark_margin)
+    x2 = min(w, mx + mw // 2 + mark_margin)
+    y2 = min(h, my + mh // 2 + mark_margin)
+    clean_skeleton[y1:y2, x1:x2] = 0
 
   # ------------------------------------------------------------------
-  # 4. For every actionable mark (has skeleton lines left or right),
-  #    cast a direction vote.
+  # 4. Dead-end check: marks on both sides, check for branches.
   # ------------------------------------------------------------------
-  for mark, detection in zip(green_marks, green_black_detected):
-    center_x, center_y, mark_w, mark_h = mark
-    has_left = detection[2] == 1
-    has_right = detection[3] == 1
-
-    if not has_left and not has_right:
-      continue
-
-    # Per RoboCup rule 3.6.6, the mark must be on the approach side
-    # (below the horizontal side lines).  If the mark is above the
-    # side lines (past the intersection), ignore it — go straight.
-    if not _is_mark_on_approach_side(skeleton, center_x, center_y, mark_w,
-                                     mark_h):
-      continue
-
-    # This frame has at least one actionable mark → activate the tracker.
-    tracker.active = True
-
-    # Determine which side of the approach line the mark sits on.
-    # Mark to the right → turn right, mark to the left → turn left.
-    line_cx = _find_line_center_below(binary_image, center_y, mark_h)
-    if line_cx is not None:
-      if not tracker.committed_dir:
-        tracker.line_cx = line_cx
-      ref = line_cx
-    else:
-      # Approach line not found below this mark — use best known ref.
-      ref = tracker.line_cx if tracker.line_cx is not None else w // 2
-    tolerance = max(mark_w // 3, 5)
-    if center_x > ref + tolerance:
-      tracker.vote('r')
-    elif center_x < ref - tolerance:
-      tracker.vote('l')
+  if left_marks and right_marks and not tracker.committed_dir:
+    left_has_branch = any(
+        _has_branch_in_direction(clean_skeleton, m[0], m[1], m[2], m[3], 'l')
+        for m in left_marks)
+    right_has_branch = any(
+        _has_branch_in_direction(clean_skeleton, m[0], m[1], m[2], m[3], 'r')
+        for m in right_marks)
+    if left_has_branch and right_has_branch:
+      # Cross intersection with marks on both sides → U-turn.
+      tracker.commit_uturn()
+      tracker.active = True
+    elif not left_has_branch and not right_has_branch:
+      # Dead end: marks on both sides, no branches → U-turn.
+      tracker.commit_uturn()
+      tracker.active = True
 
   # ------------------------------------------------------------------
-  # 4. If tracker is not yet active (marks visible but none were ever
-  #    actionable), nothing to do.
+  # 5. Branch-verified voting (only if not yet committed).
+  # ------------------------------------------------------------------
+  if not tracker.committed_dir:
+    for mark in left_marks:
+      if _has_branch_in_direction(clean_skeleton, mark[0], mark[1], mark[2],
+                                  mark[3], 'l'):
+        tracker.vote('l')
+        tracker.active = True
+
+    for mark in right_marks:
+      if _has_branch_in_direction(clean_skeleton, mark[0], mark[1], mark[2],
+                                  mark[3], 'r'):
+        tracker.vote('r')
+        tracker.active = True
+
+  # ------------------------------------------------------------------
+  # 6. Commit and apply.
   # ------------------------------------------------------------------
   if not tracker.active:
     robot.write_green_turn_direction(None)
     return binary_image
 
-  # ------------------------------------------------------------------
-  # 5. Active encounter: try to lock direction, then apply erasure.
-  # ------------------------------------------------------------------
   tracker.try_commit()
 
   turn_dir = tracker.effective_dir
-  if turn_dir is None or tracker.line_cx is None:
+  if turn_dir is None or (tracker.line_cx is None and turn_dir != 'u'):
     robot.write_green_turn_direction(None)
     return binary_image
 
-  # Publish the direction so main.py can act on it (especially 'u').
   robot.write_green_turn_direction(turn_dir)
 
-  # U-turn is handled by main.py with a physical motor turn,
-  # not by binary image modification.  Return unmodified image.
   if turn_dir == 'u':
     return binary_image
 
   modified = _erase_for_turn(binary_image, turn_dir, tracker.line_cx,
                              tracker.last_center_y, tracker.last_mark_h)
 
-  # Mask out green mark areas so their blobs don't create competing
-  # contours (green tape is dark in grayscale → white in binary).
+  # Mask out green mark blobs to prevent competing contours.
   margin = 10
   for mark in green_marks:
     mx, my, mw, mh = mark

@@ -98,7 +98,7 @@ GREEN_MARK_Y_THRESHOLD_RATIO: Final[float] = 2 / 3  # Mark must be in bottom thi
 # Maximum timeout for line-based turns (safety fallback)
 # These two number below are hard-coded to a big number, because we are not using it due to the new gyro sensors
 MAX_TURN_90_TIME: Final[float] = 1000.0
-MAX_TURN_180_TIME: Final[float] = 1000.0
+MAX_TURN_180_TIME: Final[float] = 3.5
 TURN_CHECK_DELAY: Final[float] = 0.5  # Delay before checking for line crossings
 
 # Checkpoint position for turn detection (ratio of image dimensions)
