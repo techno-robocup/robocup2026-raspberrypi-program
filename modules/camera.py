@@ -485,6 +485,18 @@ def _count_black_pixels(roi: np.ndarray, threshold: int) -> tuple:
   return black_count, roi.size
 
 
+@jit(nopython=True, cache=True)
+def _white_row_center(row: np.ndarray) -> int:
+  """Return mean x-position of white pixels in a binary row.
+
+  Returns -1 when no white pixels are present.
+  """
+  white_pixels = np.where(row > 0)[0]
+  if white_pixels.size == 0:
+    return -1
+  return int(np.mean(white_pixels))
+
+
 def _check_black_lines_around_mark(skeleton_image: np.ndarray, center_x: int,
                                    center_y: int, w: int, h: int) -> np.ndarray:
   """Check for skeleton line pixels around a mark in four directions."""
@@ -599,9 +611,9 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
   for check_y in [h * 3 // 4, h * 7 // 8, h - 5]:
     check_y = min(h - 1, check_y)
     row = binary_image[check_y, :]
-    white_pixels = np.where(row > 0)[0]
-    if len(white_pixels) > 0:
-      return int(np.mean(white_pixels))
+    row_center = _white_row_center(row)
+    if row_center >= 0:
+      return row_center
   return None
 
 
