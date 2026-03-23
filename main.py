@@ -1088,15 +1088,6 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
-
-TARGET_MIN = 10.0
-# TARGET_MAX = 20.0
-FRONT_FLAG_DIST = 10.0
-OPEN_THRESHOLD = 70.0
-BASE_SPEED = 1680
-BASE_TURN = 100
-
-
 def l_wall_follow_ccw() -> bool:
   """
   Follow the wall counter-clockwise using ultrasonic[1].
@@ -1118,10 +1109,10 @@ def l_wall_follow_ccw() -> bool:
     logger.info("The side ultrasonic sensor is not responding.")
     return False
 
-  if l_dist > OPEN_THRESHOLD:
+  if l_dist > consts.OPEN_THRESHOLD:
     logger.info("Wall opening detected")
     return True
-  elif front_dist <= FRONT_FLAG_DIST:
+  elif front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
@@ -1129,8 +1120,8 @@ def l_wall_follow_ccw() -> bool:
     return False
 
   turn = 0
-  if l_dist < TARGET_MIN:
-    turn = BASE_TURN
+  if l_dist < consts.TARGET_MIN:
+    turn = consts.BASE_TURN
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
   right_speed += 30 if turn != 0 else 0
@@ -1163,10 +1154,10 @@ def r_wall_follow_ccw() -> bool:
     logger.info("The side ultrasonic sensor is not responding.")
     return False
 
-  if r_dist > OPEN_THRESHOLD:
+  if r_dist > consts.OPEN_THRESHOLD:
     logger.info("Wall opening detected")
     return True
-  elif front_dist <= FRONT_FLAG_DIST:
+  elif front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1250, 1750)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
@@ -1174,8 +1165,8 @@ def r_wall_follow_ccw() -> bool:
     return False
 
   turn = 0
-  if r_dist < TARGET_MIN:
-    turn = BASE_TURN * -1
+  if r_dist < consts.TARGET_MIN:
+    turn = consts.BASE_TURN * -1
   left_speed = BASE_SPEED + turn
   left_speed += 30 if turn != 0 else 0
   right_speed = BASE_SPEED - turn
@@ -1234,7 +1225,7 @@ def handle_before_search() -> None:
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    robot.set_speed(1350, 1400)
+    robot.set_speed(1300, 1350)
     sleep_sec(4.0)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
@@ -1250,7 +1241,7 @@ def handle_before_search() -> None:
         robot.send_speed()
         logger.info("Sleep interrupted by button")
         break
-      if robot.ultrasonic[1] < FRONT_FLAG_DIST:
+      if robot.ultrasonic[1] < consts.FRONT_FLAG_DIST:
         run_yolo()
         cage_class = find_cage()
         if cage_class is not None:
