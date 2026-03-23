@@ -1089,8 +1089,8 @@ def calculate_cage() -> tuple[int, int]:
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
-TARGET_MIN = 6.0
-TARGET_MAX = 20.0
+TARGET_MIN = 10.0
+# TARGET_MAX = 20.0
 FRONT_FLAG_DIST = 10.0
 OPEN_THRESHOLD = 70.0
 BASE_SPEED = 1680
