@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Final
 
 import libcamera
 import numpy as np
@@ -17,12 +18,12 @@ def Rescue_Camera_precallback_func(request):
   modules.camera.Rescue_precallback_func(request)
 
 
-UART_BAUD_RATE = 4800
-UART_TIMEOUT = 1
-MOTOR_MAX_SPEED = 2000
-MOTOR_MIN_SPEED = 1000
-Rescue_Camera_Port = 0
-Rescue_Camera_Controls = {
+UART_BAUD_RATE: Final[int] = 4800
+UART_TIMEOUT: Final[float] = 1
+MOTOR_MAX_SPEED: Final[int] = 2000
+MOTOR_MIN_SPEED: Final[int] = 1000
+Rescue_Camera_Port: Final[int] = 0
+Rescue_Camera_Controls: Final[dict] = {
     "AfMode": libcamera.controls.AfModeEnum.Continuous,
     "AfSpeed": libcamera.controls.AfSpeedEnum.Fast,
     "AeFlickerMode": libcamera.controls.AeFlickerModeEnum.Manual,
@@ -32,13 +33,13 @@ Rescue_Camera_Controls = {
     "AwbMode": libcamera.controls.AwbModeEnum.Indoor,
     "HdrMode": libcamera.controls.HdrModeEnum.Off
 }
-Rescue_Camera_Size = (4608, 2592)
-Rescue_Camera_Formats = "RGB888"
-Rescue_Camera_lores = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
-Rescue_Camera_precallback = Rescue_Camera_precallback_func
-IMAGE_SZ = Rescue_Camera_Size[0] * Rescue_Camera_Size[
+Rescue_Camera_Size: Final[tuple] = (4608, 2592)
+Rescue_Camera_Formats: Final[str] = "RGB888"
+Rescue_Camera_lores: Final[tuple] = (Rescue_Camera_Size[0], Rescue_Camera_Size[1])
+Rescue_Camera_precallback: Final[callable] = Rescue_Camera_precallback_func
+IMAGE_SZ: Final[int] = Rescue_Camera_Size[0] * Rescue_Camera_Size[
     1]  # Total pixels in rescue image
-MODEL = YOLO("best.pt")
+MODEL: Final[YOLO] = YOLO("best.pt")
 
 
 class TargetList(Enum):
@@ -49,8 +50,8 @@ class TargetList(Enum):
   SILVER_BALL = 4
 
 
-Linetrace_Camera_Port = 1
-Linetrace_Camera_Controls = {
+Linetrace_Camera_Port: Final[int] = 1
+Linetrace_Camera_Controls: Final[dict] = {
     "AfMode": libcamera.controls.AfModeEnum.Manual,
     "LensPosition": 1.0 / 0.03,
     "AeFlickerMode": libcamera.controls.AeFlickerModeEnum.Manual,
@@ -60,64 +61,64 @@ Linetrace_Camera_Controls = {
     "AwbMode": libcamera.controls.AwbModeEnum.Indoor,
     "HdrMode": libcamera.controls.HdrModeEnum.Night
 }
-Linetrace_Camera_Size = (4608, 2592)
-Linetrace_Camera_Formats = "RGB888"
-Linetrace_Camera_lores = (Linetrace_Camera_Size[0] // 8,
-                          Linetrace_Camera_Size[1] // 8)
-Linetrace_Camera_precallback = Linetrace_Camera_precallback_func
+Linetrace_Camera_Size: Final[tuple] = (4608, 2592)
+Linetrace_Camera_Formats: Final[str] = "RGB888"
+Linetrace_Camera_lores: Final[tuple] = (Linetrace_Camera_Size[0] // 8,
+                                        Linetrace_Camera_Size[1] // 8)
+Linetrace_Camera_precallback: Final[callable] = Linetrace_Camera_precallback_func
 
-BLACK_WHITE_THRESHOLD = 100
-BALL_CATCH_SIZE = 1900000
-BALL_CATCH_MIN_SIZE = 1600000
-LINETRACE_CAMERA_LORES_HEIGHT = 324  # 2592 / 8
-LINETRACE_CAMERA_LORES_WIDTH = 576  # 4608 / 8
-LINETRACE_CROP_WIDTH_RATIO = 0.6
+BLACK_WHITE_THRESHOLD: Final[int] = 100
+BALL_CATCH_SIZE: Final[int] = 1900000
+BALL_CATCH_MIN_SIZE: Final[int] = 1600000
+LINETRACE_CAMERA_LORES_HEIGHT: Final[int] = 324  # 2592 / 8
+LINETRACE_CAMERA_LORES_WIDTH: Final[int] = 576  # 4608 / 8
+LINETRACE_CROP_WIDTH_RATIO: Final[float] = 0.6
 
 # FROM THIS LINE, DO NOT REWRITE
-MIN_BLACK_LINE_AREA = 300  # BE CAREFUL WHEN REWRITING THIS VALUE
+MIN_BLACK_LINE_AREA: Final[int] = 300  # BE CAREFUL WHEN REWRITING THIS VALUE
 # END OF REWRITING PROHIBITION
 
 # Line recovery constants - for backing up when losing the line
-LINE_RECOVERY_AREA_THRESHOLD = 6000  # Trigger recovery when line area drops below this
-LINE_RECOVERY_ANGLE_THRESHOLD = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
-LINE_RECOVERY_BACKUP_TIME = 1.0  # Seconds to back up
-LINE_RECOVERY_BACKUP_SPEED = 1300  # Motor speed for backing up (< 1500 = reverse)
-MIN_GREEN_AREA = 200
-MIN_RED_AREA = 9000
-MIN_OBJECT_AVOIDANCE_LINE_AREA = 5000
+LINE_RECOVERY_AREA_THRESHOLD: Final[int] = 6000  # Trigger recovery when line area drops below this
+LINE_RECOVERY_ANGLE_THRESHOLD: Final[float] = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
+LINE_RECOVERY_BACKUP_TIME: Final[float] = 1.0  # Seconds to back up
+LINE_RECOVERY_BACKUP_SPEED: Final[int] = 1300  # Motor speed for backing up (< 1500 = reverse)
+MIN_GREEN_AREA: Final[int] = 200
+MIN_RED_AREA: Final[int] = 9000
+MIN_OBJECT_AVOIDANCE_LINE_AREA: Final[int] = 5000
 
-TURN_90_TIME = 1.6
-TURN_18_TIME = 0.32
+TURN_90_TIME: Final[float] = 1.6
+TURN_18_TIME: Final[float] = 0.32
 
 # Green mark intersection turning times (seconds)
-GREEN_MARK_APPROACH_TIME = 0.3
-GREEN_MARK_TURN_180_TIME = 3.5
-GREEN_MARK_Y_THRESHOLD_RATIO = 4 / 5  # Mark must be in bottom fifth
+GREEN_MARK_APPROACH_TIME: Final[float] = 0.3
+GREEN_MARK_TURN_180_TIME: Final[float] = 3.5
+GREEN_MARK_Y_THRESHOLD_RATIO: Final[float] = 4 / 5  # Mark must be in bottom fifth
 
 # Maximum timeout for line-based turns (safety fallback)
 # These two number below are hard-coded to a big number, because we are not using it due to the new gyro sensors
-MAX_TURN_90_TIME = 1000.0
-MAX_TURN_180_TIME = 1000.0
-TURN_CHECK_DELAY = 0.5  # Delay before checking for line crossings
+MAX_TURN_90_TIME: Final[float] = 1000.0
+MAX_TURN_180_TIME: Final[float] = 1000.0
+TURN_CHECK_DELAY: Final[float] = 0.5  # Delay before checking for line crossings
 
 # Checkpoint position for turn detection (ratio of image dimensions)
 # Point at top-center of the image
-TURN_CHECKPOINT_X_RATIO = 0.5  # Center horizontally
-TURN_CHECKPOINT_Y_RATIO = 0.3  # Lowered to 30% from top
-TURN_CHECKPOINT_SIZE = 10  # Size of area to check (pixels)
+TURN_CHECKPOINT_X_RATIO: Final[float] = 0.5  # Center horizontally
+TURN_CHECKPOINT_Y_RATIO: Final[float] = 0.3  # Lowered to 30% from top
+TURN_CHECKPOINT_SIZE: Final[int] = 10  # Size of area to check (pixels)
 
-RESCUE_FLAG_TIME = 5.0
+RESCUE_FLAG_TIME: Final[float] = 5.0
 
-lower_green = np.array([20, 100, 90])
-upper_green = np.array([100, 255, 255])
+lower_green: Final[np.ndarray] = np.array([20, 100, 90])
+upper_green: Final[np.ndarray] = np.array([100, 255, 255])
 
-lower_red1 = np.array([150, 130, 100])
-upper_red1 = np.array([179, 255, 255])
-lower_red2 = np.array([0, 130, 100])
-upper_red2 = np.array([20, 255, 255])
+lower_red1: Final[np.ndarray] = np.array([150, 130, 100])
+upper_red1: Final[np.ndarray] = np.array([179, 255, 255])
+lower_red2: Final[np.ndarray] = np.array([0, 130, 100])
+upper_red2: Final[np.ndarray] = np.array([20, 255, 255])
 
-GREEN_AHEAD_SLOWDOWN_SPEED = 1550  # Motor speed cap when green mark predicted ahead
-GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
+GREEN_AHEAD_SLOWDOWN_SPEED: Final[int] = 1550  # Motor speed cap when green mark predicted ahead
+GREEN_GYRO_PASS_TIME: Final[float] = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 
 # Numbers defined on turning around(rotation)
 # These numbers are designed to be able to rotate
@@ -125,8 +126,8 @@ GREEN_GYRO_PASS_TIME = 1.0  # Seconds to pass for checking gyro degrees on green
 # F stands for fast, S stands for slow
 # F and S should be inverted on implementation side
 # whether you are desiring to turn it to left/right
-LEVEL_TURN_SPEED_F = 1750
-LEVEL_TURN_SPEED_S = 1350
+LEVEL_TURN_SPEED_F: Final[int] = 1750
+LEVEL_TURN_SPEED_S: Final[int] = 1350
 
 if __name__ == "__main__":
   pass
