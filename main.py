@@ -58,7 +58,7 @@ RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
 BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 200  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6)  # 2160.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 50 # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -1092,38 +1092,42 @@ def calculate_cage() -> tuple[int, int]:
 
 def l_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
-  l_dist = ultrasonic[0]
+  l_dist = robot.avg_ultrasonic
   front_dist = ultrasonic[1]
+
   if front_dist is None or front_dist <= 0:
     logger.warning("Front sensor not responding - Jiggling (Left Follow)...")
     while True:
-      robot.set_speed(1580, 1580)
-      if sleep_sec(0.2) == 1: return False
-      robot.set_speed(1420, 1420)
-      if sleep_sec(0.2) == 1: return False
+      robot.set_speed(1700, 1700)
+      if sleep_sec(0.4) == 1: return False
+      robot.set_speed(1300, 1300)
+      if sleep_sec(0.4) == 1: return False
       new_front = robot.ultrasonic[1]
       if new_front is not None and new_front > 0:
         logger.info(f"Front sensor recovered: {new_front}")
         robot.set_speed(1500, 1500)
         robot.send_speed()
+        front_dist = new_front
         break
       logger.info("Still no response from front sensor...")
+
+  if l_dist is not None and l_dist > consts.OPEN_THRESHOLD:
+    logger.info("Wall opening detected (Left) - Exiting control")
+    return True
+
   if l_dist is None or l_dist <= 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The left ultrasonic sensor is not responding.")
     return False
-  if l_dist > consts.OPEN_THRESHOLD:
-    logger.info("Wall opening detected (Left)")
-    return True
-  elif front_dist <= consts.FRONT_FLAG_DIST:
+
+  if front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
-
-  target_dist = (consts.TARGET_MIN + consts.TARGET_MAX) / 2.0
+  target_dist = consts.TARGET_MIN
   error = l_dist - target_dist
   kp = 10.0
   turn = int(error * kp)
@@ -1136,7 +1140,7 @@ def l_wall_follow_ccw() -> bool:
 
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
-  logger.info(f"L-Dist: {l_dist:.1f}, Turn: {turn}, L:{left_speed} R:{right_speed}")
+  logger.info(f"L-Dist: {l_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}")
   robot.send_speed()
 
   return False
@@ -1144,21 +1148,26 @@ def l_wall_follow_ccw() -> bool:
 
 def r_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
-  front_dist = ultrasonic[1]
+  front_dist = robot.avg_ultrasonic[1]
   r_dist = ultrasonic[2]
   if front_dist is None or front_dist <= 0:
     logger.warning("Front sensor not responding - Jiggling...")
     while True:
-      robot.set_speed(1580, 1580)
-      if sleep_sec(0.2) == 1: return False
-      robot.set_speed(1420, 1420)
-      if sleep_sec(0.2) == 1: return False
+      robot.set_speed(1700, 1700)
+      if sleep_sec(0.4) == 1: return False
+      robot.set_speed(1300, 1300)
+      if sleep_sec(0.4) == 1: return False
       new_front = robot.ultrasonic[1]
       if new_front is not None and new_front > 0:
         logger.info(f"Front sensor recovered: {new_front}")
         robot.set_speed(1500, 1500)
         robot.send_speed()
+        front_dist = new_front
         break
+
+  if r_dist is not None and r_dist > consts.OPEN_THRESHOLD:
+    logger.info("Wall opening detected (Right) - Exiting control")
+    return True
 
   if r_dist is None or r_dist <= 0:
     robot.set_speed(1500, 1500)
@@ -1166,16 +1175,13 @@ def r_wall_follow_ccw() -> bool:
     logger.info("The side ultrasonic sensor is not responding.")
     return False
 
-  if r_dist > consts.OPEN_THRESHOLD:
-    logger.info("Wall opening detected")
-    return True
-  elif front_dist <= consts.FRONT_FLAG_DIST:
+  if front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1250, 1750)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return False
-  target_dist = (consts.TARGET_MIN + consts.TARGET_MAX) / 2.0
+  target_dist = consts.TARGET_MIN
   error = r_dist - target_dist
   kp = 10.0
   turn = int(error * kp)
@@ -1187,7 +1193,7 @@ def r_wall_follow_ccw() -> bool:
     left_speed += 20
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
-  logger.info(f"Dist: {r_dist:.1f}, Turn: {turn}, L:{left_speed} R:{right_speed}")
+  logger.info(f"R-Dist: {r_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}")
   robot.send_speed()
 
   return False
