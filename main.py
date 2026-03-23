@@ -1130,12 +1130,11 @@ def l_wall_follow_ccw() -> bool:
     return False
 
   turn = 0
-  if l_dist > TARGET_MAX:
-    turn = BASE_TURN * -1
   if l_dist < TARGET_MIN:
     turn = BASE_TURN
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
+  right_speed += 30 if turn != 0 else 0
   # logger.info(f"motor speed L{left_speed} R{right_speed}")
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
@@ -1176,11 +1175,10 @@ def r_wall_follow_ccw() -> bool:
     return False
 
   turn = 0
-  if r_dist > TARGET_MAX:
-    turn = BASE_TURN
   if r_dist < TARGET_MIN:
     turn = BASE_TURN * -1
   left_speed = BASE_SPEED + turn
+  left_speed += 30 if turn != 0 else 0
   right_speed = BASE_SPEED - turn
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
