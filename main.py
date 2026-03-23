@@ -690,7 +690,7 @@ def update_ball_flags(dist: float, y_center: float, w: float,
   if dist is not None:
     half_w = w / 2
     # margin = w * 0.2
-    margin = w * 0.15
+    margin = w * 0.05
 
     ball_left = dist - half_w + RESCUE_CX + margin
     ball_right = dist + half_w + RESCUE_CX - margin
