@@ -1030,38 +1030,18 @@ def calculate_ball() -> tuple[int, int]:
   else:
     diff_angle = 0
   dist_term = 0
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (
-      not robot.ball_near_flag):
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    return 1500, 1500
-  if not robot.ball_catch_dist_flag:
+  if robot.ball_catch_dist_flag:
+    if robot.ball_catch_offset_flag:
+      if robot.ball_near_flag:
+        dist_term = -100
+      else:
+        return 1500, 1500
+    else:
+      diff_angle = 50 if diff_angle > 0 else -50
+      dist_term = -10
+  else:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
     dist_term = int(max(30.0, min(dist_term, 200)))
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and robot.ball_near_flag:
-    diff_angle = 0
-    dist_term = -100
-  if robot.ball_catch_offset_flag and robot.ball_catch_dist_flag and (
-      not robot.ball_near_flag):
-    diff_angle = 0
-    dist_term = 0
-  if robot.ball_catch_offset_flag and (not robot.ball_catch_dist_flag) and (
-      not robot.ball_near_flag):
-    diff_angle = 0
-    dist_term *= 1.0
-  if (not robot.ball_catch_offset_flag
-      ) and robot.ball_catch_dist_flag and robot.ball_near_flag:
-    # diff_angle *= -0.5
-    diff_angle = 0
-    dist_term = -80
-  if (not robot.ball_catch_offset_flag) and robot.ball_catch_dist_flag and (
-      not robot.ball_near_flag):  # offset
-    #  diff_angle *= 1.3
-    if diff_angle > 0:
-      diff_angle = 60
-    else:
-      diff_angle = -60
-    dist_term = 0
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
