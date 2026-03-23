@@ -1038,8 +1038,13 @@ def calculate_ball() -> tuple[int, int]:
       else:
         return 1500, 1500
     else:
-      diff_angle = 50 if diff_angle > 0 else -50
-      dist_term = -10
+      diff_angle = 40 if diff_angle > 0 else -40
+      base_L = 1500 + diff_angle
+      base_R = 1500 - diff_angle
+      robot.set_speed(base_L, base_R)
+      sleep_sec(0.3)
+      diff_angle = 0
+      dist_term = 0
   else:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
     dist_term = int(max(30.0, min(dist_term, 200)))
@@ -1235,7 +1240,7 @@ def handle_before_search() -> None:
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    robot.set_speed(1350, 1350)
+    robot.set_speed(1350, 1400)
     sleep_sec(4.0)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
