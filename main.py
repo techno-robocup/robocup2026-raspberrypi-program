@@ -35,7 +35,7 @@ KI = 300
 KD = 25
 DP = 200
 INTEGRAL_MAX = 2  # Anti-windup: max |accumulated integral error| in radians*sec
-BOP = 0.043 # Ball Offset P
+BOP = 0.043  # Ball Offset P
 BSP = 0.3  # Ball Size P
 COP = 0.06  # Cage Offset P
 CSP = 1.5
@@ -57,8 +57,8 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 120  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 140  # 2160.0 - x
+BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3)  # 1728.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6)  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -743,10 +743,9 @@ def draw_ball_debug(image) -> None:
   cx = int(RESCUE_CX)
   y_2_3 = int(BALL_Y_2_3)
   y_5_6 = int(BALL_Y_5_6)
-  status_text = (
-      f"near:{robot.ball_near_flag} "
-      f"offset:{robot.ball_catch_offset_flag} "
-      f"dist:{robot.ball_catch_dist_flag}")
+  status_text = (f"near:{robot.ball_near_flag} "
+                 f"offset:{robot.ball_catch_offset_flag} "
+                 f"dist:{robot.ball_catch_dist_flag}")
   cv2.putText(image, status_text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
               (0, 255, 255), 2, cv2.LINE_AA)
   cv2.line(image, (0, y_2_3), (RESCUE_IMAGE_WIDTH, y_2_3), hline_color, 2)
