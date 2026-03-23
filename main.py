@@ -148,157 +148,157 @@ def should_process_green_mark() -> bool:
   return (has_left or has_right) and mark_in_bottom
 
 
-def execute_green_mark_turn() -> bool:
-  """
-  Execute a turn based on detected green marks.
+# def execute_green_mark_turn() -> bool:
+#   """
+#   Execute a turn based on detected green marks.
 
-  Turn logic:
-  - Both left and right: 180° turn
-  - Only left: 90° right turn
-  - Only right: 90° left turn
+#   Turn logic:
+#   - Both left and right: 180° turn
+#   - Only left: 90° right turn
+#   - Only right: 90° left turn
 
-  Returns:
-  - True if turn completed successfully
-  - False if interrupted by button
-  """
-  logger.info("Executing green mark turn")
+#   Returns:
+#   - True if turn completed successfully
+#   - False if interrupted by button
+#   """
+#   logger.info("Executing green mark turn")
 
-  green_black_detected = robot.green_black_detected
+#   green_black_detected = robot.green_black_detected
 
-  # Determine which directions have black lines
-  has_left = False
-  has_right = False
+#   # Determine which directions have black lines
+#   has_left = False
+#   has_right = False
 
-  for detection in green_black_detected:
-    # Only require left/right lines to determine turn direction.
-    # The approaching line may come from the top or bottom depending
-    # on the tile layout, so we do not filter on bottom/top.
-    if detection[2] == 1:  # Left black line
-      has_left = True
-    if detection[3] == 1:  # Right black line
-      has_right = True
+#   for detection in green_black_detected:
+#     # Only require left/right lines to determine turn direction.
+#     # The approaching line may come from the top or bottom depending
+#     # on the tile layout, so we do not filter on bottom/top.
+#     if detection[2] == 1:  # Left black line
+#       has_left = True
+#     if detection[3] == 1:  # Right black line
+#       has_right = True
 
-  # Determine turn direction and target rotation
-  if has_left and has_right:
-    target_rotation = 180.0
-    turn_direction = "left"  # Turn left for 180° (arbitrary choice)
-    turn_description = "180°"
-  elif has_left:
-    target_rotation = 90.0
-    turn_direction = "right"
-    turn_description = "90° right"
-  elif has_right:
-    target_rotation = 90.0
-    turn_direction = "left"
-    turn_description = "90° left"
-  else:
-    logger.warning("No valid turn direction detected, aborting turn")
-    return False
+#   # Determine turn direction and target rotation
+#   if has_left and has_right:
+#     target_rotation = 180.0
+#     turn_direction = "left"  # Turn left for 180° (arbitrary choice)
+#     turn_description = "180°"
+#   elif has_left:
+#     target_rotation = 90.0
+#     turn_direction = "right"
+#     turn_description = "90° right"
+#   elif has_right:
+#     target_rotation = 90.0
+#     turn_direction = "left"
+#     turn_description = "90° left"
+#   else:
+#     logger.warning("No valid turn direction detected, aborting turn")
+#     return False
 
-  logger.info(f"Starting {turn_description} turn ({turn_direction})")
+#   logger.info(f"Starting {turn_description} turn ({turn_direction})")
 
-  # Drive backward slowly until the green mark reaches the vertical middle
-  approach_speed = 1400
-  approach_target_y = consts.LINETRACE_CAMERA_LORES_HEIGHT // 2
-  approach_timeout = 8.0
-  logger.info(
-      f"Approaching: driving backward at {approach_speed} until green mark y <= {approach_target_y}"
-  )
-  min_approach_time = 1.0  # Always reverse for at least 1 second
-  start_time = time.time()
-  while time.time() - start_time < approach_timeout:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      return False
+#   # Drive backward slowly until the green mark reaches the vertical middle
+#   approach_speed = 1400
+#   approach_target_y = consts.LINETRACE_CAMERA_LORES_HEIGHT // 2
+#   approach_timeout = 8.0
+#   logger.info(
+#       f"Approaching: driving backward at {approach_speed} until green mark y <= {approach_target_y}"
+#   )
+#   min_approach_time = 1.0  # Always reverse for at least 1 second
+#   start_time = time.time()
+#   while time.time() - start_time < approach_timeout:
+#     robot.update_button_stat()
+#     if robot.robot_stop:
+#       robot.set_speed(1500, 1500)
+#       robot.send_speed()
+#       return False
 
-    elapsed = time.time() - start_time
+#     elapsed = time.time() - start_time
 
-    # Check if any green mark has reached the middle of the screen
-    current_marks = robot.green_marks
-    if current_marks:
-      lowest_y = max(mark[1] for mark in current_marks)
-      if lowest_y <= approach_target_y:
-        logger.info(
-            f"Green mark reached target y={lowest_y} (<= {approach_target_y}), stopping approach"
-        )
-        break
-    else:
-      # Green mark disappeared - keep reversing until min time elapsed
-      if elapsed >= min_approach_time:
-        logger.info(
-            f"Green mark lost after {elapsed:.2f}s (>= {min_approach_time}s), stopping"
-        )
-        break
+#     # Check if any green mark has reached the middle of the screen
+#     current_marks = robot.green_marks
+#     if current_marks:
+#       lowest_y = max(mark[1] for mark in current_marks)
+#       if lowest_y <= approach_target_y:
+#         logger.info(
+#             f"Green mark reached target y={lowest_y} (<= {approach_target_y}), stopping approach"
+#         )
+#         break
+#     else:
+#       # Green mark disappeared - keep reversing until min time elapsed
+#       if elapsed >= min_approach_time:
+#         logger.info(
+#             f"Green mark lost after {elapsed:.2f}s (>= {min_approach_time}s), stopping"
+#         )
+#         break
 
-    robot.set_speed(approach_speed, approach_speed)
-    robot.send_speed()
+#     robot.set_speed(approach_speed, approach_speed)
+#     robot.send_speed()
 
-  # Stop briefly before turning
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
+#   # Stop briefly before turning
+#   robot.set_speed(1500, 1500)
+#   robot.send_speed()
 
-  # If statements for each angles
-  if robot.current_angle < 10:
-    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
-  elif robot.pitch > 10:
-    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
-  elif robot.pitch < -10:
-    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
-  elif robot.roll > 10:
-    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
-  elif robot.roll < -10:
-    sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
-  else:
-    pass  # TODO: It will be written in the future
+#   # If statements for each angles
+#   if robot.current_angle < 10:
+#     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+#   elif robot.pitch > 10:
+#     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+#   elif robot.pitch < -10:
+#     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+#   elif robot.roll > 10:
+#     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+#   elif robot.roll < -10:
+#     sleep_sec(2, function=lambda: robot.set_speed(1600, 1600))
+#   else:
+#     pass  # TODO: It will be written in the future
 
-  # Turning parameters
-  max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
-  started_turning = time.time()
-  black_check_enabled = False
+#   # Turning parameters
+#   max_turn_time = consts.MAX_TURN_90_TIME if target_rotation == 90.0 else consts.MAX_TURN_180_TIME
+#   started_turning = time.time()
+#   black_check_enabled = False
 
-  while True:
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      return False
+#   while True:
+#     robot.update_button_stat()
+#     if robot.robot_stop:
+#       robot.set_speed(1500, 1500)
+#       robot.send_speed()
+#       return False
 
-    # Safety timeout
-    if time.time() - started_turning > max_turn_time:
-      logger.warning(f"Turn timeout after {max_turn_time:.1f}s, stopping turn")
-      break
+#     # Safety timeout
+#     if time.time() - started_turning > max_turn_time:
+#       logger.warning(f"Turn timeout after {max_turn_time:.1f}s, stopping turn")
+#       break
 
-    # Enable black check after a minimum time
-    if time.time(
-    ) - started_turning > consts.GREEN_GYRO_PASS_TIME and not black_check_enabled:
-      black_check_enabled = True
-      logger.info("Black check mode enabled (time-based)")
+#     # Enable black check after a minimum time
+#     if time.time(
+#     ) - started_turning > consts.GREEN_GYRO_PASS_TIME and not black_check_enabled:
+#       black_check_enabled = True
+#       logger.info("Black check mode enabled (time-based)")
 
-    # Check if we should stop based on black detection
-    if black_check_enabled:
-      if robot.top_checkpoint_black:
-        logger.info("Black detected at top - stopping turn")
-        break
+#     # Check if we should stop based on black detection
+#     if black_check_enabled:
+#       if robot.top_checkpoint_black:
+#         logger.info("Black detected at top - stopping turn")
+#         break
 
-    # Set fixed turning speeds
-    if turn_direction == "left":
-      motor_left = consts.LEVEL_TURN_SPEED_S
-      motor_right = consts.LEVEL_TURN_SPEED_F
-    else:
-      motor_left = consts.LEVEL_TURN_SPEED_F
-      motor_right = consts.LEVEL_TURN_SPEED_S
+#     # Set fixed turning speeds
+#     if turn_direction == "left":
+#       motor_left = consts.LEVEL_TURN_SPEED_S
+#       motor_right = consts.LEVEL_TURN_SPEED_F
+#     else:
+#       motor_left = consts.LEVEL_TURN_SPEED_F
+#       motor_right = consts.LEVEL_TURN_SPEED_S
 
-    robot.set_speed(motor_left, motor_right)
-    robot.send_speed()
+#     robot.set_speed(motor_left, motor_right)
+#     robot.send_speed()
 
-  # Stop after turn
-  robot.set_speed(1500, 1500)
-  robot.send_speed()
+#   # Stop after turn
+#   robot.set_speed(1500, 1500)
+#   robot.send_speed()
 
-  robot.write_last_slope_get_time(time.time())
-  return True  # Completed successfully
+#   robot.write_last_slope_get_time(time.time())
+#   return True  # Completed successfully
 
 
 def execute_green_uturn() -> bool:
