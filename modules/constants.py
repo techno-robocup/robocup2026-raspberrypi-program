@@ -93,7 +93,7 @@ TURN_18_TIME: Final[float] = 0.32
 # Green mark intersection turning times (seconds)
 GREEN_MARK_APPROACH_TIME: Final[float] = 0.3
 GREEN_MARK_TURN_180_TIME: Final[float] = 3.5
-GREEN_MARK_Y_THRESHOLD_RATIO: Final[float] = 4 / 5  # Mark must be in bottom fifth
+GREEN_MARK_Y_THRESHOLD_RATIO: Final[float] = 2 / 3  # Mark must be in bottom third
 
 # Maximum timeout for line-based turns (safety fallback)
 # These two number below are hard-coded to a big number, because we are not using it due to the new gyro sensors
