@@ -35,8 +35,8 @@ Rescue_Camera_Controls: Final[dict] = {
 }
 Rescue_Camera_Size: Final[tuple] = (4608, 2592)
 Rescue_Camera_Formats: Final[str] = "RGB888"
-# Rescue uses lores frames for YOLO. Keep this reasonably small for speed.
-Rescue_Camera_lores: Final[tuple] = (1280, 720)
+Rescue_Camera_lores: Final[tuple] = (Rescue_Camera_Size[0],
+                                     Rescue_Camera_Size[1])
 Rescue_Camera_precallback: Final[callable] = Rescue_Camera_precallback_func
 IMAGE_SZ: Final[int] = Rescue_Camera_Size[0] * Rescue_Camera_Size[
     1]  # Total pixels in rescue image

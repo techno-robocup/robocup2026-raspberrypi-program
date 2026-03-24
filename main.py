@@ -53,19 +53,9 @@ _pid_prev_time: Optional[float] = None
 last_gap_recovery_time: float = 0.0
 GAP_RECOVERY_COOLDOWN = 0.5  # Seconds to wait after recovery before allowing another
 
-RESCUE_IMAGE_WIDTH = consts.Rescue_Camera_lores[0]
-RESCUE_IMAGE_HEIGHT = consts.Rescue_Camera_lores[1]
+RESCUE_IMAGE_WIDTH = 4608
+RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
-RESCUE_YOLO_IMGSZ = 640
-RESCUE_YOLO_MIN_INTERVAL_SEC = 0.08
-RESCUE_DEBUG_SAVE_INTERVAL_SEC = 0.5
-
-_last_yolo_frame_time = 0.0
-_last_yolo_run_time = 0.0
-_last_rescue_debug_save_time = 0.0
-_rescue_inference_times: list = []  # Last 10 inference times for monitoring
-_rescue_skipped_frames = 0  # Count of skipped frames
-_rescue_error_count = 0  # Count of errors in rescue mode
 
 BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 300  # 1728.0 - x
 BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100 # 2160.0 - x
@@ -761,98 +751,21 @@ def draw_ball_debug(image) -> None:
 
 
 def run_yolo() -> None:
-  """Run YOLO inference with error handling, timing, and rate limiting."""
-  global _last_yolo_frame_time, _last_yolo_run_time, _last_rescue_debug_save_time
-  global _rescue_inference_times, _rescue_skipped_frames, _rescue_error_count
-
-  try:
-    frame = robot.rescue_image
-    if frame is None:
-      logger.debug("Rescue frame is None, skipping YOLO")
-      robot.write_rescue_boxes(None)
-      return
-
-    # Validate frame dimensions to prevent processing errors
-    if frame.shape != (RESCUE_IMAGE_HEIGHT, RESCUE_IMAGE_WIDTH, 3):
-      logger.warning(
-          f"Invalid rescue frame shape: {frame.shape}, expected "
-          f"({RESCUE_IMAGE_HEIGHT}, {RESCUE_IMAGE_WIDTH}, 3). Skipping.")
-      _rescue_error_count += 1
-      robot.write_rescue_boxes(None)
-      return
-
-    frame_time = robot.rescue_saved_time
-    now = time.time()
-
-    # Skip if no new frame has arrived
-    if frame_time <= _last_yolo_frame_time:
-      _rescue_skipped_frames += 1
-      return
-
-    # Rate-limit YOLO calls to prevent CPU overload
-    if now - _last_yolo_run_time < RESCUE_YOLO_MIN_INTERVAL_SEC:
-      _rescue_skipped_frames += 1
-      return
-
-    # Run YOLO with timing measurement
-    inference_start = time.time()
+  with yolo_lock.gen_wlock():
+    yolo_results = consts.MODEL(robot.rescue_image, verbose=False)
+  current_time = time.time()
+  origin_image = robot.rescue_image.copy()
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_origin.jpg", origin_image)
+  result_image = robot.rescue_image.copy()
+  if yolo_results and isinstance(yolo_results, list) and len(yolo_results) > 0:
     try:
-      with yolo_lock.gen_wlock():
-        yolo_results = consts.MODEL(
-            frame, verbose=False, imgsz=RESCUE_YOLO_IMGSZ)
-    except Exception as yolo_err:
-      logger.error(f"YOLO inference failed: {yolo_err}")
-      _rescue_error_count += 1
-      robot.write_rescue_boxes(None)
-      return
-
-    inference_time = time.time() - inference_start
-    _rescue_inference_times.append(inference_time)
-    if len(_rescue_inference_times) > 10:
-      _rescue_inference_times.pop(0)
-    avg_time = sum(_rescue_inference_times) / len(_rescue_inference_times)
-
-    # Warn if inference is slow (may indicate CPU bottleneck)
-    if inference_time > 0.15:
-      logger.warning(
-          f"Slow YOLO: {inference_time:.3f}s (avg: {avg_time:.3f}s)")
-    elif inference_time > 0.1:
-      logger.debug(f"YOLO: {inference_time:.3f}s")
-
-    _last_yolo_frame_time = frame_time
-    _last_yolo_run_time = now
-
-    # Save debug images at reduced rate
-    if now - _last_rescue_debug_save_time >= RESCUE_DEBUG_SAVE_INTERVAL_SEC:
-      _last_rescue_debug_save_time = now
-      try:
-        cv2.imwrite(f"bin/{now:.3f}_rescue_origin.jpg", frame)
-        result_image = frame.copy()
-        if yolo_results and isinstance(yolo_results, list) and len(
-            yolo_results) > 0:
-          try:
-            result_image = yolo_results[0].plot()
-          except Exception as plot_err:
-            logger.error(f"YOLO plot failed: {plot_err}")
-        draw_ball_debug(result_image)
-        cv2.imwrite(f"bin/{now:.3f}_rescue_result.jpg", result_image)
-      except Exception as save_err:
-        logger.error(f"Failed to save debug images: {save_err}")
-
-    # Update detection boxes safely
-    try:
-      boxes = yolo_results[0].boxes if yolo_results and len(
-          yolo_results) > 0 else None
-      robot.write_rescue_boxes(boxes)
-    except Exception as box_err:
-      logger.error(f"Failed to write rescue boxes: {box_err}")
-      _rescue_error_count += 1
-      robot.write_rescue_boxes(None)
-
-  except Exception as unhandled_err:
-    logger.exception(f"Unhandled exception in run_yolo: {unhandled_err}")
-    _rescue_error_count += 1
-    robot.write_rescue_boxes(None)
+      result_image = yolo_results[0].plot()
+    except TypeError as e:
+      logger.error(f"Error plotting YOLO result: {e}.")
+  draw_ball_debug(result_image)
+  cv2.imwrite(f"bin/{current_time:.3f}_rescue_result.jpg", result_image)
+  robot.write_rescue_boxes(
+      yolo_results[0].boxes if yolo_results and len(yolo_results) > 0 else None)
 
 
 def find_best_target() -> None:
@@ -867,25 +780,21 @@ def find_best_target() -> None:
     - robot.rescue_offset: Horizontal offset from image center (pixels).
     - robot.rescue_size: Area of the detected target (pixels^2).
     - robot.rescue_y: Vertical center (pixels) of the best target.
-  """
-  global _rescue_error_count
-
-  try:
     - robot.ball_catch_dist_flag: True if ball is close enough to catch.
     - robot.rescue_target: May switch to SILVER_BALL on override.
   """
-    # Reset ball flag at start - will be set True only if catchable ball detected
-    robot.write_ball_catch_dist_flag(False)
-    robot.write_ball_catch_offset_flag(False)
-    robot.write_ball_near_flag(False)
-    # yolo_results = None
-    boxes = robot.rescue_boxes
-    if boxes is None or len(boxes) == 0:
-      logger.debug("Target not found")
-      robot.write_rescue_offset(None)
-      robot.write_rescue_size(None)
-      robot.write_rescue_y(None)
-      return
+  # Reset ball flag at start - will be set True only if catchable ball detected
+  robot.write_ball_catch_dist_flag(False)
+  robot.write_ball_catch_offset_flag(False)
+  robot.write_ball_near_flag(False)
+  # yolo_results = None
+  boxes = robot.rescue_boxes
+  if boxes is None or len(boxes) == 0:
+    logger.info("Target not found")
+    robot.write_rescue_offset(None)
+    robot.write_rescue_size(None)
+    robot.write_rescue_y(None)
+    return
   else:
     detected_classes = []
     best_angle = None
