@@ -860,25 +860,23 @@ def find_best_target() -> None:
 
   Runs YOLO inference on the rescue camera image to find balls and cages.
   Updates robot state with the offset angle and size of the closest target
-  matching the current rescue_target type. Also handles override logic
-  when searching for black ball but finding silver ball.
+  matching the current rescue_target type.
 
   Updates:
     - robot.rescue_offset: Horizontal offset from image center (pixels).
     - robot.rescue_size: Area of the detected target (pixels^2).
     - robot.rescue_y: Vertical center (pixels) of the best target.
+    - robot.ball_catch_dist_flag: True if ball is close enough to catch.
+    - robot.rescue_target: May switch to SILVER_BALL on override.
   """
   global _rescue_error_count
 
   try:
-    - robot.ball_catch_dist_flag: True if ball is close enough to catch.
-    - robot.rescue_target: May switch to SILVER_BALL on override.
-  """
-    # Reset ball flag at start - will be set True only if catchable ball detected
+    # Reset ball flag at start
     robot.write_ball_catch_dist_flag(False)
     robot.write_ball_catch_offset_flag(False)
     robot.write_ball_near_flag(False)
-    # yolo_results = None
+
     boxes = robot.rescue_boxes
     if boxes is None or len(boxes) == 0:
       logger.debug("Target not found")
@@ -886,86 +884,75 @@ def find_best_target() -> None:
       robot.write_rescue_size(None)
       robot.write_rescue_y(None)
       return
-  else:
-    detected_classes = []
+
     best_angle = None
     best_size = None
     y_center = None
     max_area = float(0)
+
     for box in boxes:
       try:
         cls = int(box.cls[0])
-        detected_classes.append(cls)
-      except Exception as e:
-        logger.exception(f"Error processing detection box: {e}")
-        continue
-      if robot.rescue_target == consts.TargetList.EXIT.value:
-        if cls == robot.target_before_exit:
-          updated, max_area, dist, area, best_y, best_w = update_best_box(
-              box.xywh[0], max_area)
-          if updated:
-            max_area = area
-            best_angle = dist
-            best_size = area
-            y_center = best_y
-      elif cls == robot.rescue_target:
-        updated, max_area, dist, area, best_y, best_w = update_best_box(
-            box.xywh[0], max_area)
-        if updated:
+        x_center, y_center_box, w, h = map(float, box.xywh[0])
+        area = w * h
+        dist = x_center - RESCUE_CX
+
+        # Update best target based on target type
+        is_target = False
+        if robot.rescue_target == consts.TargetList.EXIT.value:
+          is_target = (cls == robot.target_before_exit)
+        elif cls == robot.rescue_target:
+          is_target = True
+        elif (consts.TargetList.BLACK_BALL.value == robot.rescue_target and
+              cls == consts.TargetList.SILVER_BALL.value):
+          # Override: black ball not found, use silver ball
+          robot.write_rescue_turning_angle(0)
+          max_area = 0
+          is_target = True
+          robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+        elif (consts.TargetList.EXIT.value == robot.rescue_target and
+              cls == consts.TargetList.SILVER_BALL.value):
+          # Similar override for EXIT mode
+          robot.write_rescue_turning_angle(0)
+          max_area = 0
+          is_target = True
+          robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+
+        if is_target and area > max_area:
           max_area = area
           best_angle = dist
           best_size = area
-          y_center = best_y
+          y_center = y_center_box
           if cls in [
               consts.TargetList.SILVER_BALL.value,
               consts.TargetList.BLACK_BALL.value
           ]:
-            update_ball_flags(dist, best_y, best_w, best_size)
-      elif consts.TargetList.BLACK_BALL.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-        robot.write_rescue_turning_angle(0)
-        max_area = 0
-        updated, max_area, dist, area, best_y, best_w = update_best_box(
-            box.xywh[0], max_area)
-        if updated:
-          max_area = area
-          best_angle = dist
-          best_size = area
-          y_center = best_y
-          update_ball_flags(dist, best_y, best_w, best_size)
-        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-      elif consts.TargetList.EXIT.value == robot.rescue_target and cls == consts.TargetList.SILVER_BALL.value:
-        robot.write_rescue_turning_angle(0)
-        max_area = 0
-        updated, max_area, dist, area, best_y, best_w = update_best_box(
-            box.xywh[0], max_area)
-        if updated:
-          max_area = area
-          best_angle = dist
-          best_size = area
-          y_center = best_y
-          update_ball_flags(dist, best_y, best_w, best_size)
-        robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-      if cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
-        robot.write_detect_black_ball(True)
-    if best_angle is None:
-      robot.write_rescue_offset(None)
-    else:
-      robot.write_rescue_offset(float(best_angle))
-    if best_size is None:
-      robot.write_rescue_size(None)
-    else:
-      robot.write_rescue_size(int(best_size))
-    # Persist best target vertical center (y), if available
-    if y_center is None:
-      robot.write_rescue_y(None)
-    else:
-      robot.write_rescue_y(float(y_center))
-  if robot.rescue_offset is not None and robot.rescue_size is not None and robot.rescue_y is not None:
-    logger.info(
-        f"Best target found - Offset: {robot.rescue_offset:.1f}px, Size: {robot.rescue_size}px², Y: {robot.rescue_y:.1f}px"
-    )
-  else:
-    logger.info("No valid target found after processing detections")
+            update_ball_flags(dist, y_center_box, w, area)
+
+        # Track black ball detection
+        if cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+          robot.write_detect_black_ball(True)
+
+      except Exception as box_err:
+        logger.debug(f"Error processing detection box: {box_err}")
+        continue
+
+    # Write final results
+    robot.write_rescue_offset(float(best_angle) if best_angle is not None else None)
+    robot.write_rescue_size(int(best_size) if best_size is not None else None)
+    robot.write_rescue_y(float(y_center) if y_center is not None else None)
+
+    if best_angle is not None and best_size is not None and y_center is not None:
+      logger.debug(
+          f"Best target: offset={best_angle:.1f}px, size={best_size:.0f}px², y={y_center:.1f}px"
+      )
+
+  except Exception as find_err:
+    logger.exception(f"Unexpected error in find_best_target: {find_err}")
+    _rescue_error_count += 1
+    robot.write_rescue_offset(None)
+    robot.write_rescue_size(None)
+    robot.write_rescue_y(None)
 
 
 def catch_ball() -> int:
@@ -1586,6 +1573,16 @@ if __name__ == "__main__":
     robot.update_button_stat()
     robot.update_gyro_stat()
     ultrasonic_info = robot.avg_ultrasonic
+
+    # Log rescue diagnostics periodically (~every 10 seconds)
+    if int(time.time() * 2) % 20 == 0 and robot.is_rescue_flag:
+      avg_inference = (sum(_rescue_inference_times) /
+                       len(_rescue_inference_times)) if _rescue_inference_times else 0
+      logger.info(
+          f"[Rescue Monitor] errors={_rescue_error_count} "
+          f"skipped={_rescue_skipped_frames} "
+          f"avg_infer={avg_inference:.3f}s")
+
     if robot.robot_stop:
       is_stopping_by_button()
     elif robot.is_rescue_flag:
