@@ -32,7 +32,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 170
 KI = 300
-KD = 20
+KD = 30
 DP = 200
 INTEGRAL_MAX = 2  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.045  # Ball Offset P
@@ -368,6 +368,7 @@ def execute_green_uturn() -> bool:
   robot.write_last_slope_get_time(time.time())
   return True
 
+
 def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   if arg_line_area is None or not is_valid_number(arg_line_area):
     return False
@@ -378,30 +379,26 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   line_center_y = robot.line_center_y
   angle = robot.line_skeleton_angle
 
-  is_line_at_the_bottom = line_center_y > (consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
+  is_line_at_the_bottom = line_center_y > (
+      consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
 
   area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
 
   angle_deg = 0.0
   if angle is not None and is_valid_number(angle):
-      angle_deg = math.degrees(angle)
+    angle_deg = math.degrees(angle)
 
   angle_error = abs(90 - abs(angle_deg)) > 35
   is_vertical = abs(90 - abs(angle_deg)) < 5
-  should_recover = (
-      is_line_at_the_bottom and
-      area_condition and
-      angle_error and
-      (not is_vertical)
-  )
+  should_recover = (is_line_at_the_bottom and area_condition and angle_error
+                    and (not is_vertical))
 
   logger.info(
       f"Recovery Check -> Bottom: {is_line_at_the_bottom}, Small Area: {area_condition}, "
-      f"Angle Error: {angle_error}, Deg: {angle_deg:.1f}"
-  )
+      f"Angle Error: {angle_error}, Deg: {angle_deg:.1f}")
 
   if should_recover:
-      logger.info("Line recovery triggered: Line is bottom, small, and tilted.")
+    logger.info("Line recovery triggered: Line is bottom, small, and tilted.")
 
   return should_recover
 
@@ -507,12 +504,12 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
     return BASE_SPEED, BASE_SPEED
   robot.write_last_slope_get_time(time.time())
 
-  is_centered = (robot.line_center_x is not None and
-                 abs(robot.line_center_x -
-                     (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60)
+  is_centered = (robot.line_center_x is not None
+                 and abs(robot.line_center_x -
+                         (consts.LINETRACE_CAMERA_LORES_WIDTH // 2)) < 60)
 
-  is_short_line = (robot.line_area is not None and
-                   robot.line_area < consts.LINE_RECOVERY_AREA_THRESHOLD * 3)
+  is_short_line = (robot.line_area is not None and robot.line_area
+                   < consts.LINE_RECOVERY_AREA_THRESHOLD * 3)
 
   if _is_in_gap and (not _is_approached_line):
     _pid_prev_error = 0.0
@@ -1300,7 +1297,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     hasFoundExit += 1
-  #PIN:
+  # PIN:
   result = r_wall_follow_ccw()
   if result:
     hasFoundExit = 1
@@ -1517,8 +1514,8 @@ if __name__ == "__main__":
       else:
         run_yolo()
         find_best_target()
-        if not robot.has_moved_to_cage and (
-            (robot.rescue_offset is None) or (robot.rescue_size is None)):
+        if not robot.has_moved_to_cage and ((robot.rescue_offset is None) or
+                                            (robot.rescue_size is None)):
           logger.debug("not fund")
           handle_not_found()
         elif robot.rescue_target == consts.TargetList.EXIT.value:
@@ -1598,8 +1595,8 @@ if __name__ == "__main__":
           line_area = robot.line_area
 
           if False:
-          # if angle_error is not None and should_execute_line_recovery(
-              # line_area):
+            # if angle_error is not None and should_execute_line_recovery(
+            # line_area):
             execute_line_recovery()
             reset_pid_state()
             _is_in_gap = True

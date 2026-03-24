@@ -617,9 +617,8 @@ def _find_line_center_below(binary_image: np.ndarray, mark_center_y: int,
   return None
 
 
-def _has_branch_in_direction(skeleton: np.ndarray, center_x: int,
-                             center_y: int, mark_w: int, mark_h: int,
-                             direction: str) -> bool:
+def _has_branch_in_direction(skeleton: np.ndarray, center_x: int, center_y: int,
+                             mark_w: int, mark_h: int, direction: str) -> bool:
   """Check if a skeleton branch exists in the given direction.
 
   A mark can only vote for direction D if a real branch exists in
