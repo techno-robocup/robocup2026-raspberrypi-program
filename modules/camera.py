@@ -316,8 +316,10 @@ class _GreenTurnTracker:
     elif not self.committed_dir:
       if l >= self.VOTE_THRESHOLD:
         self.committed_dir = 'l'
+        self.votes['r'] = 0  # require fresh evidence for upgrade to 'u'
       elif r >= self.VOTE_THRESHOLD:
         self.committed_dir = 'r'
+        self.votes['l'] = 0  # require fresh evidence for upgrade to 'u'
 
   @property
   def effective_dir(self) -> Optional[str]:
