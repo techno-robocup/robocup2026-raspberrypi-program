@@ -1344,8 +1344,9 @@ def handle_exit() -> None:
           robot.set_speed(1750, 1250)
         else:
           robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME)
-        robot.set_speed(1500, 1500)
+        sleep_sec(consts.TURN_90_TIME * 1.5)
+        robot.set_speed(1600, 1600)
+        sleep_sec(1.0)
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
         robot.write_linetrace_slope(None)
@@ -1364,8 +1365,6 @@ def handle_exit() -> None:
       robot.send_speed()
       robot.write_is_rescue_flag(False)
     if result:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
       robot.set_speed(1650, 1650)
       sleep_sec(2.6)
       robot.set_speed(1500, 1500)
