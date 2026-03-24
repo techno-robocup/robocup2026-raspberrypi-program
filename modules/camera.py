@@ -303,15 +303,17 @@ class _GreenTurnTracker:
     if not self.committed_dir:
       self.committed_dir = 'u'
 
-  def try_commit(self):
+  def try_commit(self, allow_upgrade: bool = False):
     """Lock direction once enough votes accumulated.
 
     Allows upgrade from 'l'/'r' to 'u' when the opposite side also
-    reaches threshold — handles dead-end marks entering the camera
-    at different times.
+    reaches threshold — but only when allow_upgrade is True (both
+    sides have marks in the current frame), preventing a single
+    drifting mark from faking a U-turn.
     """
     l, r = self.votes['l'], self.votes['r']
-    if l >= self.VOTE_THRESHOLD and r >= self.VOTE_THRESHOLD:
+    if l >= self.VOTE_THRESHOLD and r >= self.VOTE_THRESHOLD and (
+        not self.committed_dir or allow_upgrade):
       self.committed_dir = 'u'
     elif not self.committed_dir:
       if l >= self.VOTE_THRESHOLD:
@@ -769,7 +771,10 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
     robot.write_green_turn_direction(None)
     return binary_image
 
-  tracker.try_commit()
+  # Only allow upgrade from l/r to u when both sides have marks in the
+  # same frame — prevents a single drifting mark from faking a U-turn.
+  both_sides_visible = bool(left_marks) and bool(right_marks)
+  tracker.try_commit(allow_upgrade=both_sides_visible)
 
   turn_dir = tracker.effective_dir
   if turn_dir is None or (tracker.line_cx is None and turn_dir != 'u'):

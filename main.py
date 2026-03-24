@@ -1524,7 +1524,7 @@ if __name__ == "__main__":
           handle_cage()
     else:
       if not robot.linetrace_stop:
-        logger.info(f"{robot.sum_accel}")
+        logger.info(f"{_pid_integral}")
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
         if robot.green_turn_direction == 'u':
