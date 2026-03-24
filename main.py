@@ -1523,7 +1523,7 @@ if __name__ == "__main__":
           from modules.camera import reset_green_tracker
           reset_green_tracker()
           robot.write_green_turn_direction(None)
-        elif should_process_green_mark():
+        elif should_process_green_mark() and robot.green_turn_direction in ('l', 'r'):
           # Green turn is handled by camera binary image modification.
           # The modified binary shows only the desired path, so normal
           # line-following PID naturally steers through the turn.
