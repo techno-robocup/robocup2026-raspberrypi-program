@@ -1037,7 +1037,7 @@ def calculate_ball() -> tuple[int, int]:
       else:
         return 1500, 1500
     else:
-      diff_angle = 40 if diff_angle > 0 else -40
+      diff_angle = 70 if diff_angle > 0 else -70
       base_L = 1500 + diff_angle
       base_R = 1500 - diff_angle
       robot.set_speed(base_L, base_R)
@@ -1091,7 +1091,7 @@ def calculate_cage() -> tuple[int, int]:
 
 def l_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
-  l_dist = robot.avg_ultrasonic
+  l_dist = robot.avg_ultrasonic[0]
   front_dist = ultrasonic[1]
 
   if front_dist is None or front_dist <= 0:
