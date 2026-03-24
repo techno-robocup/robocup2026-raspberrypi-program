@@ -57,7 +57,7 @@ RESCUE_IMAGE_WIDTH = 4608
 RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
-BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 200  # 1728.0 - x
+BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 300  # 1728.0 - x
 BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100 # 2160.0 - x
 
 
@@ -1047,7 +1047,7 @@ def calculate_ball() -> tuple[int, int]:
       dist_term = 0
   else:
     dist_term = (math.sqrt(consts.BALL_CATCH_SIZE) - math.sqrt(size)) * BSP
-    dist_term = int(max(30.0, min(dist_term, 100)))
+    dist_term = int(max(0.0, min(dist_term, 100)))
   base_L = 1500 + diff_angle + dist_term
   base_R = 1500 - diff_angle + dist_term
   base_L = int(base_L)
