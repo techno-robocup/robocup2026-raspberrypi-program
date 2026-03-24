@@ -34,7 +34,7 @@ KP = 170
 KI = 300
 KD = 25
 DP = 200
-INTEGRAL_MAX = 0.5  # Anti-windup: max |accumulated integral error| in radians*sec
+INTEGRAL_MAX = 2  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
 BSP = 0.3  # Ball Size P
 COP = 0.06  # Cage Offset P
@@ -1204,6 +1204,7 @@ def l_wall_follow_ccw() -> bool:
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
+    sleep_sec(0.2)
     return False
   target_dist = consts.TARGET_MIN
   error = l_dist - target_dist
@@ -1258,6 +1259,7 @@ def r_wall_follow_ccw() -> bool:
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
     robot.send_speed()
+    sleep_sec(0.2)
     return False
   target_dist = consts.TARGET_MIN
   error = r_dist - target_dist
