@@ -293,8 +293,8 @@ class _GreenTurnTracker:
     self.miss_count = 0
 
   def vote(self, direction: str):
-    """Record a branch-verified vote. Ignored after commit."""
-    if self.committed_dir:
+    """Record a branch-verified vote. Ignored after U-turn commit."""
+    if self.committed_dir == 'u':
       return
     self.votes[direction] = self.votes.get(direction, 0) + 1
 
@@ -304,16 +304,20 @@ class _GreenTurnTracker:
       self.committed_dir = 'u'
 
   def try_commit(self):
-    """Lock direction once enough votes accumulated."""
-    if self.committed_dir:
-      return
+    """Lock direction once enough votes accumulated.
+
+    Allows upgrade from 'l'/'r' to 'u' when the opposite side also
+    reaches threshold — handles dead-end marks entering the camera
+    at different times.
+    """
     l, r = self.votes['l'], self.votes['r']
     if l >= self.VOTE_THRESHOLD and r >= self.VOTE_THRESHOLD:
       self.committed_dir = 'u'
-    elif l >= self.VOTE_THRESHOLD:
-      self.committed_dir = 'l'
-    elif r >= self.VOTE_THRESHOLD:
-      self.committed_dir = 'r'
+    elif not self.committed_dir:
+      if l >= self.VOTE_THRESHOLD:
+        self.committed_dir = 'l'
+      elif r >= self.VOTE_THRESHOLD:
+        self.committed_dir = 'r'
 
   @property
   def effective_dir(self) -> Optional[str]:
@@ -743,7 +747,7 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   #    check is needed — it would bypass per-mark branch verification
   #    and cause false U-turns when a spurious mark is present.
   # ------------------------------------------------------------------
-  if not tracker.committed_dir:
+  if tracker.committed_dir != 'u':
     for mark in left_marks:
       if _has_branch_in_direction(clean_skeleton, mark[0], mark[1], mark[2],
                                   mark[3], 'l'):
