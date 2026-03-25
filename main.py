@@ -34,7 +34,7 @@ KP = 170
 KI = 300
 KD = 25
 DP = 200
-INTEGRAL_MAX = 2  # Anti-windup: max |accumulated integral error| in radians*sec
+INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
 BSP = 0.3  # Ball Size P
 COP = 0.06  # Cage Offset P
@@ -1545,6 +1545,9 @@ if __name__ == "__main__":
           motorl = min(motorl, slowdown)
           motorr = min(motorr, slowdown)
           robot.set_speed(motorl, motorr)
+          # Limit integral windup during speed-capped turns: allow some
+          # integral for steady-state correction but prevent full buildup.
+          _pid_integral = max(-0.25, min(0.25, _pid_integral))
           logger.info("Green turn — camera steering active, slowing down")
         elif robot.green_ahead:
           # Green mark detected ahead along line direction — slow down to prepare
