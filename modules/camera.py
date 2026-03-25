@@ -666,6 +666,43 @@ def _has_branch_in_direction(skeleton: np.ndarray, center_x: int, center_y: int,
   return cv2.countNonZero(roi) >= MIN_BRANCH_PIXELS
 
 
+def _is_mark_past_intersection(clean_skeleton: np.ndarray, mark_cy: int,
+                                mark_h: int, ref_cx: int) -> bool:
+  """Check if a mark is past the intersection (above the side lines).
+
+  Looks for skeleton pixels BELOW the mark (higher y, closer to robot)
+  that are far from the approach line center.  Such pixels indicate
+  horizontal side lines, meaning the intersection is between the robot
+  and the mark.  Uses clean_skeleton (mark blobs already removed) to
+  avoid confusing other marks' blobs for side lines.
+  """
+  h, w = clean_skeleton.shape[:2]
+  MIN_SIDE_PIXELS = 8
+
+  y_start = min(h - 1, mark_cy + mark_h // 2)
+  y_end = h
+  if y_start >= y_end:
+    return False
+
+  side_margin = 30
+
+  # Left side of approach line
+  x_left_end = max(0, ref_cx - side_margin)
+  if x_left_end > 0:
+    left_roi = clean_skeleton[y_start:y_end, 0:x_left_end]
+    if cv2.countNonZero(left_roi) >= MIN_SIDE_PIXELS:
+      return True
+
+  # Right side of approach line
+  x_right_start = min(w, ref_cx + side_margin)
+  if x_right_start < w:
+    right_roi = clean_skeleton[y_start:y_end, x_right_start:w]
+    if cv2.countNonZero(right_roi) >= MIN_SIDE_PIXELS:
+      return True
+
+  return False
+
+
 def _apply_green_turn_to_binary(binary_image: np.ndarray,
                                 skeleton: np.ndarray) -> np.ndarray:
   """Modify binary image to guide the robot through a green-mark turn.
@@ -714,6 +751,20 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
 
   ref_cx = tracker.line_cx if tracker.line_cx is not None else w // 2
 
+  # Create a clean skeleton with green mark blobs removed so that
+  # _has_branch_in_direction and _is_mark_past_intersection do not
+  # mistake a mark's own blob (green tape → dark in grayscale → white
+  # in binary → skeleton pixels) for a real intersection branch.
+  clean_skeleton = skeleton.copy()
+  mark_margin = 15
+  for mark in green_marks:
+    mx, my, mw, mh = mark
+    x1 = max(0, mx - mw // 2 - mark_margin)
+    y1 = max(0, my - mh // 2 - mark_margin)
+    x2 = min(w, mx + mw // 2 + mark_margin)
+    y2 = min(h, my + mh // 2 + mark_margin)
+    clean_skeleton[y1:y2, x1:x2] = 0
+
   # ------------------------------------------------------------------
   # 3. Classify marks into left / right relative to approach line.
   # ------------------------------------------------------------------
@@ -724,25 +775,13 @@ def _apply_green_turn_to_binary(binary_image: np.ndarray,
   for mark, detection in zip(green_marks, green_black_detected):
     if detection[2] != 1 and detection[3] != 1:
       continue  # no adjacent skeleton lines — not actionable
+    if _is_mark_past_intersection(clean_skeleton, mark[1], mark[3], ref_cx):
+      continue  # mark is above the side lines — ignore
     cx = mark[0]
     if cx < ref_cx - SIDE_TOLERANCE:
       left_marks.append(mark)
     elif cx > ref_cx + SIDE_TOLERANCE:
       right_marks.append(mark)
-
-  # Create a clean skeleton with green mark blobs removed so that
-  # _has_branch_in_direction does not mistake a mark's own blob
-  # (green tape → dark in grayscale → white in binary → skeleton
-  # pixels) for a real intersection branch.
-  clean_skeleton = skeleton.copy()
-  mark_margin = 15
-  for mark in green_marks:
-    mx, my, mw, mh = mark
-    x1 = max(0, mx - mw // 2 - mark_margin)
-    y1 = max(0, my - mh // 2 - mark_margin)
-    x2 = min(w, mx + mw // 2 + mark_margin)
-    y2 = min(h, my + mh // 2 + mark_margin)
-    clean_skeleton[y1:y2, x1:x2] = 0
 
   # ------------------------------------------------------------------
   # 4. Branch-verified voting.
