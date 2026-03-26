@@ -667,7 +667,7 @@ def _has_branch_in_direction(skeleton: np.ndarray, center_x: int, center_y: int,
 
 
 def _is_mark_past_intersection(clean_skeleton: np.ndarray, mark_cy: int,
-                                mark_h: int, ref_cx: int) -> bool:
+                               mark_h: int, ref_cx: int) -> bool:
   """Check if a mark is past the intersection (above the side lines).
 
   Looks for skeleton pixels BELOW the mark (higher y, closer to robot)

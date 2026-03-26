@@ -58,7 +58,7 @@ RESCUE_IMAGE_HEIGHT = 2592
 RESCUE_CX = RESCUE_IMAGE_WIDTH / 2.0
 
 BALL_Y_2_3 = (RESCUE_IMAGE_HEIGHT * 2 / 3) - 200  # 1728.0 - x
-BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100 # 2160.0 - x
+BALL_Y_5_6 = (RESCUE_IMAGE_HEIGHT * 5 / 6) - 100  # 2160.0 - x
 
 
 def is_valid_number(value) -> bool:
@@ -700,6 +700,7 @@ def update_ball_flags(dist_offset: float, y_center: float, w: float,
   robot.write_ball_catch_dist_flag(is_bottom_third)
   robot.write_ball_catch_offset_flag(includes_center)
 
+
 def update_best_box(
     xywh,
     max_area: float,
@@ -1090,6 +1091,7 @@ def calculate_cage() -> tuple[int, int]:
   return clamp(int(base_L), MIN_SPEED,
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
+
 def l_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
   l_dist = robot.avg_ultrasonic[0]
@@ -1099,9 +1101,11 @@ def l_wall_follow_ccw() -> bool:
     logger.warning("Front sensor not responding - Jiggling (Left Follow)...")
     while True:
       robot.set_speed(1700, 1700)
-      if sleep_sec(0.4) == 1: return False
+      if sleep_sec(0.4) == 1:
+        return False
       robot.set_speed(1300, 1300)
-      if sleep_sec(0.4) == 1: return False
+      if sleep_sec(0.4) == 1:
+        return False
       new_front = robot.ultrasonic[1]
       if new_front is not None and new_front > 0:
         logger.info(f"Front sensor recovered: {new_front}")
@@ -1141,7 +1145,9 @@ def l_wall_follow_ccw() -> bool:
 
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
-  logger.info(f"L-Dist: {l_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}")
+  logger.info(
+      f"L-Dist: {l_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}"
+  )
   robot.send_speed()
 
   return False
@@ -1155,9 +1161,11 @@ def r_wall_follow_ccw() -> bool:
     logger.warning("Front sensor not responding - Jiggling...")
     while True:
       robot.set_speed(1700, 1700)
-      if sleep_sec(0.4) == 1: return False
+      if sleep_sec(0.4) == 1:
+        return False
       robot.set_speed(1300, 1300)
-      if sleep_sec(0.4) == 1: return False
+      if sleep_sec(0.4) == 1:
+        return False
       new_front = robot.ultrasonic[1]
       if new_front is not None and new_front > 0:
         logger.info(f"Front sensor recovered: {new_front}")
@@ -1195,7 +1203,9 @@ def r_wall_follow_ccw() -> bool:
     left_speed += 20
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
-  logger.info(f"R-Dist: {r_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}")
+  logger.info(
+      f"R-Dist: {r_dist:.1f}, Target: {target_dist}, L:{left_speed} R:{right_speed}"
+  )
   robot.send_speed()
 
   return False
