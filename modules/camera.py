@@ -237,7 +237,8 @@ def Rescue_precallback_func(request: CompletedRequest) -> None:
   # Depth estimation only during linetrace mode
   if not robot.is_rescue_flag:
     # In linetrace mode - perform depth estimation
-    Rescue_Depth_precallback_func(request)
+    # Rescue_Depth_precallback_func(request)
+    return
   else:
     # In rescue mode - just capture image for YOLO detection
     # In rescue mode we only capture the lores image for YOLO.
