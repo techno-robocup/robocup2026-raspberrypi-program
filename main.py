@@ -218,7 +218,7 @@ def execute_green_uturn() -> bool:
         logger.info("U-turn: second black line found — stopping")
         break
 
-    # Spin left (arbitrary direction for 180°)
+    # Spin right (arbitrary direction for 180°)
     robot.set_speed(1750, 1250)
     robot.send_speed()
 
