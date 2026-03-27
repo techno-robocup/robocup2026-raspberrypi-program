@@ -904,7 +904,7 @@ def calculate_ball() -> tuple[int, int]:
       base_R = 1500 - diff_angle
       logger.info(f"Override Motor Speed L{base_L} dist:{base_R}")
       robot.set_speed(base_L, base_R)
-      sleep_sec(0.5)
+      sleep_sec(0.3)
       diff_angle = 0
       dist_term = 0
   else:
