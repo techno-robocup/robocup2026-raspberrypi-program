@@ -1444,7 +1444,7 @@ if __name__ == "__main__":
               break
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
-            robot.set_speed(1600, 1800)
+            robot.set_speed(1600, 1780)
             robot.send_speed()
             robot.update_button_stat()
             if robot.robot_stop:
