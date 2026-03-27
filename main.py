@@ -755,7 +755,7 @@ def catch_ball() -> int:
   robot.send_speed()
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1490, 0)
+  robot.set_arm(1530, 0)
   robot.send_arm()
   sleep_sec(1)
   robot.set_speed(1750, 1750)
@@ -765,9 +765,7 @@ def catch_ball() -> int:
   robot.set_arm(920, 0)
   robot.send_arm()
   robot.set_speed(1400, 1400)
-  sleep_sec(0.5)
-  robot.set_speed(1600, 1600)
-  sleep_sec(0.5)
+  sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_arm(920, 1)
@@ -791,7 +789,7 @@ def release_ball() -> bool:
     True on successful completion.
   """
   robot.set_speed(1650, 1650)
-  sleep_sec(1.5)
+  sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1350, 1350)
@@ -802,11 +800,11 @@ def release_ball() -> bool:
   robot.set_arm(1700, 0)
   robot.send_arm()
   sleep_sec(1.5)
+  robot.set_speed(1300, 1300)
+  sleep_sec(0.7)
   robot.set_arm(3030, 0)
   robot.send_arm()
   sleep_sec(0.5)
-  robot.set_speed(1300, 1300)
-  sleep_sec(0.7)
   robot.set_speed(1250, 1750)
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
@@ -1121,7 +1119,7 @@ def handle_before_search() -> None:
   if hasFoundExit == -1:
     robot.set_speed(1500, 1500)
     robot.send_speed()
-    robot.set_speed(1350, 1400)
+    robot.set_speed(1350, 1350)
     sleep_sec(4.5)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
@@ -1155,7 +1153,7 @@ def handle_before_search() -> None:
           is not None) and (robot.line_area
                             >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
         hasFoundExit = 1
-        robot.set_speed(1350, 1350)
+        robot.set_speed(1400, 1400)
         sleep_sec(2)
         robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
@@ -1178,7 +1176,7 @@ def handle_before_search() -> None:
                         >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
     hasFoundExit = 1
     robot.set_speed(1400, 1400)
-    sleep_sec(1)
+    sleep_sec(2)
     robot.set_speed(1250, 1750)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1650, 1650)
