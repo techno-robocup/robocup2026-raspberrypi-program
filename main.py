@@ -30,9 +30,9 @@ assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 170
-KI = 300
-KD = 25
+KP = 165
+KI = 280
+KD = 28
 DP = 200
 INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
