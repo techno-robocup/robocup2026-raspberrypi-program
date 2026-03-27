@@ -155,6 +155,7 @@ def execute_green_uturn() -> bool:
 
   Returns True if completed, False if interrupted by button.
   """
+  use_bno = False
   logger.info("Starting 180° U-turn")
 
   # Drive forward a bit to center on the intersection
@@ -177,6 +178,10 @@ def execute_green_uturn() -> bool:
   black_crosses = 0
   was_on_black = False
 
+  degree = None
+  if use_bno:
+    degree = robot.yaw
+
   while True:
     robot.update_button_stat()
     if robot.robot_stop:
@@ -187,6 +192,14 @@ def execute_green_uturn() -> bool:
     if time.time() - started_turning > max_turn_time:
       logger.warning(f"U-turn timeout after {max_turn_time:.1f}s")
       break
+
+    if use_bno:
+      current_robot_yaw = robot.yaw
+      diff = current_robot_yaw - degree
+      diff = diff if diff > 0 else diff + 360
+      if time.time() - started_turning > 1 and diff > 180 * 1.3:
+        logger.warning(f"U-turn turning too much. Initial: {degree} Current: {current_robot_yaw}")
+        break
 
     # Enable black line check after passing through the initial dead zone
     past_dead_zone = (time.time() - started_turning
