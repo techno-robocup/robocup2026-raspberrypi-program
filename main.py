@@ -147,6 +147,7 @@ def should_process_green_mark() -> bool:
 
   return (has_left or has_right) and mark_in_bottom
 
+
 def execute_green_uturn() -> bool:
   """Execute a 180° U-turn (green marks on both sides = dead end).
 
@@ -198,7 +199,9 @@ def execute_green_uturn() -> bool:
       diff = current_robot_yaw - degree
       diff = diff if diff > 0 else diff + 360
       if time.time() - started_turning > 1 and diff > 180 * 1.3:
-        logger.warning(f"U-turn turning too much. Initial: {degree} Current: {current_robot_yaw}")
+        logger.warning(
+            f"U-turn turning too much. Initial: {degree} Current: {current_robot_yaw}"
+        )
         break
 
     # Enable black line check after passing through the initial dead zone
@@ -955,10 +958,10 @@ def calculate_cage() -> tuple[int, int]:
 
 def l_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
-  l_dist = robot.avg_ultrasonic[0]
-  front_dist = ultrasonic[1]
+  l_dist = ultrasonic[0]
+  front_dist = robot.avg_ultrasonic[1]
 
-  if front_dist is None or front_dist <= 0:
+  if front_dist is None or front_dist < 0:
     logger.warning("Front sensor not responding - Jiggling (Left Follow)...")
     while True:
       robot.set_speed(1700, 1700)
@@ -976,7 +979,7 @@ def l_wall_follow_ccw() -> bool:
         break
       logger.info("Still no response from front sensor...")
 
-  if l_dist is not None and l_dist > consts.OPEN_THRESHOLD:
+  if (l_dist is not None and l_dist > consts.OPEN_THRESHOLD) or l_dist == 0:
     logger.info("Wall opening detected (Left) - Exiting control")
     return True
 
