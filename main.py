@@ -1153,7 +1153,7 @@ def handle_before_search() -> None:
           is not None) and (robot.line_area
                             >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
         hasFoundExit = 1
-        robot.set_speed(1400, 1400)
+        robot.set_speed(1350, 1350)
         sleep_sec(2)
         robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
@@ -1175,7 +1175,7 @@ def handle_before_search() -> None:
       is not None) and (robot.line_area
                         >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
     hasFoundExit = 1
-    robot.set_speed(1400, 1400)
+    robot.set_speed(1350, 1350)
     sleep_sec(2)
     robot.set_speed(1250, 1750)
     sleep_sec(consts.TURN_90_TIME)
