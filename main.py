@@ -1344,7 +1344,7 @@ def is_stopping_by_button() -> None:
   robot.write_ball_catch_offset_flag(False)
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
-  robot.write_detect_black_ball(True)
+  robot.write_detect_black_ball(False)
   reset_pid_state()
 
 
