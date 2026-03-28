@@ -1384,6 +1384,7 @@ if __name__ == "__main__":
       continue
     if _was_stopped:
       _was_stopped = False
+      robot.restart_linetrace_camera()
       robot.write_linetrace_stop(False)
       robot.write_linetrace_slope(None)
       robot.write_line_area(0)
