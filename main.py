@@ -1009,6 +1009,7 @@ def r_wall_follow_ccw() -> bool:
   turn = int(error * kp)
   max_turn = consts.BASE_TURN
   turn = max(-max_turn, min(max_turn, turn))
+  turn = 0
   left_speed = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
 
@@ -1066,6 +1067,7 @@ def l_wall_follow_ccw() -> bool:
   turn = int(error * kp)
   max_turn = consts.BASE_TURN
   turn = max(-max_turn, min(max_turn, turn))
+  turn = 0
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
