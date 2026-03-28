@@ -1340,8 +1340,10 @@ def is_stopping_by_button() -> None:
   robot.write_rescue_turning_angle(0)
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   logger.info("robot stop true, stopping..")
-  robot.write_linetrace_stop(False)
+  robot.write_linetrace_stop(True)
   robot.write_is_rescue_flag(False)
+  robot.write_linetrace_slope(None)
+  robot.write_line_area(0)
   robot.write_last_slope_get_time(time.time())
   robot.write_ball_catch_dist_flag(False)
   robot.write_ball_catch_offset_flag(False)
@@ -1371,13 +1373,23 @@ if __name__ == "__main__":
   robot.write_last_slope_get_time(time.time())
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
+  _was_stopped = False
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
     ultrasonic_info = robot.avg_ultrasonic
     if robot.robot_stop:
+      _was_stopped = True
       is_stopping_by_button()
-    elif robot.is_rescue_flag:
+      continue
+    if _was_stopped:
+      _was_stopped = False
+      robot.write_linetrace_stop(False)
+      robot.write_linetrace_slope(None)
+      robot.write_line_area(0)
+      robot.write_last_slope_get_time(time.time())
+      reset_pid_state()
+    if robot.is_rescue_flag:
       try:
         logger.info(
             f"Searching for target: {consts.TargetList(robot.rescue_target).name} (id={robot.rescue_target})"
