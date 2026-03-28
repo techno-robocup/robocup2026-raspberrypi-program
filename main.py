@@ -1467,6 +1467,7 @@ if __name__ == "__main__":
           sleep_sec(1)
           robot.set_speed(1600, 1400)
           sleep_sec(1)
+          robot.write_linetrace_stop(False)
         else:
           # Check if line recovery is needed (small line area + steep angle)
           angle_error = get_current_angle_error()
