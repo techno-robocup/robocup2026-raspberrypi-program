@@ -758,7 +758,7 @@ def catch_ball() -> int:
   robot.send_speed()
   robot.set_speed(1500, 1500)
   robot.send_speed()
-  robot.set_arm(1530, 0)
+  robot.set_arm(1540, 0)
   robot.send_arm()
   sleep_sec(1)
   robot.set_speed(1750, 1750)
@@ -767,7 +767,7 @@ def catch_ball() -> int:
   robot.send_speed()
   robot.set_arm(920, 0)
   robot.send_arm()
-  robot.set_speed(1400, 1400)
+  robot.set_speed(1250, 1250)
   sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
@@ -791,13 +791,14 @@ def release_ball() -> bool:
   Returns:
     True on successful completion.
   """
-  robot.set_speed(1650, 1650)
+  robot.set_speed(1600, 1600)
   sleep_sec(1)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1350, 1350)
   sleep_sec(0.3)
-  robot.set_speed(1450, 1450)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
   robot.set_arm(1700, 0)
   robot.send_arm()
   robot.set_arm(1700, 0)
@@ -1154,9 +1155,9 @@ def handle_before_search() -> None:
         break
       if (robot.linetrace_slope
           is not None) and (robot.line_area
-                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
         hasFoundExit = 1
-        robot.set_speed(1350, 1350)
+        robot.set_speed(1300, 1300)
         sleep_sec(2)
         robot.set_speed(1250, 1750)
         sleep_sec(consts.TURN_90_TIME)
@@ -1176,9 +1177,9 @@ def handle_before_search() -> None:
     sleep_sec(2.5)
   if (robot.linetrace_slope
       is not None) and (robot.line_area
-                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2):
+                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
     hasFoundExit = 1
-    robot.set_speed(1350, 1350)
+    robot.set_speed(1300, 1300)
     sleep_sec(2)
     robot.set_speed(1250, 1750)
     sleep_sec(consts.TURN_90_TIME)
