@@ -82,7 +82,7 @@ MIN_BLACK_LINE_AREA: Final[int] = 3000  # BE CAREFUL WHEN REWRITING THIS VALUE
 
 # Line recovery constants - for backing up when losing the line
 LINE_RECOVERY_AREA_THRESHOLD: Final[
-    int] = 6000  # Trigger recovery when line area drops below this
+    int] = 7000  # Trigger recovery when line area drops below this
 LINE_RECOVERY_ANGLE_THRESHOLD: Final[
     float] = 0.15  # Trigger when angle error exceeds this (radians, ~28.6°)
 LINE_RECOVERY_BACKUP_TIME: Final[float] = 1.0  # Seconds to back up
@@ -124,7 +124,7 @@ lower_red2: Final[np.ndarray] = np.array([0, 130, 100])
 upper_red2: Final[np.ndarray] = np.array([20, 255, 255])
 
 GREEN_AHEAD_SLOWDOWN_SPEED: Final[
-    int] = 1600  # Motor speed cap when green mark predicted ahead
+    int] = 1630  # Motor speed cap when green mark predicted ahead
 GREEN_GYRO_PASS_TIME: Final[
     float] = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 

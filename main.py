@@ -32,7 +32,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 170
 KI = 280
-KD = 33
+KD = 30
 DP = 200
 INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
@@ -453,14 +453,14 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   # Reduce the speed when the robot on slope and when it tries to go downside
   l_multi = 1
   r_multi = 1
-  if robot.pitch > 10:
+  if robot.pitch < -10:
     if local_angle_error > 0:
       l_multi = 0.3
       r_multi = 0.3
     else:
       l_multi = 1.5
       r_multi = 1.5
-  elif robot.pitch < -10:
+  elif robot.pitch > 10:
     if local_angle_error < 0:
       l_multi = 0.3
       r_multi = 0.3
@@ -469,8 +469,8 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       r_multi = 1.5
 
   if abs(robot.roll) > 10:
-    l_multi = 0.6
-    r_multi = 0.6
+    l_multi = 0.8
+    r_multi = 0.8
 
   decel_speed = clamp(int(adjusted_base_speed - abs(local_angle_error)**7 * DP),
                       1500, 2000)
