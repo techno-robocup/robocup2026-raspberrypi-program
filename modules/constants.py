@@ -142,7 +142,7 @@ TARGET_MAX = 20.0
 FRONT_FLAG_DIST = 10.0
 OPEN_THRESHOLD = 25.0
 BASE_SPEED = 1600
-BASE_TURN = 80
+BASE_TURN = 50
 
 if __name__ == "__main__":
   pass

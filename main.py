@@ -980,11 +980,11 @@ def l_wall_follow_ccw() -> bool:
         break
       logger.info("Still no response from front sensor...")
 
-  if (l_dist is not None and l_dist > consts.OPEN_THRESHOLD) or l_dist == 0:
+  if l_dist is not None and l_dist > consts.OPEN_THRESHOLD or l_dist == 0:
     logger.info("Wall opening detected (Left) - Exiting control")
     return True
 
-  if l_dist is None or l_dist <= 0:
+  if l_dist is None or l_dist < 0:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     logger.info("The left ultrasonic sensor is not responding.")
@@ -1005,8 +1005,6 @@ def l_wall_follow_ccw() -> bool:
   turn = max(-max_turn, min(max_turn, turn))
   left_speed = BASE_SPEED - turn
   right_speed = BASE_SPEED + turn
-  if turn > 0:
-    right_speed += 20
 
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
@@ -1064,8 +1062,6 @@ def r_wall_follow_ccw() -> bool:
   turn = max(-max_turn, min(max_turn, turn))
   left_speed = BASE_SPEED + turn
   right_speed = BASE_SPEED - turn
-  if turn > 0:
-    left_speed += 20
   left_speed, right_speed = clamp(left_speed), clamp(right_speed)
   robot.set_speed(left_speed, right_speed)
   logger.info(
@@ -1124,7 +1120,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     robot.set_speed(1350, 1380)
-    sleep_sec(4.5)
+    sleep_sec(4.1)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME)
     robot.set_speed(1500, 1500)
@@ -1160,11 +1156,11 @@ def handle_before_search() -> None:
         robot.set_speed(1300, 1300)
         sleep_sec(2)
         robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME)
+        sleep_sec(consts.TURN_90_TIME * 1.3)
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.set_speed(1650, 1650)
-        sleep_sec(2)
+        sleep_sec(2.5)
         break
     robot.set_speed(1500, 1500)
     robot.send_speed()
@@ -1182,9 +1178,9 @@ def handle_before_search() -> None:
     robot.set_speed(1300, 1300)
     sleep_sec(2)
     robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(consts.TURN_90_TIME * 1.3)
     robot.set_speed(1650, 1650)
-    sleep_sec(2)
+    sleep_sec(2.5)
 
 
 def handle_not_found() -> None:
@@ -1209,7 +1205,7 @@ def handle_exit() -> None:
       robot.send_speed()
       if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
           robot.rescue_image.shape[0] * 1 / 2):
-        robot.set_speed(1700, 1700)
+        robot.set_speed(1600, 1600)
         sleep_sec(1)
         robot.set_speed(1300, 1300)
         sleep_sec(0.5)
@@ -1232,7 +1228,9 @@ def handle_exit() -> None:
       result = l_wall_follow_ccw()
     else:
       result = r_wall_follow_ccw()
-    if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2:
+    if (robot.linetrace_slope
+      is not None) and (robot.line_area
+                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
       logger.info("Line detected, exit rescue mode")
       robot.set_speed(1600, 1600)
       sleep_sec(1.0)
