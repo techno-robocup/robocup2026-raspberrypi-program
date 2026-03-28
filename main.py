@@ -1206,7 +1206,7 @@ def handle_exit() -> None:
       motorl, motorr = calculate_cage()
       robot.set_speed(motorl, motorr)
       robot.send_speed()
-      if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.5 and robot.rescue_y is not None and robot.rescue_y > (
+      if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.6 and robot.rescue_y is not None and robot.rescue_y > (
           robot.rescue_image.shape[0] * 1 / 2):
         robot.set_speed(1600, 1600)
         sleep_sec(1)
@@ -1302,7 +1302,7 @@ def handle_cage() -> None:
   motorl, motorr = calculate_cage()
   robot.set_speed(motorl, motorr)
   robot.send_speed()
-  if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.6 and robot.rescue_y is not None and robot.rescue_y > (
+  if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.7 and robot.rescue_y is not None and robot.rescue_y > (
       robot.rescue_image.shape[0] * 1 / 2):
     release_ball()
     set_target()
