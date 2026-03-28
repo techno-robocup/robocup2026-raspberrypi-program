@@ -468,9 +468,9 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       l_multi = 1.5
       r_multi = 1.5
 
-  if abs(robot.roll) > 10:
-    l_multi = 0.8
-    r_multi = 0.8
+  if robot.roll < -10:
+    l_multi = 0.6
+    r_multi = 0.6
 
   decel_speed = clamp(int(adjusted_base_speed - abs(local_angle_error)**7 * DP),
                       1500, 2000)
