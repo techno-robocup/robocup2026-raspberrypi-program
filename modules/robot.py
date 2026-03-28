@@ -374,6 +374,12 @@ class Robot:
     """
     self.__uart_device = device
 
+  def restart_linetrace_camera(self) -> None:
+    """Restart the line trace camera (stop then start)."""
+    logger.get_logger().info("Restarting line trace camera")
+    self.__Linetrace_Camera.stop_cam()
+    self.__Linetrace_Camera.start_cam()
+
   # ============================================================================
   # Motor and Arm Control
   # ============================================================================
