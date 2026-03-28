@@ -992,7 +992,7 @@ def l_wall_follow_ccw() -> bool:
 
   if front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1750, 1250)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(consts.TURN_90_TIME * 1.3)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     sleep_sec(0.2)
@@ -1049,7 +1049,7 @@ def r_wall_follow_ccw() -> bool:
 
   if front_dist <= consts.FRONT_FLAG_DIST:
     robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(consts.TURN_90_TIME * 1.3)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     sleep_sec(0.2)
@@ -1122,7 +1122,7 @@ def handle_before_search() -> None:
     robot.set_speed(1350, 1380)
     sleep_sec(4.1)
     robot.set_speed(1750, 1250)
-    sleep_sec(consts.TURN_90_TIME)
+    sleep_sec(consts.TURN_90_TIME * 0.8)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     robot.set_speed(1650, 1650)
@@ -1145,7 +1145,7 @@ def handle_before_search() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME)
+        sleep_sec(consts.TURN_90_TIME * 1.2)
         robot.set_speed(1500, 1500)
         robot.send_speed()
         break
