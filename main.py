@@ -1245,9 +1245,9 @@ def handle_exit() -> None:
       robot.send_speed()
       if robot.rescue_offset is None:
         if exit_angle == "R":
-          robot.set_speed(1680, 1600)
+          robot.set_speed(1640, 1600)
         else:
-          robot.set_speed(1600, 1680)
+          robot.set_speed(1600, 1640)
         robot.send_speed()
       if (robot.linetrace_slope
         is not None) and (robot.line_area
