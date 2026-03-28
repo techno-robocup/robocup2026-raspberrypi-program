@@ -25,14 +25,14 @@ uart_dev = modules.robot.uart_io()
 uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1650
+BASE_SPEED = 1710
 assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 165
+KP = 170
 KI = 280
-KD = 28
+KD = 30
 DP = 200
 INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
