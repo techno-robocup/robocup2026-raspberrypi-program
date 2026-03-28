@@ -1450,14 +1450,6 @@ if __name__ == "__main__":
           sleep_sec(1)
           robot.write_linetrace_stop(False)
         else:
-          # Check if line recovery is needed (small line area + steep angle)
-          angle_error = get_current_angle_error()
-          line_area = robot.line_area
-
-          if should_execute_line_recovery(line_area):
-            execute_line_recovery()
-            reset_pid_state()
-          else:
             motorl, motorr = calculate_motor_speeds()
             robot.set_speed(motorl, motorr)
       else:
