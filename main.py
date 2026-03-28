@@ -455,18 +455,18 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   r_multi = 1
   if robot.pitch > 10:
     if local_angle_error > 0:
-      l_multi = 0.5
-      r_multi = 0.5
+      l_multi = 0.3
+      r_multi = 0.3
     else:
-      l_multi = 1.2
-      r_multi = 1.2
+      l_multi = 1.5
+      r_multi = 1.5
   elif robot.pitch < -10:
     if local_angle_error < 0:
-      l_multi = 0.5
-      r_multi = 0.5
+      l_multi = 0.3
+      r_multi = 0.3
     else:
-      l_multi = 1.2
-      r_multi = 1.2
+      l_multi = 1.5
+      r_multi = 1.5
 
   if abs(robot.roll) > 10:
     l_multi = 0.6
