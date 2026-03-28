@@ -1219,23 +1219,23 @@ def handle_exit() -> None:
         sleep_sec(0.5)
         robot.set_speed(1500, 1500)
         robot.send_speed()
-        if hasFoundExit > 0:
-          robot.set_speed(1750, 1250)
-        else:
-          robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME * 1.5)
-        robot.set_speed(1600, 1600)
+        # if hasFoundExit > 0:
+        robot.set_speed(1750, 1250)
+        # else:
+        #   robot.set_speed(1250, 1750)
+        sleep_sec(consts.TURN_90_TIME * 2)
+        robot.set_speed(2000, 2000)
         sleep_sec(1.0)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
         robot.write_linetrace_slope(None)
+        robot.target_before_exit(consts.TargetList.EXIT.value)
         robot.write_line_area(0)
   else:
     # logger.info("wall follow ccw")
-    if hasFoundExit > 0:
-      result = l_wall_follow_ccw()
-    else:
-      result = r_wall_follow_ccw()
+    calculate_cage()
     if (robot.linetrace_slope
       is not None) and (robot.line_area
                         >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
@@ -1245,35 +1245,6 @@ def handle_exit() -> None:
       robot.set_speed(1500, 1500)
       robot.send_speed()
       robot.write_is_rescue_flag(False)
-    if result:
-      robot.set_speed(1650, 1650)
-      sleep_sec(2.6)
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      if hasFoundExit > 0:
-        robot.set_speed(1250, 1750)
-      else:
-        robot.set_speed(1750, 1250)
-      sleep_sec(consts.TURN_90_TIME)
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      robot.set_speed(1650, 1650)
-      while True:
-        robot.update_button_stat()
-        if robot.robot_stop:
-          robot.set_speed(1500, 1500)
-          robot.send_speed()
-          break
-
-        robot.send_speed()
-
-        if robot.linetrace_slope is not None and robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA * 2:
-          logger.info("Line detected, exit rescue mode")
-          robot.set_speed(1500, 1500)
-          robot.send_speed()
-          robot.write_is_rescue_flag(False)
-          break
-
 
 def handle_ball() -> None:
   clamp_turning_angle()
@@ -1374,6 +1345,7 @@ if __name__ == "__main__":
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+  robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
@@ -1387,7 +1359,7 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if robot.target_before_exit == -1:
+      if False:
         handle_before_search()
       else:
         run_yolo()
