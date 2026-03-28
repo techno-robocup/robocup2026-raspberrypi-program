@@ -1444,7 +1444,7 @@ if __name__ == "__main__":
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
           robot.set_speed(1750, 1250)
-          sleep_sec(1.7, robot.send_speed)
+          sleep_sec(1.5, robot.send_speed)
           robot.set_speed(1580, 1800)
           sleep_sec(1, robot.send_speed)
           object_avoidance_start = time.time()
