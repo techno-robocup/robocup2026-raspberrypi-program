@@ -252,7 +252,8 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   if should_recover:
     logger.info(
         f"Line recovery triggered: x_offset={x_offset:.0f}px, "
-        f"area={arg_line_area:.0f} (threshold={consts.MIN_BLACK_LINE_AREA * 2})")
+        f"area={arg_line_area:.0f} (threshold={consts.MIN_BLACK_LINE_AREA * 2})"
+    )
 
   return should_recover
 
@@ -1193,8 +1194,10 @@ def handle_not_found() -> None:
     robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
     set_target()
 
+
 has_found_exit = False
 exit_angle = None
+
 
 def handle_exit() -> None:
   global has_found_exit, exit_angle
@@ -1241,7 +1244,7 @@ def handle_exit() -> None:
           exit_angle = "L"
       has_found_exit = True
       motorl, motorr = calculate_cage()
-      robot.set_speed(motorl,motorr)
+      robot.set_speed(motorl, motorr)
       robot.send_speed()
       if robot.rescue_offset is None:
         if exit_angle == "R":
@@ -1250,8 +1253,8 @@ def handle_exit() -> None:
           robot.set_speed(1600, 1640)
         robot.send_speed()
       if (robot.linetrace_slope
-        is not None) and (robot.line_area
-                          >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+          is not None) and (robot.line_area
+                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
         logger.info("Line detected, exit rescue mode")
         robot.set_speed(1600, 1600)
         sleep_sec(1.0)
@@ -1459,8 +1462,8 @@ if __name__ == "__main__":
           sleep_sec(1)
           robot.write_linetrace_stop(False)
         else:
-            motorl, motorr = calculate_motor_speeds()
-            robot.set_speed(motorl, motorr)
+          motorl, motorr = calculate_motor_speeds()
+          robot.set_speed(motorl, motorr)
       else:
         logger.info("Red stop")
         robot.set_speed(1500, 1500)
