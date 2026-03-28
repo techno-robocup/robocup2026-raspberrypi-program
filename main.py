@@ -480,6 +480,13 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   motor_r = clamp(int(decel_speed + steering * gyro_multiplier * r_multi),
                   MIN_SPEED, MAX_SPEED)
 
+  logger.info(
+      f"PID err={local_angle_error:.3f} steer={steering} "
+      f"dt={dt:.3f} d={derivative:.3f} | "
+      f"motors=({motor_l},{motor_r}) decel={decel_speed} "
+      f"l_m={l_multi} r_m={r_multi}"
+  )
+
   return motor_l, motor_r
 
 
@@ -1397,7 +1404,13 @@ if __name__ == "__main__":
           handle_cage()
     else:
       if not robot.linetrace_stop:
-        logger.info(f"{_pid_integral}")
+        logger.info(
+            f"PID i={_pid_integral:.3f} | "
+            f"slope={robot.linetrace_slope} area={robot.line_area} "
+            f"cx={robot.line_center_x} | "
+            f"green={robot.green_turn_direction} | "
+            f"pitch={robot.pitch} roll={robot.roll}"
+        )
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
         if robot.green_turn_direction == 'u':
