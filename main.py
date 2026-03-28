@@ -1193,8 +1193,10 @@ def handle_not_found() -> None:
     robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
     set_target()
 
+has_found_exit = False
 
 def handle_exit() -> None:
+  global has_found_exit
   if not robot.has_moved_to_cage:
     # logger.info("Finding Red Cage for exiting")
     if robot.rescue_offset is None:
@@ -1227,18 +1229,27 @@ def handle_exit() -> None:
         robot.write_line_area(0)
   else:
     # logger.info("wall follow ccw")
-    motorl, motorr = calculate_cage()
-    robot.set_speed(motorl,motorr)
-    robot.send_speed()
-    if (robot.linetrace_slope
-      is not None) and (robot.line_area
-                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-      logger.info("Line detected, exit rescue mode")
-      robot.set_speed(1600, 1600)
-      sleep_sec(1.0)
-      robot.set_speed(1500, 1500)
+    if (not has_found_exit) and robot.rescue_offset is None:
+      change_position()
+      return
+    else:
+      has_found_exit = True
+      motorl, motorr = calculate_cage()
+      robot.set_speed(motorl,motorr)
       robot.send_speed()
-      robot.write_is_rescue_flag(False)
+      if robot.rescue_offset is None:
+        robot.set_speed(1600, 1600)
+        robot.send_speed()
+      if (robot.linetrace_slope
+        is not None) and (robot.line_area
+                          >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
+        logger.info("Line detected, exit rescue mode")
+        robot.set_speed(1600, 1600)
+        sleep_sec(1.0)
+        robot.set_speed(1500, 1500)
+        robot.send_speed()
+        robot.write_is_rescue_flag(False)
+
 
 def handle_ball() -> None:
   clamp_turning_angle()
@@ -1297,9 +1308,10 @@ def reset_pid_state() -> None:
 
 
 def is_stopping_by_button() -> None:
-  global hasFoundExit, _is_in_gap, _is_approached_line
+  global hasFoundExit, _is_in_gap, _is_approached_line, has_found_exit
   _is_in_gap = False
   _is_approached_line = False
+  has_found_exit = False
   if robot.target_before_exit == -1:
     hasFoundExit = -1
   robot.set_speed(1500, 1500)
