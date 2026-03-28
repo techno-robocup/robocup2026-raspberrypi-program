@@ -238,29 +238,21 @@ def should_execute_line_recovery(arg_line_area: Optional[float]) -> bool:
   if time.time() - last_gap_recovery_time < GAP_RECOVERY_COOLDOWN:
     return False
 
-  line_center_y = robot.line_center_y
-  angle = robot.line_skeleton_angle
+  line_center_x = robot.line_center_x
+  if line_center_x is None:
+    return False
 
-  is_line_at_the_bottom = line_center_y > (
-      consts.LINETRACE_CAMERA_LORES_HEIGHT / 2)
+  image_width = consts.LINETRACE_CAMERA_LORES_WIDTH
+  x_offset = abs(line_center_x - image_width / 2)
+  offset_condition = x_offset > image_width / 10
+  area_condition = arg_line_area < consts.MIN_BLACK_LINE_AREA * 2
 
-  area_condition = arg_line_area < consts.LINE_RECOVERY_AREA_THRESHOLD
-
-  angle_deg = 0.0
-  if angle is not None and is_valid_number(angle):
-    angle_deg = math.degrees(angle)
-
-  angle_error = abs(90 - abs(angle_deg)) > 35
-  is_vertical = abs(90 - abs(angle_deg)) < 5
-  should_recover = (is_line_at_the_bottom and area_condition and angle_error
-                    and (not is_vertical))
-
-  logger.info(
-      f"Recovery Check -> Bottom: {is_line_at_the_bottom}, Small Area: {area_condition}, "
-      f"Angle Error: {angle_error}, Deg: {angle_deg:.1f}")
+  should_recover = offset_condition and area_condition
 
   if should_recover:
-    logger.info("Line recovery triggered: Line is bottom, small, and tilted.")
+    logger.info(
+        f"Line recovery triggered: x_offset={x_offset:.0f}px, "
+        f"area={arg_line_area:.0f} (threshold={consts.MIN_BLACK_LINE_AREA * 2})")
 
   return should_recover
 
@@ -1231,11 +1223,13 @@ def handle_exit() -> None:
         robot.send_speed()
         robot.write_has_moved_to_cage(True)
         robot.write_linetrace_slope(None)
-        robot.target_before_exit(consts.TargetList.EXIT.value)
+        robot.write_target_before_exit(consts.TargetList.EXIT.value)
         robot.write_line_area(0)
   else:
     # logger.info("wall follow ccw")
-    calculate_cage()
+    motorl, motorr = calculate_cage()
+    robot.set_speed(motorl,motorr)
+    robot.send_speed()
     if (robot.linetrace_slope
       is not None) and (robot.line_area
                         >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
@@ -1448,16 +1442,9 @@ if __name__ == "__main__":
           angle_error = get_current_angle_error()
           line_area = robot.line_area
 
-          if False:
-            # if angle_error is not None and should_execute_line_recovery(
-            # line_area):
+          if should_execute_line_recovery(line_area):
             execute_line_recovery()
             reset_pid_state()
-            _is_in_gap = True
-            robot.set_speed(1500, 1500)
-            robot.send_speed()
-            sleep_sec(0.1)
-            approached_exact_angle()
           else:
             motorl, motorr = calculate_motor_speeds()
             robot.set_speed(motorl, motorr)
