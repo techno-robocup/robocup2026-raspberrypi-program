@@ -1350,6 +1350,9 @@ def is_stopping_by_button() -> None:
   robot.write_ball_near_flag(False)
   robot.write_has_moved_to_cage(False)
   robot.write_detect_black_ball(False)
+  from modules.camera import reset_green_tracker
+  reset_green_tracker()
+  robot.write_green_turn_direction(None)
   reset_pid_state()
 
 
