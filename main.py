@@ -1194,9 +1194,10 @@ def handle_not_found() -> None:
     set_target()
 
 has_found_exit = False
+exit_angle = None
 
 def handle_exit() -> None:
-  global has_found_exit
+  global has_found_exit, exit_angle
   if not robot.has_moved_to_cage:
     # logger.info("Finding Red Cage for exiting")
     if robot.rescue_offset is None:
@@ -1233,12 +1234,20 @@ def handle_exit() -> None:
       change_position()
       return
     else:
+      if not has_found_exit:
+        if robot.rescue_offset >= 0:
+          exit_angle = "R"
+        else:
+          exit_angle = "L"
       has_found_exit = True
       motorl, motorr = calculate_cage()
       robot.set_speed(motorl,motorr)
       robot.send_speed()
       if robot.rescue_offset is None:
-        robot.set_speed(1600, 1600)
+        if exit_angle == "R":
+          robot.set_speed(1680, 1600)
+        else:
+          robot.set_speed(1600, 1680)
         robot.send_speed()
       if (robot.linetrace_slope
         is not None) and (robot.line_area
