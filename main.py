@@ -792,7 +792,7 @@ def release_ball() -> bool:
     True on successful completion.
   """
   robot.set_speed(1600, 1600)
-  sleep_sec(1)
+  sleep_sec(1.5)
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1350, 1350)
