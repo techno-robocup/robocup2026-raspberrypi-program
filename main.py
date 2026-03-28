@@ -1005,7 +1005,7 @@ def r_wall_follow_ccw() -> bool:
     return False
   target_dist = consts.TARGET_MIN
   error = l_dist - target_dist
-  kp = 10.0
+  kp = 20.0
   turn = int(error * kp)
   max_turn = consts.BASE_TURN
   turn = max(-max_turn, min(max_turn, turn))
@@ -1062,7 +1062,7 @@ def l_wall_follow_ccw() -> bool:
     return False
   target_dist = consts.TARGET_MIN
   error = r_dist - target_dist
-  kp = 10.0
+  kp = 20.0
   turn = int(error * kp)
   max_turn = consts.BASE_TURN
   turn = max(-max_turn, min(max_turn, turn))
@@ -1126,7 +1126,7 @@ def handle_before_search() -> None:
     robot.set_speed(1500, 1500)
     robot.send_speed()
     robot.set_speed(1350, 1380)
-    sleep_sec(4.1)
+    sleep_sec(3.5)
     robot.set_speed(1750, 1250)
     sleep_sec(consts.TURN_90_TIME * 0.8)
     robot.set_speed(1500, 1500)
