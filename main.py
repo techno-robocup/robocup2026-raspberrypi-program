@@ -957,7 +957,7 @@ def calculate_cage() -> tuple[int, int]:
                MAX_SPEED), clamp(int(base_R), MIN_SPEED, MAX_SPEED)
 
 
-def l_wall_follow_ccw() -> bool:
+def r_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
   l_dist = ultrasonic[0]
   front_dist = robot.avg_ultrasonic[1]
@@ -1016,7 +1016,7 @@ def l_wall_follow_ccw() -> bool:
   return False
 
 
-def r_wall_follow_ccw() -> bool:
+def l_wall_follow_ccw() -> bool:
   ultrasonic = robot.ultrasonic
   front_dist = robot.avg_ultrasonic[1]
   r_dist = ultrasonic[2]
