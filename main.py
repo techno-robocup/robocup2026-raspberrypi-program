@@ -32,7 +32,7 @@ MAX_SPEED = 2000
 MIN_SPEED = 1000
 KP = 170
 KI = 280
-KD = 30
+KD = 33
 DP = 200
 INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
@@ -1462,9 +1462,9 @@ if __name__ == "__main__":
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
-          robot.set_speed(1750, 1250)
+          robot.set_speed(1250, 1750)
           sleep_sec(1.5, robot.send_speed)
-          robot.set_speed(1580, 1800)
+          robot.set_speed(1800, 1580)
           sleep_sec(1, robot.send_speed)
           object_avoidance_start = time.time()
           while robot.linetrace_slope is None:
@@ -1473,7 +1473,7 @@ if __name__ == "__main__":
               break
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
-            robot.set_speed(1590, 1790)
+            robot.set_speed(1790, 1590)
             robot.send_speed()
             robot.update_button_stat()
             if robot.robot_stop:
@@ -1484,7 +1484,7 @@ if __name__ == "__main__":
           )
           robot.set_speed(1600, 1600)
           sleep_sec(1)
-          robot.set_speed(1600, 1400)
+          robot.set_speed(1400, 1600)
           sleep_sec(1)
           robot.write_linetrace_stop(False)
         else:
