@@ -469,7 +469,7 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       l_multi = 1.5
       r_multi = 1.5
 
-  if robot.roll < -10: # UP
+  if robot.roll < -10:  # UP
     l_multi = 0.4
     r_multi = 0.4
   elif robot.roll > 10:
@@ -483,12 +483,10 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
   motor_r = clamp(int(decel_speed + steering * gyro_multiplier * r_multi),
                   MIN_SPEED, MAX_SPEED)
 
-  logger.info(
-      f"PID err={local_angle_error:.3f} steer={steering} "
-      f"dt={dt:.3f} d={derivative:.3f} | "
-      f"motors=({motor_l},{motor_r}) decel={decel_speed} "
-      f"l_m={l_multi} r_m={r_multi}"
-  )
+  logger.info(f"PID err={local_angle_error:.3f} steer={steering} "
+              f"dt={dt:.3f} d={derivative:.3f} | "
+              f"motors=({motor_l},{motor_r}) decel={decel_speed} "
+              f"l_m={l_multi} r_m={r_multi}")
 
   return motor_l, motor_r
 
@@ -1159,6 +1157,7 @@ def handle_before_search() -> None:
   robot.set_speed(1500, 1500)
   robot.send_speed()
 
+
 def handle_not_found() -> None:
   change_position()
   # Only call set_target() if searching for balls (rotation-based logic).
@@ -1372,9 +1371,7 @@ if __name__ == "__main__":
           handle_cage()
     else:
       if not robot.linetrace_stop:
-        logger.info(
-            ultrasonic_info
-        )
+        logger.info(ultrasonic_info)
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
         if robot.green_turn_direction == 'u':
