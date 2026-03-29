@@ -1134,81 +1134,26 @@ def find_cage() -> Optional[int]:
 
 
 def handle_before_search() -> None:
-  global hasFoundExit
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
+  robot.set_speed(1340, 1380)
+  sleep_sec(3.5)
+  robot.set_speed(1750, 1250)
+  sleep_sec(consts.TURN_90_TIME * 0.8)
+  robot.set_speed(1500, 1500)
   run_yolo()
   cage_class = find_cage()
   if cage_class is not None:
     logger.info(f"Exit {hasFoundExit} Cage{consts.TargetList(cage_class).name}")
-    robot.write_target_before_exit(cage_class)
+    if cage_class == consts.TargetList.RED_CAGE.value:
+      robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
+    else:
+      robot.write_target_before_exit(consts.TargetList.RED_CAGE.value)
     robot.set_speed(1500, 1500)
     robot.send_speed()
     return
-  if hasFoundExit == -1:
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    robot.set_speed(1340, 1380)
-    sleep_sec(3.5)
-    robot.set_speed(1750, 1250)
-    sleep_sec(consts.TURN_90_TIME * 0.8)
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    robot.set_speed(1650, 1650)
-    prev_time = time.time()
-    while time.time() - prev_time < 2.5:
-      robot.update_button_stat()
-      robot.send_speed()
-      if robot.robot_stop:
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        logger.info("Sleep interrupted by button")
-        break
-      if robot.ultrasonic[1] < consts.FRONT_FLAG_DIST:
-        run_yolo()
-        cage_class = find_cage()
-        if cage_class is not None:
-          logger.info(
-              f"Exit:{hasFoundExit} Cage:{consts.TargetList(cage_class).name}")
-          robot.write_target_before_exit(cage_class)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME * 1.2)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        break
-      if (robot.linetrace_slope
-          is not None) and (robot.line_area
-                            >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-        hasFoundExit = 1
-        robot.set_speed(1300, 1300)
-        sleep_sec(2)
-        robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME * 1.3)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.set_speed(1650, 1650)
-        sleep_sec(2.5)
-        break
-    robot.set_speed(1500, 1500)
-    robot.send_speed()
-    hasFoundExit += 1
-  # PIN:
-  result = r_wall_follow_ccw()
-  if result:
-    hasFoundExit = 1
-    robot.set_speed(1650, 1650)
-    sleep_sec(2.5)
-  if (robot.linetrace_slope
-      is not None) and (robot.line_area
-                        >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-    hasFoundExit = 1
-    robot.set_speed(1300, 1300)
-    sleep_sec(2)
-    robot.set_speed(1250, 1750)
-    sleep_sec(consts.TURN_90_TIME * 1.3)
-    robot.set_speed(1650, 1650)
-    sleep_sec(2.5)
-
+  else:
+    robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
 
 def handle_not_found() -> None:
   change_position()
@@ -1237,22 +1182,8 @@ def handle_exit() -> None:
       robot.send_speed()
       if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.6 and robot.rescue_y is not None and robot.rescue_y > (
           robot.rescue_image.shape[0] * 1 / 2):
-        robot.set_speed(1600, 1600)
-        sleep_sec(1)
         robot.set_speed(1300, 1300)
         sleep_sec(0.5)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        # if hasFoundExit > 0:
-        robot.set_speed(1750, 1250)
-        # else:
-        #   robot.set_speed(1250, 1750)
-        sleep_sec(consts.TURN_90_TIME * 2)
-        robot.set_speed(2000, 2000)
-        sleep_sec(1.0)
-        robot.set_speed(1500, 1500)
-        robot.send_speed()
-        robot.send_speed()
         robot.write_has_moved_to_cage(True)
         robot.write_linetrace_slope(None)
         robot.write_target_before_exit(consts.TargetList.EXIT.value)
@@ -1393,7 +1324,6 @@ if __name__ == "__main__":
   robot.write_is_rescue_flag(False)
   robot.write_last_slope_get_time(time.time())
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
-  robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
   _was_stopped = False
   while True:
     robot.update_button_stat()
@@ -1418,7 +1348,7 @@ if __name__ == "__main__":
         )
       except Exception:
         logger.info(f"Searching for target id: {robot.rescue_target}")
-      if False:
+      if robot.target_before_exit == -1:
         handle_before_search()
       else:
         run_yolo()
