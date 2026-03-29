@@ -1154,6 +1154,10 @@ def handle_before_search() -> None:
     return
   else:
     robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
+  robot.set_speed(1250, 1750)
+  sleep_sec(consts.TURN_90_TIME * 0.4)
+  robot.set_speed(1500, 1500)
+  robot.send_speed()
 
 def handle_not_found() -> None:
   change_position()
