@@ -25,7 +25,7 @@ uart_dev = modules.robot.uart_io()
 uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1710
+BASE_SPEED = 1690
 assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
@@ -469,7 +469,10 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       l_multi = 1.5
       r_multi = 1.5
 
-  if robot.roll < -10:
+  if robot.roll < -10: # UP
+    l_multi = 0.4
+    r_multi = 0.4
+  elif robot.roll > 10:
     l_multi = 0.6
     r_multi = 0.6
 
@@ -1340,7 +1343,7 @@ def is_stopping_by_button() -> None:
   robot.write_rescue_turning_angle(0)
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   logger.info("robot stop true, stopping..")
-  robot.write_linetrace_stop(True)
+  robot.write_linetrace_stop(False)
   robot.write_is_rescue_flag(False)
   robot.write_linetrace_slope(None)
   robot.write_line_area(0)
@@ -1373,7 +1376,6 @@ if __name__ == "__main__":
   robot.write_last_slope_get_time(time.time())
   robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
   robot.write_target_before_exit(consts.TargetList.GREEN_CAGE.value)
-  _was_stopped = False
   while True:
     robot.update_button_stat()
     robot.update_gyro_stat()
@@ -1418,11 +1420,7 @@ if __name__ == "__main__":
     else:
       if not robot.linetrace_stop:
         logger.info(
-            f"PID i={_pid_integral:.3f} | "
-            f"slope={robot.linetrace_slope} area={robot.line_area} "
-            f"cx={robot.line_center_x} | "
-            f"green={robot.green_turn_direction} | "
-            f"pitch={robot.pitch} roll={robot.roll}"
+            ultrasonic_info
         )
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
