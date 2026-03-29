@@ -691,6 +691,7 @@ def find_best_target() -> None:
             best_angle = dist
             best_size = area
             y_center = best_y
+          update_ball_flags()
           robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
         elif cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
           robot.write_detect_black_ball(True)
@@ -909,6 +910,8 @@ def calculate_ball() -> tuple[int, int]:
     logger.warning(
         f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}"
     )
+    robot.write_rescue_offset(None)
+    robot.write_rescue_size(None)
     return 1500, 1500
   if not robot.ball_catch_offset_flag:
     diff_angle = angle * BOP
