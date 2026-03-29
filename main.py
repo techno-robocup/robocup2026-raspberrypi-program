@@ -1114,37 +1114,6 @@ def find_cage() -> Optional[int]:
   return None
 
 
-def random_walk() -> None:
-  robot.set_speed(1750, 1250)
-  sleep_sec(consts.TURN_90_TIME * 0.6)
-  while True:
-    ultrasonic = robot.ultrasonic
-    front_dist = ultrasonic[1]
-    robot.set_speed(1650, 1650)
-    robot.send_speed()
-    if front_dist is not None and front_dist < consts.FRONT_FLAG_DIST:
-      robot.set_speed(1250, 1750)
-      sleep_sec(consts.TURN_90_TIME * 1.2)
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      break
-    robot.update_button_stat()
-    if robot.robot_stop:
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      logger.info("Sleep interrupted by button")
-      break
-    if (robot.linetrace_slope is not None) and (robot.line_area >= consts.MIN_OBJECT_AVOIDANCE_LINE_AREA):
-      robot.set_speed(1300, 1300)
-      sleep_sec(2)
-      robot.set_speed(1250, 1750)
-      sleep_sec(consts.TURN_90_TIME * 1.3)
-      robot.set_speed(1500, 1500)
-      robot.send_speed()
-      robot.set_speed(1650, 1650)
-      sleep_sec(2.5)
-      break
-
 def handle_before_search() -> None:
   global hasFoundExit
   run_yolo()
@@ -1231,8 +1200,6 @@ def handle_not_found() -> None:
   ]:
     robot.write_rescue_turning_angle(robot.rescue_turning_angle + 18)
     set_target()
-    if robot.rescue_turning_angle % 360 == 0:
-      random_walk()
 
 
 has_found_exit = False
