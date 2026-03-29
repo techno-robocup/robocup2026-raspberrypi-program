@@ -748,6 +748,7 @@ def find_best_target() -> None:
   else:
     logger.info("No valid target found after processing detections")
 
+has_detected_target = False
 
 def catch_ball() -> int:
   """Execute the ball catching sequence using the robot arm.
@@ -760,6 +761,7 @@ def catch_ball() -> int:
     0 on successful completion (catch verification is not implemented).
   """
   # Store which ball type we're catching
+  global has_detected_target
   robot.set_speed(1500, 1500)
   robot.send_speed()
   robot.set_speed(1500, 1500)
@@ -785,6 +787,7 @@ def catch_ball() -> int:
   sleep_sec(0.3)
   robot.set_arm(3030, 1)
   robot.send_arm()
+  has_detected_target = False
   return 0
 
 
@@ -797,6 +800,7 @@ def release_ball() -> bool:
   Returns:
     True on successful completion.
   """
+  global has_detected_target
   robot.set_speed(1600, 1600)
   sleep_sec(1.5)
   robot.set_speed(1500, 1500)
@@ -819,6 +823,7 @@ def release_ball() -> bool:
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
+  has_detected_target = False
   return True
 
 
@@ -878,6 +883,25 @@ def clamp_turning_angle() -> bool:
   robot.write_rescue_turning_angle(angle)
   return True
 
+def rescue_object_avoidance() -> bool:
+  ultrasonic = robot.ultrasonic
+  front_dist = ultrasonic[1]
+  if front_dist is not None and front_dist < consts.FRONT_FLAG_DIST and has_found_exit:
+    robot.set_speed(1300, 1300)
+    sleep_sec(0.5)
+    robot.set_speed(1250, 1750)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1500, 1500)
+    robot.set_speed(1650, 1650)
+    sleep_sec(2.5)
+    robot.set_speed(1750, 1250)
+    sleep_sec(consts.TURN_90_TIME)
+    robot.set_speed(1650, 1650)
+    sleep_sec(2.5)    
+    robot.send_speed()
+    return True
+  else:
+    return False
 
 def calculate_ball() -> tuple[int, int]:
   """Calculate motor speeds to approach a ball target.
@@ -890,13 +914,18 @@ def calculate_ball() -> tuple[int, int]:
     Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
     Returns (1500, 1500) if target data is unavailable.
   """
+  global has_detected_target
   angle = robot.rescue_offset
   size = robot.rescue_size
+  result = rescue_object_avoidance()
+  if result:
+    return 1500, 1500
   if angle is None or size is None:
     logger.warning(
         f"Calculate ball was called, but angle or size is None. angle: {angle}, size: {size}"
     )
     return 1500, 1500
+  has_detected_target = True
   if not robot.ball_catch_offset_flag:
     diff_angle = angle * BOP
   else:
@@ -945,10 +974,15 @@ def calculate_cage() -> tuple[int, int]:
     Tuple of (left_motor_speed, right_motor_speed) in range [MIN_SPEED, MAX_SPEED].
     Returns (1500, 1500) if target data is unavailable.
   """
+  global has_found_exit
   angle = robot.rescue_offset
   size = robot.rescue_size
+  result = rescue_object_avoidance()
+  if result:
+    return 1500, 1500
   if angle is None or size is None:
     return 1500, 1500
+  has_found_exit = True
   diff_angle = angle * COP
   diff_min_max = 100
   diff_angle = clamp(diff_angle, -diff_min_max, diff_min_max)
@@ -1301,6 +1335,7 @@ def handle_exit() -> None:
         robot.set_speed(1500, 1500)
         robot.send_speed()
         robot.write_linetrace_stop(False)
+        robot.restart_linetrace_camera()
         robot.write_is_rescue_flag(False)
 
 
@@ -1361,10 +1396,11 @@ def reset_pid_state() -> None:
 
 
 def is_stopping_by_button() -> None:
-  global hasFoundExit, _is_in_gap, _is_approached_line, has_found_exit
+  global hasFoundExit, _is_in_gap, _is_approached_line, has_found_exit, has_detected_target
   _is_in_gap = False
   _is_approached_line = False
   has_found_exit = False
+  has_detected_target = False
   if robot.target_before_exit == -1:
     hasFoundExit = -1
   robot.set_speed(1500, 1500)
