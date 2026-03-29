@@ -681,6 +681,19 @@ def find_best_target() -> None:
         logger.exception(f"Error processing detection box: {e}")
         continue
       if robot.rescue_target == consts.TargetList.EXIT.value:
+        if cls == consts.TargetList.SILVER_BALL.value:
+          robot.write_rescue_turning_angle(0)
+          max_area = 0
+          updated, max_area, dist, area, best_y, best_w = update_best_box(
+              box.xywh[0], max_area)
+          if updated:
+            max_area = area
+            best_angle = dist
+            best_size = area
+            y_center = best_y
+          robot.write_rescue_target(consts.TargetList.SILVER_BALL.value)
+        elif cls == consts.TargetList.BLACK_BALL.value and robot.rescue_target == consts.TargetList.SILVER_BALL.value:
+          robot.write_detect_black_ball(True)
         if cls == robot.target_before_exit:
           updated, max_area, dist, area, best_y, best_w = update_best_box(
               box.xywh[0], max_area)
@@ -815,7 +828,7 @@ def release_ball() -> bool:
   robot.set_arm(3030, 0)
   robot.send_arm()
   sleep_sec(0.5)
-  robot.set_speed(1750, 1250)
+  robot.set_speed(1250, 1750)
   sleep_sec(consts.TURN_90_TIME)
   robot.set_speed(1500, 1500)
   robot.send_speed()
@@ -831,7 +844,7 @@ def change_position() -> bool:
   Returns:
     True on successful completion.
   """
-  robot.set_speed(1750, 1250)
+  robot.set_speed(1250, 1750)
   sleep_sec(consts.TURN_18_TIME)
   robot.set_speed(1500, 1500)
   sleep_sec(0.1)
@@ -1267,6 +1280,7 @@ def handle_exit() -> None:
         sleep_sec(1.0)
         robot.set_speed(1500, 1500)
         robot.send_speed()
+        robot.restart_linetrace_camera()
         robot.write_linetrace_stop(False)
         robot.write_is_rescue_flag(False)
 
