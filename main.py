@@ -1270,6 +1270,7 @@ def handle_exit() -> None:
         sleep_sec(1.0)
         robot.set_speed(1500, 1500)
         robot.send_speed()
+        robot.write_linetrace_stop(False)
         robot.write_is_rescue_flag(False)
 
 
@@ -1315,7 +1316,7 @@ def handle_cage() -> None:
   motorl, motorr = calculate_cage()
   robot.set_speed(motorl, motorr)
   robot.send_speed()
-  if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.7 and robot.rescue_y is not None and robot.rescue_y > (
+  if robot.rescue_size is not None and robot.rescue_size >= consts.IMAGE_SZ * 0.6 and robot.rescue_y is not None and robot.rescue_y > (
       robot.rescue_image.shape[0] * 1 / 2):
     release_ball()
     set_target()
