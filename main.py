@@ -25,14 +25,14 @@ uart_dev = modules.robot.uart_io()
 uart_dev.connect(consts.UART_BAUD_RATE, consts.UART_TIMEOUT)
 robot.set_uart_device(uart_dev)
 
-BASE_SPEED = 1710
+BASE_SPEED = 1690
 assert 1500 < BASE_SPEED < 2000
 # assert TURNING_BASE_SPEED < BASE_SPEED
 MAX_SPEED = 2000
 MIN_SPEED = 1000
-KP = 170
+KP = 180
 KI = 280
-KD = 30
+KD = 33
 DP = 200
 INTEGRAL_MAX = 1  # Anti-windup: max |accumulated integral error| in radians*sec
 BOP = 0.03  # Ball Offset P
@@ -469,7 +469,10 @@ def calculate_motor_speeds(slope: Optional[float] = None) -> tuple[int, int]:
       l_multi = 1.5
       r_multi = 1.5
 
-  if robot.roll < -10:
+  if robot.roll < -10: # UP
+    l_multi = 0.4
+    r_multi = 0.4
+  elif robot.roll > 10:
     l_multi = 0.6
     r_multi = 0.6
 
@@ -1436,11 +1439,7 @@ if __name__ == "__main__":
     else:
       if not robot.linetrace_stop:
         logger.info(
-            f"PID i={_pid_integral:.3f} | "
-            f"slope={robot.linetrace_slope} area={robot.line_area} "
-            f"cx={robot.line_center_x} | "
-            f"green={robot.green_turn_direction} | "
-            f"pitch={robot.pitch} roll={robot.roll}"
+            ultrasonic_info
         )
         # Check for green mark intersections before normal line following
         # logger.info(ultrasonic_info)
@@ -1480,9 +1479,9 @@ if __name__ == "__main__":
           logger.info("Object avoidance triggered")
           robot.set_speed(1400, 1400)
           sleep_sec(1, robot.send_speed)
-          robot.set_speed(1750, 1250)
+          robot.set_speed(1250, 1750)
           sleep_sec(1.5, robot.send_speed)
-          robot.set_speed(1580, 1800)
+          robot.set_speed(1800, 1580)
           sleep_sec(1, robot.send_speed)
           object_avoidance_start = time.time()
           while robot.linetrace_slope is None:
@@ -1491,7 +1490,7 @@ if __name__ == "__main__":
               break
             logger.info("Turning around in object avoidance...")
             robot.write_last_slope_get_time(time.time())
-            robot.set_speed(1590, 1790)
+            robot.set_speed(1790, 1590)
             robot.send_speed()
             robot.update_button_stat()
             if robot.robot_stop:
@@ -1502,7 +1501,7 @@ if __name__ == "__main__":
           )
           robot.set_speed(1600, 1600)
           sleep_sec(1)
-          robot.set_speed(1600, 1400)
+          robot.set_speed(1400, 1600)
           sleep_sec(1)
           robot.write_linetrace_stop(False)
         else:

@@ -375,9 +375,31 @@ class Robot:
     self.__uart_device = device
 
   def restart_linetrace_camera(self) -> None:
-    """Restart the line trace camera (stop then start)."""
+    """Restart the line trace camera by recreating the Picamera2 instance.
+
+    Avoids calling stop() which can hang if the callback thread is stuck.
+    """
     logger.get_logger().info("Restarting line trace camera")
-    self.__Linetrace_Camera.stop_cam()
+    try:
+      self.__Linetrace_Camera.cam.close()
+    except Exception:
+      pass
+    self.__Linetrace_Camera.is_camera_running = False
+    from picamera2 import Picamera2
+    self.__Linetrace_Camera.cam = Picamera2(self.__Linetrace_Camera.PORT)
+    self.__Linetrace_Camera.cam.configure(
+        self.__Linetrace_Camera.cam.create_preview_configuration(
+            main={
+                "size": self.__Linetrace_Camera.size,
+                "format": self.__Linetrace_Camera.format
+            },
+            lores={
+                "size": self.__Linetrace_Camera.lores_size,
+                "format": self.__Linetrace_Camera.format
+            },
+        ))
+    self.__Linetrace_Camera.cam.pre_callback = self.__Linetrace_Camera.pre_callback_func
+    self.__Linetrace_Camera.cam.set_controls(self.__Linetrace_Camera.controls)
     self.__Linetrace_Camera.start_cam()
 
   # ============================================================================

@@ -124,7 +124,7 @@ lower_red2: Final[np.ndarray] = np.array([0, 130, 100])
 upper_red2: Final[np.ndarray] = np.array([20, 255, 255])
 
 GREEN_AHEAD_SLOWDOWN_SPEED: Final[
-    int] = 1630  # Motor speed cap when green mark predicted ahead
+    int] = 1650  # Motor speed cap when green mark predicted ahead
 GREEN_GYRO_PASS_TIME: Final[
     float] = 1.0  # Seconds to pass for checking gyro degrees on green mark turn
 
